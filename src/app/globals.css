@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    border-color: #E2E8F0;
+  }
+
+  body {
+    background-color: #FFFFFF;
+    color: #1E293B;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Force tabular numbers for all numerical metrics */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* Precision B2B Card per Official Render */
+  .b2b-card {
+    @apply bg-white border border-[#E2E8F0] rounded-xl transition-all duration-200;
+    box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.03);
+  }
+
+  .b2b-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+  }
+
+  .b2b-card-dark {
+    @apply bg-[#0F172A] border border-slate-800 rounded-xl text-white;
+    box-shadow: 0 12px 32px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+  }
+
+  /* Precision Buttons */
+  .btn-primary {
+    @apply bg-[#0F172A] text-white hover:bg-[#1E3A8A] active:bg-[#0F172A] font-medium rounded-xl px-4 py-2.5 transition-all duration-200 flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-[#1E293B] hover:bg-[#F8FAFC] active:bg-[#F1F5F9] border border-[#E2E8F0] font-medium rounded-xl px-4 py-2.5 transition-all duration-200 flex items-center justify-center gap-2 shadow-sm;
+  }
+
+  .btn-emerald {
+    @apply bg-[#10B981] text-white hover:bg-[#059669] active:bg-[#047857] font-medium rounded-xl px-4 py-2.5 transition-all duration-200 flex items-center justify-center gap-2 shadow-sm;
+  }
+
+  .btn-amber {
+    @apply bg-amber-500 text-slate-950 hover:bg-amber-400 active:bg-amber-600 font-semibold rounded-xl px-4 py-2.5 transition-all duration-200 flex items-center justify-center gap-2 shadow-sm;
+  }
+
+  /* Subtle technical badges */
+  .badge-neutral {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-[#F3F4F6] text-[#1E293B] border border-[#E2E8F0];
+  }
+
+  .badge-emerald {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#ECFDF5] text-[#065F46] border border-[#10B981]/30;
+  }
+
+  .badge-amber {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200/80;
+  }
+
+  .badge-rose {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/80;
+  }
+}
+
+/* Subtle modern scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
