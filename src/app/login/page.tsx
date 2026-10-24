@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -82,6 +82,11 @@ function LoginForm() {
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotSuccess, setForgotSuccess] = useState(false);
   const [forgotError, setForgotError] = useState<string | null>(null);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [pendingConfirmEmail, setPendingConfirmEmail] = useState<string | null>(null);
+
+  // Evita condición de carrera entre onAuthStateChange y handleSubmit durante el registro
+  const isSubmittingRef = useRef(false);
 
   const supabase = createClient();
 
@@ -103,6 +108,12 @@ function LoginForm() {
       setErrorMsg(
         "Acceso restringido: Esta sección requiere rol de Super Administrador (Operaciones & Poligrafía)."
       );
+    } else if (errorParam === "unauthorized_company") {
+      setErrorType("generic");
+      setErrorMsg("Inicia sesión con tu cuenta corporativa o registra tu empresa para acceder al panel B2B.");
+    } else if (errorParam === "unauthorized_candidate") {
+      setErrorType("generic");
+      setErrorMsg("Inicia sesión o crea tu cuenta gratuita para completar tu expediente operativo.");
     } else if (errorParam === "auth_callback_failed") {
       setErrorType("generic");
       setErrorMsg("No fue posible completar la autenticación con Google. Por favor intenta de nuevo.");
@@ -174,6 +185,11 @@ function LoginForm() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Si handleSubmit está en plena ejecución (guardando perfil/empresa), no interrumpir con redirección prematura
+      if (isSubmittingRef.current) {
+        return;
+      }
+
       if (event === "SIGNED_IN" && session?.user) {
         setLoading(true);
         try {
@@ -203,11 +219,13 @@ function LoginForm() {
             userRole = session.user.user_metadata?.role || "candidate";
           }
 
+          const meta = session.user.user_metadata || {};
+
           // Asegurar que el perfil exista (upsert automático solo si no existe)
           if (!profile) {
             const googleFullName =
-              session.user.user_metadata?.full_name ||
-              session.user.user_metadata?.name ||
+              meta.full_name ||
+              meta.name ||
               session.user.email?.split("@")[0] ||
               (userRole === "company" ? "Empresa de Seguridad" : "Personal Operativo");
 
@@ -217,11 +235,38 @@ function LoginForm() {
                 role: userRole,
                 full_name: googleFullName,
                 email: session.user.email ?? "",
-                phone_whatsapp: session.user.phone ?? "",
+                phone_whatsapp: meta.phone_whatsapp || session.user.phone || "",
                 updated_at: new Date().toISOString(),
               },
               { onConflict: "id" }
             );
+          }
+
+          // Si el usuario es empresa y aún no tiene su registro en public.companies, crearlo desde user_metadata
+          if (userRole === "company") {
+            const { data: existingComp } = await supabase
+              .from("companies")
+              .select("id")
+              .eq("owner_id", session.user.id)
+              .maybeSingle();
+
+            if (!existingComp) {
+              await supabase.from("companies").insert({
+                owner_id: session.user.id,
+                company_name:
+                  meta.company_name ||
+                  profile?.full_name ||
+                  meta.full_name ||
+                  "Empresa de Seguridad",
+                nit: meta.nit || `NIT-${session.user.id.slice(0, 8)}`,
+                city: meta.city || "Bogotá D.C.",
+                contact_person: profile?.full_name || meta.full_name || "Contacto Principal",
+                contact_phone: meta.phone_whatsapp || session.user.phone || "",
+                is_verified_company: false,
+                plan_name: "basico",
+                credits_security_studies: 0,
+              });
+            }
           }
 
           if (typeof window !== "undefined") {
@@ -353,44 +398,221 @@ function LoginForm() {
     }
   };
 
+  const handleResendConfirmation = async () => {
+    const targetEmail = (pendingConfirmEmail || email).trim().toLowerCase();
+    if (!targetEmail) return;
+    setResendLoading(true);
+    try {
+      const origin =
+        typeof window !== "undefined" && window.location.origin
+          ? window.location.origin
+          : process.env.NEXT_PUBLIC_SITE_URL || "";
+
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: targetEmail,
+        options: {
+          emailRedirectTo: `${origin}/auth/callback?intent=register&role=${selectedRole}`,
+        },
+      });
+      if (error) throw error;
+      setSuccessMsg(
+        `Hemos reenviado el enlace de activación a ${targetEmail}. Revisa tu bandeja de entrada y carpeta de Spam.`
+      );
+      setErrorMsg(null);
+    } catch (err: any) {
+      setErrorMsg(
+        err.message || "No fue posible reenviar el correo en este momento. Intenta en unos segundos."
+      );
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
+  // Sincroniza de forma garantizada public.profiles, public.companies y public.candidate_profiles
+  const syncUserRegistrationRecords = async (params: {
+    userId: string;
+    role: "candidate" | "company" | "admin";
+    fullName: string;
+    phone: string;
+    email: string;
+    city: string;
+    primaryRole?: string;
+    companyName?: string;
+    companyNit?: string;
+  }) => {
+    const cleanFullName =
+      params.fullName.trim() ||
+      (params.role === "company" ? params.companyName?.trim() || "Empresa de Seguridad" : "Personal Operativo");
+    const cleanPhone = params.phone.trim();
+    const cleanEmail = params.email.trim().toLowerCase();
+    const cleanCity = params.city || "Bogotá D.C.";
+
+    // 1. Upsert en public.profiles
+    const { error: profileError } = await supabase.from("profiles").upsert(
+      {
+        id: params.userId,
+        role: params.role,
+        full_name: cleanFullName,
+        phone_whatsapp: cleanPhone,
+        email: cleanEmail,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" }
+    );
+
+    if (profileError) {
+      console.error("Error guardando en public.profiles:", profileError);
+    }
+
+    // 2. Si es empresa, insertar o actualizar en public.companies
+    if (params.role === "company") {
+      const { data: existingComp } = await supabase
+        .from("companies")
+        .select("id")
+        .eq("owner_id", params.userId)
+        .maybeSingle();
+
+      if (existingComp) {
+        await supabase
+          .from("companies")
+          .update({
+            company_name: params.companyName?.trim() || cleanFullName,
+            nit: params.companyNit?.trim() || `NIT-${params.userId.slice(0, 8)}`,
+            city: cleanCity,
+            contact_person: cleanFullName,
+            contact_phone: cleanPhone,
+          })
+          .eq("id", existingComp.id);
+      } else {
+        const { error: compError } = await supabase.from("companies").insert({
+          owner_id: params.userId,
+          company_name: params.companyName?.trim() || cleanFullName || "Empresa de Seguridad",
+          nit: params.companyNit?.trim() || `NIT-${params.userId.slice(0, 8)}`,
+          city: cleanCity,
+          contact_person: cleanFullName,
+          contact_phone: cleanPhone,
+          is_verified_company: false,
+          plan_name: "basico",
+          credits_security_studies: 0,
+        });
+        if (compError) {
+          console.error("Error guardando en public.companies:", compError);
+        }
+      }
+    }
+
+    // 3. Si es candidato, asegurar registro inicial en public.candidate_profiles
+    if (params.role === "candidate") {
+      const { data: existingCand } = await supabase
+        .from("candidate_profiles")
+        .select("user_id")
+        .eq("user_id", params.userId)
+        .maybeSingle();
+
+      if (!existingCand) {
+        const validRole =
+          params.primaryRole === "Operador de Medios Tecnológicos"
+            ? "Operador Medios Tecnológicos"
+            : params.primaryRole || "Vigilante Fijo";
+
+        const { error: candError } = await supabase.from("candidate_profiles").upsert(
+          {
+            user_id: params.userId,
+            national_id: `CC-${params.userId.slice(0, 8)}`,
+            city: cleanCity,
+            primary_role: validRole as any,
+            years_experience: 0,
+            has_military_booklet: false,
+            has_own_motorcycle: false,
+            has_driving_license: false,
+            has_weapon_permit_experience: false,
+            available_immediately: true,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
+        if (candError) {
+          console.error("Error guardando en public.candidate_profiles:", candError);
+        }
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
     setErrorType(null);
     setSuccessMsg(null);
+    setPendingConfirmEmail(null);
     setLoading(true);
+    isSubmittingRef.current = true;
+
+    const cleanEmail = email.trim().toLowerCase();
 
     try {
       if (mode === "login") {
         const { data, error } = await supabase.auth.signInWithPassword({
-          email,
+          email: cleanEmail,
           password,
         });
 
         if (error) {
-          setErrorType("not_registered_credentials");
-          setErrorMsg(
-            "No te encuentras registrado o tus datos son incorrectos. Si no tienes cuenta, debes registrarte primero aquí."
-          );
+          if (error.message.toLowerCase().includes("email not confirmed")) {
+            setPendingConfirmEmail(cleanEmail);
+            setErrorType("generic");
+            setErrorMsg(
+              "Tu cuenta ya fue creada pero tu correo electrónico aún no ha sido confirmado. Revisa tu bandeja de entrada o carpeta de Spam y haz clic en el enlace de activación."
+            );
+          } else {
+            setErrorType("not_registered_credentials");
+            setErrorMsg(
+              "No te encuentras registrado o tus datos son incorrectos. Si no tienes cuenta, debes registrarte primero aquí."
+            );
+          }
           setLoading(false);
+          isSubmittingRef.current = false;
           return;
         }
 
         if (data.user) {
+          const meta = data.user.user_metadata || {};
+
           // Consult canonical role in public.profiles table
-          const { data: profile } = await supabase
+          let { data: profile } = await supabase
             .from("profiles")
-            .select("role, full_name, email")
+            .select("role, full_name, email, phone_whatsapp")
             .eq("id", data.user.id)
             .maybeSingle();
 
-          // If user exists in auth but has no profile registered
+          // Si el usuario autenticó con correo/contraseña pero su perfil aún no se había creado en public.profiles
           if (!profile) {
-            await supabase.auth.signOut();
-            setErrorType("not_registered_oauth");
-            setErrorMsg("No te encuentras registrado. Debes registrarte primero aquí");
-            setLoading(false);
-            return;
+            const inferredRole = (meta.role || "candidate") as "candidate" | "company" | "admin";
+            const inferredName =
+              meta.full_name ||
+              meta.company_name ||
+              data.user.email?.split("@")[0] ||
+              (inferredRole === "company" ? "Empresa de Seguridad" : "Personal Operativo");
+
+            await syncUserRegistrationRecords({
+              userId: data.user.id,
+              role: inferredRole,
+              fullName: inferredName,
+              phone: meta.phone_whatsapp || "",
+              email: data.user.email || cleanEmail,
+              city: meta.city || "Bogotá D.C.",
+              primaryRole: meta.primary_role || "Vigilante Fijo",
+              companyName: meta.company_name || inferredName,
+              companyNit: meta.nit,
+            });
+
+            const { data: createdProfile } = await supabase
+              .from("profiles")
+              .select("role, full_name, email, phone_whatsapp")
+              .eq("id", data.user.id)
+              .maybeSingle();
+
+            profile = createdProfile;
           }
 
           let role = profile?.role;
@@ -410,12 +632,39 @@ function LoginForm() {
           }
 
           if (!role) {
-            role = data.user.user_metadata?.role || "candidate";
+            role = meta.role || "candidate";
+          }
+
+          // Si el rol es company, garantizar que tenga su fila en public.companies
+          if (role === "company") {
+            const { data: existingComp } = await supabase
+              .from("companies")
+              .select("id")
+              .eq("owner_id", data.user.id)
+              .maybeSingle();
+
+            if (!existingComp) {
+              await supabase.from("companies").insert({
+                owner_id: data.user.id,
+                company_name:
+                  meta.company_name ||
+                  profile?.full_name ||
+                  meta.full_name ||
+                  "Empresa de Seguridad",
+                nit: meta.nit || `NIT-${data.user.id.slice(0, 8)}`,
+                city: meta.city || "Bogotá D.C.",
+                contact_person: profile?.full_name || meta.full_name || "Contacto Principal",
+                contact_phone: profile?.phone_whatsapp || meta.phone_whatsapp || "",
+                is_verified_company: false,
+                plan_name: "basico",
+                credits_security_studies: 0,
+              });
+            }
           }
 
           const userFullName =
             profile?.full_name ||
-            data.user.user_metadata?.full_name ||
+            meta.full_name ||
             (role === "company" ? "Empresa de Seguridad" : "Usuario Verificado");
 
           if (typeof window !== "undefined") {
@@ -444,71 +693,194 @@ function LoginForm() {
           return;
         }
       } else {
+        // =====================================================================
+        // FLUJO DE REGISTRO (CREAR CUENTA) - PERSONAL OPERATIVO O EMPRESA
+        // =====================================================================
+        const origin =
+          typeof window !== "undefined" && window.location.origin
+            ? window.location.origin
+            : process.env.NEXT_PUBLIC_SITE_URL || "";
+
+        const validPrimaryRole =
+          primaryRole === "Operador de Medios Tecnológicos"
+            ? "Operador Medios Tecnológicos"
+            : primaryRole;
+
         const { data, error } = await supabase.auth.signUp({
-          email,
+          email: cleanEmail,
           password,
           options: {
+            emailRedirectTo: `${origin}/auth/callback?intent=register&role=${selectedRole}`,
             data: {
-              full_name: fullName,
-              phone_whatsapp: phone,
+              full_name: fullName.trim(),
+              phone_whatsapp: phone.trim(),
               role: selectedRole,
-              primary_role: selectedRole === "candidate" ? primaryRole : undefined,
+              primary_role: selectedRole === "candidate" ? validPrimaryRole : undefined,
+              company_name: selectedRole === "company" ? companyName.trim() : undefined,
+              nit: selectedRole === "company" ? companyNit.trim() : undefined,
+              city: city || "Bogotá D.C.",
             },
           },
         });
 
-        if (error) {
-          throw new Error(error.message);
+        // 1. Intentar ejecutar RPC transaccional SECURITY DEFINER (si fue instalado en Supabase)
+        // Esto auto-confirma el email e inserta public.profiles, public.companies y public.candidate_profiles
+        if (data?.user?.id) {
+          try {
+            await supabase.rpc("complete_user_registration", {
+              p_user_id: data.user.id,
+              p_email: cleanEmail,
+              p_role: selectedRole,
+              p_full_name: fullName.trim(),
+              p_phone: phone.trim(),
+              p_city: city || "Bogotá D.C.",
+              p_primary_role: selectedRole === "candidate" ? validPrimaryRole : "Vigilante Fijo",
+              p_company_name: selectedRole === "company" ? companyName.trim() : null,
+              p_company_nit: selectedRole === "company" ? companyNit.trim() : null,
+            });
+          } catch {}
         }
 
-        if (data.user) {
-          await supabase.from("profiles").upsert({
-            id: data.user.id,
-            role: selectedRole,
-            full_name: fullName,
-            phone_whatsapp: phone,
-            email,
-          });
+        let activeUser = data?.user ?? null;
+        let activeSession = data?.session ?? null;
 
-          if (selectedRole === "company") {
-            // Enterprise registration: is_verified_company defaults to false until validated
-            await supabase.from("companies").insert({
-              owner_id: data.user.id,
-              company_name: companyName,
-              nit: companyNit,
-              city,
-              contact_person: fullName,
-              contact_phone: phone,
-              is_verified_company: false,
-              plan_name: "basico",
-              credits_security_studies: 0,
+        // 2. Si signUp no devolvió sesión activa (por ej. auto-confirm RPC o cuenta existente en auth.users),
+        // intentar iniciar sesión inmediatamente con las mismas credenciales:
+        if (!activeSession) {
+          const { data: signInData, error: signInError } =
+            await supabase.auth.signInWithPassword({
+              email: cleanEmail,
+              password,
             });
 
-            if (typeof window !== "undefined") {
+          if (!signInError && signInData?.session && signInData?.user) {
+            activeUser = signInData.user;
+            activeSession = signInData.session;
+          } else if (error) {
+            const lowerErr = error.message.toLowerCase();
+            if (lowerErr.includes("already registered") || lowerErr.includes("already exists")) {
+              if (signInError?.message?.toLowerCase().includes("email not confirmed")) {
+                setPendingConfirmEmail(cleanEmail);
+                throw new Error(
+                  "Este correo ya fue registrado pero aún no ha sido confirmado. Revisa tu bandeja de entrada o carpeta de Spam para activar tu cuenta."
+                );
+              }
+              throw new Error(
+                "Este correo electrónico ya se encuentra registrado. Por favor inicia sesión o usa '¿Olvidaste tu contraseña?'."
+              );
+            }
+            if (lowerErr.includes("rate limit") || lowerErr.includes("security purposes")) {
+              throw new Error(
+                "Has realizado varios intentos seguidos y Supabase activó una pausa de seguridad de correo. Espera 1 minuto o verifica tu bandeja de entrada."
+              );
+            }
+            throw new Error(error.message);
+          }
+        }
+
+        // 3. Detectar cuando Supabase retorna un usuario ofuscado con identities = [] (correo duplicado con Confirm Email activo)
+        if (
+          activeUser &&
+          Array.isArray(activeUser.identities) &&
+          activeUser.identities.length === 0 &&
+          !activeSession
+        ) {
+          setPendingConfirmEmail(cleanEmail);
+          throw new Error(
+            "Este correo electrónico ya se encuentra registrado en el sistema. Si ya confirmaste tu correo, ve a 'Inicia sesión aquí'; de lo contrario revisa tu bandeja de entrada."
+          );
+        }
+
+        // 4. Si tenemos sesión autenticada activa: guardar en public.profiles, public.companies / candidate_profiles y redirigir
+        if (activeUser && activeSession) {
+          await syncUserRegistrationRecords({
+            userId: activeUser.id,
+            role: selectedRole,
+            fullName: fullName.trim(),
+            phone: phone.trim(),
+            email: cleanEmail,
+            city: city || "Bogotá D.C.",
+            primaryRole: validPrimaryRole,
+            companyName: companyName.trim(),
+            companyNit: companyNit.trim(),
+          });
+
+          if (typeof window !== "undefined") {
+            localStorage.setItem("fv_demo_role", selectedRole);
+            if (selectedRole === "company") {
               localStorage.setItem("fv_company_verified", "false");
               localStorage.setItem("fv_company_credits", "0");
               localStorage.setItem(
                 "fv_demo_user",
                 JSON.stringify({
-                  email,
-                  full_name: companyName,
+                  email: cleanEmail,
+                  full_name: companyName.trim() || fullName.trim(),
                   role: "company",
                 })
               );
+            } else {
+              localStorage.setItem("fv_candidate_role", validPrimaryRole);
+              localStorage.setItem(
+                "fv_demo_user",
+                JSON.stringify({
+                  email: cleanEmail,
+                  full_name: fullName.trim(),
+                  role: "candidate",
+                })
+              );
+              localStorage.setItem(
+                "fv_candidate_profile",
+                JSON.stringify({
+                  full_name: fullName.trim(),
+                  phone: phone.trim(),
+                  city: city || "Bogotá D.C.",
+                  primary_role: validPrimaryRole,
+                  available_immediately: true,
+                })
+              );
             }
-            router.push("/empresa/dashboard");
-          } else {
-            if (typeof window !== "undefined") {
-              localStorage.setItem("fv_candidate_role", primaryRole);
-            }
-            router.push("/guarda/onboarding");
           }
+
+          if (selectedRole === "company") {
+            window.location.href = "/empresa/dashboard";
+          } else {
+            window.location.href = "/guarda/onboarding";
+          }
+          return;
+        }
+
+        // 5. Si el usuario fue creado en auth.users pero Supabase requiere confirmación por correo (activeSession === null)
+        if (activeUser && !activeSession) {
+          if (typeof window !== "undefined") {
+            localStorage.setItem(
+              "fv_pending_registration",
+              JSON.stringify({
+                userId: activeUser.id,
+                role: selectedRole,
+                fullName: fullName.trim(),
+                phone: phone.trim(),
+                email: cleanEmail,
+                city: city || "Bogotá D.C.",
+                primaryRole: validPrimaryRole,
+                companyName: companyName.trim(),
+                companyNit: companyNit.trim(),
+              })
+            );
+          }
+
+          setPendingConfirmEmail(cleanEmail);
+          setSuccessMsg(
+            `¡Cuenta creada exitosamente! Hemos enviado un enlace de activación a ${cleanEmail}. Por favor abre tu correo (revisa también Spam) y haz clic en el enlace para activar tu cuenta y continuar.`
+          );
+          return;
         }
       }
     } catch (err: any) {
+      setErrorType("generic");
       setErrorMsg(err.message || "Error al procesar la solicitud");
     } finally {
       setLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
@@ -653,43 +1025,55 @@ function LoginForm() {
 
             {/* FEEDBACK ALERTS */}
             {errorMsg && (
-              <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start gap-2.5">
-                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" strokeWidth={1.75} />
-                <div className="flex-1 leading-relaxed">
-                  {errorType === "not_registered_oauth" ? (
-                    <>
-                      <span>No te encuentras registrado. Debes registrarte primero{" "}</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMode("register");
-                          setErrorMsg(null);
-                          setErrorType(null);
-                        }}
-                        className="font-bold text-[#0F172A] underline hover:text-[#1E3A8A] transition-colors inline"
-                      >
-                        aquí
-                      </button>
-                    </>
-                  ) : errorType === "not_registered_credentials" ? (
-                    <>
-                      <span>No te encuentras registrado o tus datos son incorrectos. Si no tienes cuenta, debes registrarte primero{" "}</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMode("register");
-                          setErrorMsg(null);
-                          setErrorType(null);
-                        }}
-                        className="font-bold text-[#0F172A] underline hover:text-[#1E3A8A] transition-colors inline"
-                      >
-                        aquí.
-                      </button>
-                    </>
-                  ) : (
-                    <span>{errorMsg}</span>
-                  )}
+              <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 space-y-2">
+                <div className="flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" strokeWidth={1.75} />
+                  <div className="flex-1 leading-relaxed">
+                    {errorType === "not_registered_oauth" ? (
+                      <>
+                        <span>No te encuentras registrado. Debes registrarte primero{" "}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMode("register");
+                            setErrorMsg(null);
+                            setErrorType(null);
+                          }}
+                          className="font-bold text-[#0F172A] underline hover:text-[#1E3A8A] transition-colors inline"
+                        >
+                          aquí
+                        </button>
+                      </>
+                    ) : errorType === "not_registered_credentials" ? (
+                      <>
+                        <span>No te encuentras registrado o tus datos son incorrectos. Si no tienes cuenta, debes registrarte primero{" "}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMode("register");
+                            setErrorMsg(null);
+                            setErrorType(null);
+                          }}
+                          className="font-bold text-[#0F172A] underline hover:text-[#1E3A8A] transition-colors inline"
+                        >
+                          aquí.
+                        </button>
+                      </>
+                    ) : (
+                      <span>{errorMsg}</span>
+                    )}
+                  </div>
                 </div>
+                {pendingConfirmEmail && (
+                  <button
+                    type="button"
+                    onClick={handleResendConfirmation}
+                    disabled={resendLoading}
+                    className="w-full py-2 px-3 rounded-lg bg-white border border-rose-300 text-[#0F172A] font-bold text-[11px] hover:bg-slate-50 transition-colors"
+                  >
+                    {resendLoading ? "Reenviando correo..." : "Reenviar correo de confirmación"}
+                  </button>
+                )}
               </div>
             )}
 
@@ -960,8 +1344,9 @@ function LoginForm() {
                       <option value="Vigilante Fijo">Vigilante Fijo</option>
                       <option value="Vigilante Móvil">Vigilante Móvil</option>
                       <option value="Escolta VIP">Escolta VIP</option>
+                      <option value="Escolta Mercancía">Escolta Mercancía</option>
                       <option value="Supervisor Motorizado">Supervisor Motorizado</option>
-                      <option value="Operador de Medios Tecnológicos">Operador de Medios Tecnológicos</option>
+                      <option value="Operador Medios Tecnológicos">Operador de Medios Tecnológicos</option>
                       <option value="Manejador Canino">Manejador Canino</option>
                       <option value="Inspector de Seguridad">Inspector de Seguridad</option>
                     </select>
@@ -1025,6 +1410,44 @@ function LoginForm() {
                       </button>
                     </div>
                   </div>
+
+                  {errorMsg && (
+                    <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" strokeWidth={1.5} />
+                        <span className="leading-relaxed">{errorMsg}</span>
+                      </div>
+                      {pendingConfirmEmail && (
+                        <button
+                          type="button"
+                          onClick={handleResendConfirmation}
+                          disabled={resendLoading}
+                          className="w-full py-2 px-3 rounded-lg bg-white border border-rose-300 text-[#0F172A] font-bold text-[11px] hover:bg-slate-50 transition-colors"
+                        >
+                          {resendLoading ? "Reenviando correo..." : "Reenviar correo de confirmación"}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {successMsg && (
+                    <div className="p-3.5 rounded-xl bg-[#ECFDF5] border border-[#10B981]/30 text-xs text-[#065F46] space-y-2">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" strokeWidth={1.75} />
+                        <span className="font-medium leading-relaxed">{successMsg}</span>
+                      </div>
+                      {pendingConfirmEmail && (
+                        <button
+                          type="button"
+                          onClick={handleResendConfirmation}
+                          disabled={resendLoading}
+                          className="w-full py-2 px-3 rounded-lg bg-white border border-[#10B981]/40 text-[#065F46] font-bold text-[11px] hover:bg-emerald-50 transition-colors"
+                        >
+                          {resendLoading ? "Reenviando correo..." : "Reenviar correo de confirmación"}
+                        </button>
+                      )}
+                    </div>
+                  )}
 
                   <button
                     type="submit"
@@ -1182,6 +1605,44 @@ function LoginForm() {
                       </button>
                     </div>
                   </div>
+
+                  {errorMsg && (
+                    <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" strokeWidth={1.5} />
+                        <span className="leading-relaxed">{errorMsg}</span>
+                      </div>
+                      {pendingConfirmEmail && (
+                        <button
+                          type="button"
+                          onClick={handleResendConfirmation}
+                          disabled={resendLoading}
+                          className="w-full py-2 px-3 rounded-lg bg-white border border-rose-300 text-[#0F172A] font-bold text-[11px] hover:bg-slate-50 transition-colors"
+                        >
+                          {resendLoading ? "Reenviando correo..." : "Reenviar correo de confirmación"}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {successMsg && (
+                    <div className="p-3.5 rounded-xl bg-[#ECFDF5] border border-[#10B981]/30 text-xs text-[#065F46] space-y-2">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" strokeWidth={1.75} />
+                        <span className="font-medium leading-relaxed">{successMsg}</span>
+                      </div>
+                      {pendingConfirmEmail && (
+                        <button
+                          type="button"
+                          onClick={handleResendConfirmation}
+                          disabled={resendLoading}
+                          className="w-full py-2 px-3 rounded-lg bg-white border border-[#10B981]/40 text-[#065F46] font-bold text-[11px] hover:bg-emerald-50 transition-colors"
+                        >
+                          {resendLoading ? "Reenviando correo..." : "Reenviar correo de confirmación"}
+                        </button>
+                      )}
+                    </div>
+                  )}
 
                   <button
                     type="submit"

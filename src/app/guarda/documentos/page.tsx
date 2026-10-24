@@ -91,11 +91,13 @@ export default function DocumentosPage() {
 
           if (course) {
             if (course.completion_date) setCourseCompletionDate(course.completion_date);
-            if (course.credential_number) setCredencialSupervigilancia(course.credential_number);
+            const credNum = course.nro_credencial_supervigilancia || course.credential_number;
+            if (credNum) setCredencialSupervigilancia(credNum);
             if (course.academy_name) setCourseAcademy(course.academy_name);
-            if (course.diploma_pdf_url) {
+            const certUrl = course.certificate_file_url || course.diploma_pdf_url;
+            if (certUrl) {
               setHasCourseDiploma(true);
-              setCourseDiplomaUrl(course.diploma_pdf_url);
+              setCourseDiplomaUrl(certUrl);
             }
           }
 
@@ -107,13 +109,14 @@ export default function DocumentosPage() {
 
           if (docs && docs.length > 0) {
             docs.forEach((d: any) => {
-              if (d.document_type === "hoja_de_vida_pdf") {
+              const docType = d.doc_type || d.document_type;
+              if (docType === "hoja_de_vida_pdf") {
                 setHasResume(true);
                 setResumeUrl(d.file_url);
-              } else if (d.document_type === "diploma_curso") {
+              } else if (docType === "diploma_curso") {
                 setHasCourseDiploma(true);
                 setCourseDiplomaUrl(d.file_url);
-              } else if (d.document_type === "cedula_ciudadania") {
+              } else if (docType === "cedula_ciudadania") {
                 setHasIdCard(true);
                 setIdCardUrl(d.file_url);
               }

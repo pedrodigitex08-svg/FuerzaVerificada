@@ -56,8 +56,61 @@ export default function AdminEmpresasPage() {
           .select("*")
           .order("created_at", { ascending: false });
 
-        if (!error && data && data.length > 0) {
-          setCompanies(data as Company[]);
+        // También verificar perfiles en public.profiles con role = 'company' que aún no tengan fila en public.companies
+        const { data: companyProfiles } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("role", "company");
+
+        const currentCompanies: Company[] = Array.isArray(data) ? [...(data as Company[])] : [];
+
+        if (companyProfiles && companyProfiles.length > 0) {
+          for (const prof of companyProfiles) {
+            const alreadyInCompanies = currentCompanies.some((c) => c.owner_id === prof.id);
+            if (!alreadyInCompanies) {
+              // Intentar insertar registro faltante en public.companies
+              const { data: insertedComp } = await supabase
+                .from("companies")
+                .insert({
+                  owner_id: prof.id,
+                  company_name: prof.full_name || "Empresa Registrada",
+                  nit: `NIT-${prof.id.slice(0, 8)}`,
+                  city: "Bogotá D.C.",
+                  contact_person: prof.full_name || "Contacto Principal",
+                  contact_phone: prof.phone_whatsapp || "",
+                  is_verified_company: false,
+                  plan_name: "basico",
+                  credits_security_studies: 0,
+                })
+                .select("*")
+                .maybeSingle();
+
+              if (insertedComp) {
+                currentCompanies.unshift(insertedComp as Company);
+              } else {
+                currentCompanies.unshift({
+                  id: prof.id,
+                  owner_id: prof.id,
+                  company_name: prof.full_name || "Empresa Registrada",
+                  nit: `NIT-${prof.id.slice(0, 8)}`,
+                  supervigilancia_license: null,
+                  city: "Bogotá D.C.",
+                  address: null,
+                  contact_person: prof.full_name || "Contacto Principal",
+                  contact_phone: prof.phone_whatsapp || "",
+                  logo_url: null,
+                  is_verified_company: false,
+                  plan_name: "basico",
+                  credits_security_studies: 0,
+                  created_at: prof.created_at || new Date().toISOString(),
+                });
+              }
+            }
+          }
+        }
+
+        if (!error && currentCompanies.length > 0) {
+          setCompanies(currentCompanies);
           return;
         }
       } catch {}

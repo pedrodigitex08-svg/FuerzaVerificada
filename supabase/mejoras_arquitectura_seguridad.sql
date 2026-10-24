@@ -191,3 +191,185 @@ DROP POLICY IF EXISTS "SuperAdmin gestiona academias" ON public.partner_academie
 CREATE POLICY "SuperAdmin gestiona academias"
   ON public.partner_academies FOR ALL
   USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+
+-- -----------------------------------------------------------------------------
+-- 4. REGISTRO AUTOMÁTICO DE USUARIOS (PROFILES, COMPANIES Y CANDIDATE_PROFILES)
+-- -----------------------------------------------------------------------------
+-- Resuelve el bloqueo cuando 'Confirm email' está activo en Supabase Auth:
+-- 1) Provee la función RPC SECURITY DEFINER `complete_user_registration` para
+--    confirmar e insertar perfil, empresa o candidato de forma atómica al registrarse.
+-- 2) Instala triggers en auth.users para auto-confirmar y sincronizar perfiles.
+-- 3) Repara usuarios existentes en auth.users sin confirmar o empresas sin fila en companies.
+
+CREATE OR REPLACE FUNCTION public.complete_user_registration(
+  p_user_id uuid,
+  p_email text,
+  p_role text DEFAULT 'candidate',
+  p_full_name text DEFAULT '',
+  p_phone text DEFAULT '',
+  p_city text DEFAULT 'Bogotá D.C.',
+  p_primary_role text DEFAULT 'Vigilante Fijo',
+  p_company_name text DEFAULT NULL,
+  p_company_nit text DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_valid_role public.user_role;
+  v_clean_role text;
+BEGIN
+  -- Verificar que el usuario realmente exista en auth.users con ese correo
+  IF NOT EXISTS (
+    SELECT 1 FROM auth.users
+    WHERE id = p_user_id AND lower(email) = lower(trim(p_email))
+  ) THEN
+    RAISE EXCEPTION 'Usuario no encontrado en auth.users.';
+  END IF;
+
+  -- Auto-confirmar correo en auth.users para permitir inicio de sesión inmediato
+  UPDATE auth.users
+  SET email_confirmed_at = COALESCE(email_confirmed_at, now()),
+      updated_at = now()
+  WHERE id = p_user_id;
+
+  v_clean_role := CASE
+    WHEN p_role IN ('candidate', 'company', 'admin') THEN p_role
+    ELSE 'candidate'
+  END;
+  v_valid_role := v_clean_role::public.user_role;
+
+  -- 1. Upsert en public.profiles
+  INSERT INTO public.profiles (id, role, full_name, phone_whatsapp, email, updated_at)
+  VALUES (
+    p_user_id,
+    v_valid_role,
+    COALESCE(NULLIF(trim(p_full_name), ''), 'Usuario Verificado'),
+    COALESCE(trim(p_phone), ''),
+    lower(trim(p_email)),
+    now()
+  )
+  ON CONFLICT (id) DO UPDATE
+  SET role = EXCLUDED.role,
+      full_name = EXCLUDED.full_name,
+      phone_whatsapp = EXCLUDED.phone_whatsapp,
+      email = EXCLUDED.email,
+      updated_at = now();
+
+  -- 2. Si es empresa, crear o actualizar en public.companies
+  IF v_clean_role = 'company' THEN
+    IF EXISTS (SELECT 1 FROM public.companies WHERE owner_id = p_user_id) THEN
+      UPDATE public.companies
+      SET company_name = COALESCE(NULLIF(trim(p_company_name), ''), NULLIF(trim(p_full_name), ''), company_name),
+          nit = COALESCE(NULLIF(trim(p_company_nit), ''), nit),
+          city = COALESCE(NULLIF(trim(p_city), ''), city),
+          contact_person = COALESCE(NULLIF(trim(p_full_name), ''), contact_person),
+          contact_phone = COALESCE(NULLIF(trim(p_phone), ''), contact_phone)
+      WHERE owner_id = p_user_id;
+    ELSE
+      INSERT INTO public.companies (
+        owner_id,
+        company_name,
+        nit,
+        city,
+        contact_person,
+        contact_phone,
+        is_verified_company,
+        plan_name,
+        credits_security_studies
+      )
+      VALUES (
+        p_user_id,
+        COALESCE(NULLIF(trim(p_company_name), ''), NULLIF(trim(p_full_name), ''), 'Empresa de Seguridad'),
+        COALESCE(NULLIF(trim(p_company_nit), ''), 'NIT-' || substr(p_user_id::text, 1, 8)),
+        COALESCE(NULLIF(trim(p_city), ''), 'Bogotá D.C.'),
+        COALESCE(NULLIF(trim(p_full_name), ''), 'Contacto Principal'),
+        COALESCE(trim(p_phone), ''),
+        false,
+        'basico',
+        0
+      );
+    END IF;
+  END IF;
+
+  -- 3. Si es candidato, asegurar fila base en public.candidate_profiles
+  IF v_clean_role = 'candidate' THEN
+    INSERT INTO public.candidate_profiles (
+      user_id,
+      national_id,
+      city,
+      primary_role,
+      years_experience,
+      available_immediately,
+      updated_at
+    )
+    VALUES (
+      p_user_id,
+      'CC-' || substr(p_user_id::text, 1, 8),
+      COALESCE(NULLIF(trim(p_city), ''), 'Bogotá D.C.'),
+      (CASE
+        WHEN p_primary_role = 'Operador de Medios Tecnológicos' THEN 'Operador Medios Tecnológicos'
+        WHEN p_primary_role IN (
+          'Vigilante Fijo',
+          'Vigilante Móvil',
+          'Escolta VIP',
+          'Escolta Mercancía',
+          'Supervisor Motorizado',
+          'Operador Medios Tecnológicos',
+          'Manejador Canino',
+          'Inspector de Seguridad'
+        ) THEN p_primary_role
+        ELSE 'Vigilante Fijo'
+      END)::public.security_role_type,
+      0,
+      true,
+      now()
+    )
+    ON CONFLICT (user_id) DO NOTHING;
+  END IF;
+
+  RETURN jsonb_build_object('success', true, 'user_id', p_user_id, 'role', v_clean_role);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.complete_user_registration(uuid, text, text, text, text, text, text, text, text) TO anon, authenticated;
+
+-- Reparar cuentas existentes en auth.users que hayan quedado sin confirmar correo
+DO $$
+BEGIN
+  UPDATE auth.users
+  SET email_confirmed_at = COALESCE(email_confirmed_at, now())
+  WHERE email_confirmed_at IS NULL;
+EXCEPTION
+  WHEN OTHERS THEN NULL;
+END $$;
+
+-- Asegurar que cualquier perfil con role = 'company' tenga su fila en public.companies
+INSERT INTO public.companies (
+  owner_id,
+  company_name,
+  nit,
+  city,
+  contact_person,
+  contact_phone,
+  is_verified_company,
+  plan_name,
+  credits_security_studies
+)
+SELECT
+  p.id,
+  COALESCE(NULLIF(p.full_name, ''), 'Empresa Registrada'),
+  'NIT-' || substr(p.id::text, 1, 8),
+  'Bogotá D.C.',
+  COALESCE(NULLIF(p.full_name, ''), 'Contacto Principal'),
+  COALESCE(p.phone_whatsapp, ''),
+  false,
+  'basico',
+  0
+FROM public.profiles p
+WHERE p.role = 'company'
+  AND NOT EXISTS (
+    SELECT 1 FROM public.companies c WHERE c.owner_id = p.id
+  );

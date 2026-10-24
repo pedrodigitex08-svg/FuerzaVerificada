@@ -84,6 +84,46 @@ export default function OnboardingPage() {
           else if (user.user_metadata?.full_name) setFullName(user.user_metadata.full_name);
 
           if (profile?.phone_whatsapp) setPhone(profile.phone_whatsapp);
+          else if (user.user_metadata?.phone_whatsapp) setPhone(user.user_metadata.phone_whatsapp);
+
+          if (user.user_metadata?.primary_role) {
+            const metaRole =
+              user.user_metadata.primary_role === "Operador de Medios Tecnológicos"
+                ? "Operador Medios Tecnológicos"
+                : user.user_metadata.primary_role;
+            setPrimaryRole(metaRole as SecurityRoleType);
+          }
+
+          if (user.user_metadata?.city) {
+            setCity(user.user_metadata.city);
+          }
+
+          const { data: candProfile } = await supabase
+            .from("candidate_profiles")
+            .select("*")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (candProfile) {
+            if (candProfile.national_id && !candProfile.national_id.startsWith("CC-")) {
+              setNationalId(candProfile.national_id);
+            }
+            if (candProfile.city) setCity(candProfile.city);
+            if (candProfile.locality_neighborhood) setLocality(candProfile.locality_neighborhood);
+            if (candProfile.primary_role) setPrimaryRole(candProfile.primary_role);
+            if (candProfile.years_experience !== undefined) {
+              setYearsExperience(candProfile.years_experience);
+            }
+            if (candProfile.has_military_booklet !== undefined) {
+              setHasMilitaryBooklet(candProfile.has_military_booklet);
+            }
+            if (candProfile.has_own_motorcycle !== undefined) {
+              setHasMotorcycle(candProfile.has_own_motorcycle);
+            }
+            if (candProfile.motorcycle_cc) {
+              setMotorcycleCc(candProfile.motorcycle_cc);
+            }
+          }
         }
       } catch {}
     }
@@ -128,15 +168,18 @@ export default function OnboardingPage() {
       let uploadedCedulaUrl: string | null = null;
 
       if (userId) {
-        // 1. Update public.profiles
-        await supabase
-          .from("profiles")
-          .update({
+        // 1. Upsert public.profiles para garantizar llave foránea antes de candidate_profiles
+        await supabase.from("profiles").upsert(
+          {
+            id: userId,
+            role: "candidate",
             full_name: fullName.trim() || "Personal Operativo",
             phone_whatsapp: phone.trim(),
+            email: authData?.user?.email || "",
             updated_at: new Date().toISOString(),
-          })
-          .eq("id", userId);
+          },
+          { onConflict: "id" }
+        );
 
         // 2. Upload files to Storage bucket 'documents' if provided
         const uploadDoc = async (file: File, folder: string) => {
@@ -160,6 +203,11 @@ export default function OnboardingPage() {
         if (courseFile) uploadedCourseUrl = await uploadDoc(courseFile, "courses");
         if (cedulaFile) uploadedCedulaUrl = await uploadDoc(cedulaFile, "id_cards");
 
+        const validPrimaryRole =
+          primaryRole === "Operador de Medios Tecnológicos"
+            ? "Operador Medios Tecnológicos"
+            : primaryRole;
+
         // 3. Upsert candidate_profiles
         await supabase.from("candidate_profiles").upsert(
           {
@@ -167,7 +215,7 @@ export default function OnboardingPage() {
             national_id: nationalId.trim() || `CC-${userId.slice(0, 8)}`,
             city,
             locality_neighborhood: locality,
-            primary_role: primaryRole,
+            primary_role: validPrimaryRole,
             years_experience: yearsExperience,
             has_military_booklet: hasMilitaryBooklet,
             has_own_motorcycle: hasMotorcycle,
@@ -182,40 +230,42 @@ export default function OnboardingPage() {
 
         // 4. Insert/update candidate_courses if completion date was provided
         if (courseCompletionDate) {
+          const compDateObj = new Date(courseCompletionDate);
+          compDateObj.setFullYear(compDateObj.getFullYear() + 1);
+          const computedExpirationDate = compDateObj.toISOString().split("T")[0];
+
           await supabase.from("candidate_courses").insert({
             candidate_id: userId,
-            course_name: `Reentrenamiento - ${primaryRole}`,
+            course_name: `Reentrenamiento - ${validPrimaryRole}`,
             academy_name: courseAcademy.trim() || "Academia Autorizada SuperVigilancia",
             completion_date: courseCompletionDate,
-            credential_number: credencialSupervigilancia.trim() || null,
-            diploma_pdf_url: uploadedCourseUrl,
-            is_verified: false,
+            expiration_date: computedExpirationDate,
+            nro_credencial_supervigilancia: credencialSupervigilancia.trim() || null,
+            certificate_file_url: uploadedCourseUrl,
+            is_verified_by_admin: false,
           });
         }
 
-        // 5. Record documents in candidate_documents
+        // 5. Record documents in candidate_documents (usando columnas reales doc_type y file_url)
         const docsToInsert: any[] = [];
         if (resumeFile && uploadedResumeUrl) {
           docsToInsert.push({
             candidate_id: userId,
-            document_type: "hoja_de_vida_pdf",
-            file_name: resumeFile.name,
+            doc_type: "hoja_de_vida_pdf",
             file_url: uploadedResumeUrl,
           });
         }
         if (courseFile && uploadedCourseUrl) {
           docsToInsert.push({
             candidate_id: userId,
-            document_type: "diploma_curso",
-            file_name: courseFile.name,
+            doc_type: "diploma_curso",
             file_url: uploadedCourseUrl,
           });
         }
         if (cedulaFile && uploadedCedulaUrl) {
           docsToInsert.push({
             candidate_id: userId,
-            document_type: "cedula_ciudadania",
-            file_name: cedulaFile.name,
+            doc_type: "cedula_ciudadania",
             file_url: uploadedCedulaUrl,
           });
         }
