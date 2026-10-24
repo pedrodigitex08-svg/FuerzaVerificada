@@ -308,7 +308,7 @@ function LoginForm() {
           ? window.location.origin
           : process.env.NEXT_PUBLIC_SITE_URL || "";
 
-      const redirectUrl = `${origin}/auth/callback?intent=${intent}`;
+      const redirectUrl = `${origin}/auth/callback?intent=${intent}&role=${selectedRole}`;
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -337,34 +337,6 @@ function LoginForm() {
       setErrorMsg(err.message || "Error al conectar con Google. Por favor intenta de nuevo.");
       setLoading(false);
     }
-  };
-
-  // Demo direct switch for instant testing without waiting for confirmation emails
-  const handleDemoLogin = (role: "candidate" | "company" | "admin") => {
-    setLoading(true);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("fv_demo_role", role);
-      localStorage.setItem(
-        "fv_demo_user",
-        JSON.stringify({
-          email: `${role}@fuerzaverificada.com`,
-          full_name:
-            role === "candidate"
-              ? "Personal Operativo"
-              : role === "company"
-              ? "Empresa de Seguridad"
-              : "Administrador de Plataforma",
-          role,
-        })
-      );
-      if (role === "company") {
-        localStorage.setItem("fv_company_verified", "true");
-      }
-    }
-
-    if (role === "candidate") router.push("/guarda/vacantes");
-    else if (role === "company") router.push("/empresa/dashboard");
-    else router.push("/admin/estudios");
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
