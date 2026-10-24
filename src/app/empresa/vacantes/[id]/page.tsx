@@ -99,38 +99,16 @@ export default function ATSVacantePage() {
 
       // 1. Load Vacancy Details
       try {
-        let { data: jobData } = await supabase
+        const { data: jobData } = await supabase
           .from("job_posts")
           .select("*")
           .eq("id", vacancyId)
           .maybeSingle();
 
-        if (!jobData) {
-          const fb = await supabase
-            .from("jobs")
-            .select("*")
-            .eq("id", vacancyId)
-            .maybeSingle();
-          if (fb.data) jobData = fb.data;
-        }
-
         if (jobData) {
           setVacancyTitle(jobData.title);
           setVacancyShift(jobData.shift || "Turno rotativo");
           setVacancyAddress(jobData.zone_neighborhood || jobData.city || "Colombia");
-        } else if (typeof window !== "undefined") {
-          const localJobs = localStorage.getItem("fv_company_jobs");
-          if (localJobs) {
-            try {
-              const parsed = JSON.parse(localJobs);
-              const found = parsed.find((j: any) => j.id === vacancyId);
-              if (found) {
-                setVacancyTitle(found.title);
-                setVacancyShift(found.shift || "Turno rotativo");
-                setVacancyAddress(found.zone_neighborhood || found.city || "Colombia");
-              }
-            } catch {}
-          }
         }
       } catch (err) {
         console.error("Error fetching job details:", err);
@@ -255,26 +233,6 @@ export default function ATSVacantePage() {
 
     if (typeof window !== "undefined") {
       localStorage.setItem("fv_company_credits", updatedCredits.toString());
-
-      // Append to orders list in localStorage
-      const existingOrdersStr = localStorage.getItem("fv_security_orders") || "[]";
-      try {
-        const orders = JSON.parse(existingOrdersStr);
-        orders.unshift({
-          id: `order-${Date.now()}`,
-          company_name: companyName,
-          candidate_name: selectedCandidateForStudy.full_name,
-          candidate_phone: selectedCandidateForStudy.phone_whatsapp,
-          national_id: selectedCandidateForStudy.national_id,
-          job_title: vacancyTitle,
-          status: "solicitado",
-          scheduled_date: "Programando visita domiciliaria...",
-          final_concept: "En verificación de antecedentes y prueba de poligrafía",
-          report_pdf_url: null,
-          created_at: new Date().toISOString(),
-        });
-        localStorage.setItem("fv_security_orders", JSON.stringify(orders));
-      } catch {}
     }
 
     // Update candidate in local state
@@ -415,7 +373,7 @@ export default function ATSVacantePage() {
                   const whatsappCitationLink = generateInterviewCitationLink({
                     phone: cand.phone_whatsapp,
                     candidateName: cand.full_name,
-                    companyName: "Seguridad Privada",
+                    companyName: companyName || "Nuestra Empresa de Seguridad",
                     jobTitle: vacancyTitle,
                     shift: vacancyShift,
                     interviewAddress: vacancyAddress,

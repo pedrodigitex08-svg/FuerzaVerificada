@@ -65,7 +65,7 @@ export default function RadarRelevosPage() {
               id: c.user_id || c.id,
               full_name: c.full_name || "Aspirante",
               national_id: c.national_id || "En verificación",
-              phone_whatsapp: c.phone_whatsapp || "573000000000",
+              phone_whatsapp: c.phone_whatsapp || "",
               city: c.city || "Bogotá D.C.",
               locality: c.locality_neighborhood || c.locality || c.city || "Bogotá",
               primary_role: c.primary_role || "Vigilante Fijo",
@@ -73,7 +73,7 @@ export default function RadarRelevosPage() {
               has_military_booklet: !!c.has_military_booklet,
               has_own_motorcycle: !!c.has_own_motorcycle,
               motorcycle_cc: c.motorcycle_cc || null,
-              days_remaining: 180,
+              days_remaining: c.days_remaining || 0,
               resume_pdf_url: c.resume_pdf_url || "",
               available_immediately: !!c.available_immediately,
             }))
@@ -87,23 +87,47 @@ export default function RadarRelevosPage() {
           .select("*, profiles(*)");
 
         if (!error && data && data.length > 0) {
+          const userIds = data.map((c: any) => c.user_id || c.id).filter(Boolean);
+          const { data: coursesData } =
+            userIds.length > 0
+              ? await supabase
+                  .from("candidate_courses")
+                  .select("candidate_id, expiration_date")
+                  .in("candidate_id", userIds)
+              : { data: [] as any[] };
+
+          const courseMap = new Map();
+          (coursesData || []).forEach((cs: any) => {
+            if (cs.expiration_date) {
+              const diffMs = new Date(cs.expiration_date).getTime() - Date.now();
+              const diffDays = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+              courseMap.set(cs.candidate_id, diffDays);
+            }
+          });
+
           setGuards(
-            data.map((c: any) => ({
-              id: c.user_id || c.id,
-              full_name: c.profiles?.full_name || "Aspirante",
-              national_id: c.national_id || "En verificación",
-              phone_whatsapp: c.profiles?.phone_whatsapp || "573000000000",
-              city: c.city || "Bogotá D.C.",
-              locality: c.locality_neighborhood || c.locality || c.city || "Bogotá",
-              primary_role: c.primary_role || "Vigilante Fijo",
-              years_experience: c.years_experience || 0,
-              has_military_booklet: !!c.has_military_booklet,
-              has_own_motorcycle: !!c.has_own_motorcycle,
-              motorcycle_cc: c.motorcycle_cc || null,
-              days_remaining: 180,
-              resume_pdf_url: c.resume_pdf_url || "",
-              available_immediately: !!c.available_immediately,
-            }))
+            data
+              .filter((c: any) => c.profiles?.role === "candidate" || !c.profiles?.role)
+              .map((c: any) => {
+                const uid = c.user_id || c.id;
+                const days = courseMap.has(uid) ? courseMap.get(uid) : 0;
+                return {
+                  id: uid,
+                  full_name: c.profiles?.full_name || "Aspirante Operativo",
+                  national_id: c.national_id || "En verificación",
+                  phone_whatsapp: c.profiles?.phone_whatsapp || "",
+                  city: c.city || "Bogotá D.C.",
+                  locality: c.locality_neighborhood || c.locality || c.city || "Bogotá",
+                  primary_role: c.primary_role || "Vigilante Fijo",
+                  years_experience: c.years_experience || 0,
+                  has_military_booklet: !!c.has_military_booklet,
+                  has_own_motorcycle: !!c.has_own_motorcycle,
+                  motorcycle_cc: c.motorcycle_cc || null,
+                  days_remaining: days,
+                  resume_pdf_url: c.resume_pdf_url || "",
+                  available_immediately: !!c.available_immediately,
+                };
+              })
           );
         } else {
           setGuards([]);
@@ -218,22 +242,24 @@ export default function RadarRelevosPage() {
         <div className="bg-white border border-slate-200/90 rounded-2xl p-12 text-center shadow-subtle">
           <Users className="w-12 h-12 mx-auto mb-3 text-slate-300" strokeWidth={1.5} />
           <h3 className="text-base font-bold text-slate-800">
-            {searchTerm || selectedRole !== "Todos" || onlyMotorcycle
-              ? "No se encontraron guardas con los filtros actuales"
-              : "No hay personal disponible para relevo inmediato en este momento"}
+            No se encontraron perfiles operativos registrados con estos criterios
           </h3>
           <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
             {searchTerm || selectedRole !== "Todos" || onlyMotorcycle
               ? "Intenta modificando el filtro de búsqueda o el tipo de cargo seleccionado."
-              : "Tan pronto como los guardas y escoltas activen la opción de 'Disponibilidad Inmediata' en su perfil, aparecerán en este radar operativo para contacto en 1 clic."}
+              : "Tan pronto como los guardas y escoltas se registren en la plataforma, aparecerán en este directorio para contacto en 1 clic."}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filtered.map((guard) => {
-            const directWhatsappLink = `https://wa.me/57${guard.phone_whatsapp}?text=Hola%20${encodeURIComponent(
+            const cleanPhone = (guard.phone_whatsapp || "").replace(/\D/g, "");
+            const formattedPhone = cleanPhone.startsWith("57") ? cleanPhone : (cleanPhone ? `57${cleanPhone}` : "573000000000");
+            const directWhatsappLink = `https://wa.me/${formattedPhone}?text=Hola%20${encodeURIComponent(
               guard.full_name
-            )},%20te%20escribimos%20a%20través%20de%20FuerzaVerificada.%20Vimos%20que%20estás%20disponible%20para%20turno%20de%20relevo%20hoy.%20¿Tienes%20disponibilidad%20inmediata?`;
+            )},%20te%20escribimos%20a%20través%20de%20FuerzaVerificada.%20Vimos%20tu%20perfil%20operativo%20de%20${encodeURIComponent(
+              guard.primary_role
+            )}%20y%20nos%20gustaría%20validar%20tu%20disponibilidad%20para%20un%20puesto.`;
 
             return (
               <div
@@ -272,7 +298,9 @@ export default function RadarRelevosPage() {
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 uppercase font-semibold block">Credencial</span>
-                    <span className="font-bold text-emerald-700 font-mono tabular-nums">{guard.days_remaining}d vigentes</span>
+                    <span className="font-bold text-emerald-700 font-mono tabular-nums">
+                      {guard.days_remaining > 0 ? `${guard.days_remaining}d vigentes` : "Por validar"}
+                    </span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 uppercase font-semibold block">Vehículo</span>

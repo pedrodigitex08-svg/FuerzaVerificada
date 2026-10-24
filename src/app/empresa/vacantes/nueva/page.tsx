@@ -108,44 +108,58 @@ export default function NuevaVacantePage() {
     try {
       const { data: authData } = await supabase.auth.getUser();
       const userId = authData?.user?.id;
-      let resolvedCompanyId = userId || "demo-company-id";
-      let resolvedCompanyName = companyName;
-      let resolvedVerified = true;
+      if (!userId) {
+        router.push("/login?error=unauthorized_company");
+        return;
+      }
 
-      if (userId) {
-        const { data: existingComp } = await supabase
-          .from("companies")
-          .select("id, company_name, is_verified_company")
-          .eq("owner_id", userId)
+      let resolvedCompanyId = userId;
+      let resolvedCompanyName = companyName;
+      let resolvedVerified = false;
+
+      const { data: existingComp } = await supabase
+        .from("companies")
+        .select("id, company_name, is_verified_company")
+        .eq("owner_id", userId)
+        .maybeSingle();
+
+      if (existingComp) {
+        resolvedCompanyId = existingComp.id;
+        resolvedCompanyName = existingComp.company_name || companyName;
+        resolvedVerified = Boolean(existingComp.is_verified_company);
+      } else {
+        // Auto-create company record if company user does not have one yet
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("full_name, phone_whatsapp")
+          .eq("id", userId)
           .maybeSingle();
 
-        if (existingComp) {
-          resolvedCompanyId = existingComp.id;
-          resolvedCompanyName = existingComp.company_name || companyName;
-          resolvedVerified = Boolean(existingComp.is_verified_company);
-        } else {
-          // Auto-create company record if company user does not have one yet
-          const { data: createdComp } = await supabase
-            .from("companies")
-            .insert({
-              owner_id: userId,
-              company_name: companyName || "Empresa de Seguridad",
-              nit: `900.${Math.floor(100000 + Math.random() * 900000)}-1`,
-              city,
-              contact_person: companyName || "Dirección de Selección",
-              contact_phone: "3000000000",
-              is_verified_company: false,
-              plan_name: "basico",
-              credits_security_studies: 0,
-            })
-            .select("id, company_name, is_verified_company")
-            .maybeSingle();
+        const meta = authData.user?.user_metadata || {};
+        const cleanCompName = companyName || meta.company_name || prof?.full_name || authData.user?.email?.split("@")[0] || "Empresa de Seguridad";
+        const cleanNit = meta.nit || "";
+        const cleanPhone = prof?.phone_whatsapp || meta.phone_whatsapp || "";
 
-          if (createdComp) {
-            resolvedCompanyId = createdComp.id;
-            resolvedCompanyName = createdComp.company_name;
-            resolvedVerified = Boolean(createdComp.is_verified_company);
-          }
+        const { data: createdComp } = await supabase
+          .from("companies")
+          .insert({
+            owner_id: userId,
+            company_name: cleanCompName,
+            nit: cleanNit,
+            city,
+            contact_person: prof?.full_name || "Contacto Principal",
+            contact_phone: cleanPhone,
+            is_verified_company: false,
+            plan_name: "basico",
+            credits_security_studies: 0,
+          })
+          .select("id, company_name, is_verified_company")
+          .maybeSingle();
+
+        if (createdComp) {
+          resolvedCompanyId = createdComp.id;
+          resolvedCompanyName = createdComp.company_name;
+          resolvedVerified = Boolean(createdComp.is_verified_company);
         }
       }
 
@@ -180,20 +194,6 @@ export default function NuevaVacantePage() {
 
       if (jobPostErr) {
         await supabase.from("jobs").insert(payload);
-      }
-
-      if (typeof window !== "undefined") {
-        const existingLocal = JSON.parse(
-          localStorage.getItem("fv_company_jobs") || "[]"
-        );
-        existingLocal.unshift({
-          id: insertedJob?.id || `job-${Date.now()}`,
-          ...payload,
-          company_name: resolvedCompanyName,
-          is_verified_company: resolvedVerified,
-          created_at: new Date().toISOString(),
-        });
-        localStorage.setItem("fv_company_jobs", JSON.stringify(existingLocal));
       }
 
       setSuccessToast(true);

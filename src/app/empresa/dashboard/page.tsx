@@ -25,7 +25,9 @@ export default function EmpresaDashboardPage() {
   const [isVerifiedCompany, setIsVerifiedCompany] = useState<boolean>(true);
   const [vacancies, setVacancies] = useState<any[]>([]);
   const [recentStudies, setRecentStudies] = useState<any[]>([]);
+  const [activeVacanciesCount, setActiveVacanciesCount] = useState(0);
   const [totalApplicantsCount, setTotalApplicantsCount] = useState(0);
+  const [totalStudiesCount, setTotalStudiesCount] = useState(0);
   const [reliefCount, setReliefCount] = useState(0);
 
   useEffect(() => {
@@ -64,7 +66,7 @@ export default function EmpresaDashboardPage() {
         }
       } catch {}
 
-      // 0. Count available relief candidates
+      // 0. Count available relief candidates (Operativos con disponibilidad inmediata)
       try {
         const { count: rCount } = await supabase
           .from("candidate_profiles")
@@ -75,42 +77,63 @@ export default function EmpresaDashboardPage() {
         }
       } catch {}
 
-      // 1. Load real vacancies from Supabase / localStorage
+      if (!currentCompanyId) {
+        setVacancies([]);
+        setRecentStudies([]);
+        setActiveVacanciesCount(0);
+        setTotalApplicantsCount(0);
+        setTotalStudiesCount(0);
+        return;
+      }
+
+      // 1. Métricas exactas en Supabase para la empresa autenticada
       try {
-        let query = supabase
+        // Vacantes Activas
+        const { count: vCount } = await supabase
+          .from("job_posts")
+          .select("*", { count: "exact", head: true })
+          .eq("company_id", currentCompanyId)
+          .eq("is_active", true);
+        setActiveVacanciesCount(vCount ?? 0);
+
+        // Candidatos postulados a las vacantes de esta empresa
+        const { data: compJobs } = await supabase
+          .from("job_posts")
+          .select("id")
+          .eq("company_id", currentCompanyId);
+
+        const jobIds = (compJobs || []).map((j: any) => j.id);
+        if (jobIds.length > 0) {
+          const { count: aCount } = await supabase
+            .from("applications")
+            .select("*", { count: "exact", head: true })
+            .in("job_id", jobIds);
+          setTotalApplicantsCount(aCount ?? 0);
+        } else {
+          setTotalApplicantsCount(0);
+        }
+
+        // Estudios de Seguridad solicitados por esta empresa
+        const { count: sCount } = await supabase
+          .from("security_study_orders")
+          .select("*", { count: "exact", head: true })
+          .eq("company_id", currentCompanyId);
+        setTotalStudiesCount(sCount ?? 0);
+      } catch {}
+
+      // 2. Cargar las 5 vacantes más recientes de la empresa
+      try {
+        const { data: jobsData, error: jobsError } = await supabase
           .from("job_posts")
           .select("*, applications(count)")
+          .eq("company_id", currentCompanyId)
           .order("created_at", { ascending: false })
           .limit(5);
 
-        if (currentCompanyId) {
-          query = query.eq("company_id", currentCompanyId);
-        }
-
-        let { data: jobsData, error: jobsError } = await query;
-
-        if (jobsError || !jobsData || jobsData.length === 0) {
-          let fbQuery = supabase
-            .from("jobs")
-            .select("*, applications(count)")
-            .order("created_at", { ascending: false })
-            .limit(5);
-          if (currentCompanyId) {
-            fbQuery = fbQuery.eq("company_id", currentCompanyId);
-          }
-          const fb = await fbQuery;
-          if (!fb.error && fb.data && fb.data.length > 0) {
-            jobsData = fb.data;
-            jobsError = null;
-          }
-        }
-
         if (!jobsError && jobsData && jobsData.length > 0) {
-          let appsTotal = 0;
           setVacancies(
             jobsData.map((j: any) => {
               const appCount = j.applications?.[0]?.count ?? 0;
-              appsTotal += appCount;
               return {
                 id: j.id,
                 title: j.title,
@@ -125,46 +148,21 @@ export default function EmpresaDashboardPage() {
               };
             })
           );
-          setTotalApplicantsCount(appsTotal);
-        } else if (typeof window !== "undefined") {
-          const localJobs = localStorage.getItem("fv_company_jobs");
-          if (localJobs) {
-            try {
-              const parsed = JSON.parse(localJobs);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                setVacancies(
-                  parsed.map((j: any) => ({
-                    id: j.id,
-                    title: j.title,
-                    role_required: j.role_required,
-                    shift: j.shift,
-                    salary: j.salary_monthly,
-                    zone: j.zone_neighborhood || j.city,
-                    applicants_count: 0,
-                    avg_match: 90,
-                    is_urgent: j.is_urgent_relief,
-                    created_at: "Reciente",
-                  }))
-                );
-              }
-            } catch {}
-          }
+        } else {
+          setVacancies([]);
         }
-      } catch {}
+      } catch {
+        setVacancies([]);
+      }
 
-      // 2. Load real security study orders
+      // 3. Cargar las 5 órdenes más recientes de la empresa
       try {
-        let sQuery = supabase
+        const { data: studiesData, error: studiesError } = await supabase
           .from("security_study_orders")
           .select("*, profiles(*)")
+          .eq("company_id", currentCompanyId)
           .order("created_at", { ascending: false })
           .limit(5);
-
-        if (currentCompanyId) {
-          sQuery = sQuery.eq("company_id", currentCompanyId);
-        }
-
-        const { data: studiesData, error: studiesError } = await sQuery;
 
         if (!studiesError && studiesData && studiesData.length > 0) {
           const candIds = studiesData.map((s: any) => s.candidate_id).filter(Boolean);
@@ -184,25 +182,21 @@ export default function EmpresaDashboardPage() {
               id: s.id,
               candidate_name: s.profiles?.full_name || "Aspirante",
               national_id: natMap.get(s.candidate_id) || "En verificación",
-              job_title: "Estudio Solicitado",
+              job_title: s.study_type
+                ? s.study_type.replace(/_/g, " ").toUpperCase()
+                : "Estudio Solicitado",
               status: s.status,
               concept: s.final_concept || "En proceso de validación",
               report_url: s.report_pdf_url,
               date: new Date(s.created_at).toLocaleDateString("es-CO"),
             }))
           );
-        } else if (typeof window !== "undefined") {
-          const localOrders = localStorage.getItem("fv_security_orders");
-          if (localOrders) {
-            try {
-              const parsed = JSON.parse(localOrders);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                setRecentStudies(parsed);
-              }
-            } catch {}
-          }
+        } else {
+          setRecentStudies([]);
         }
-      } catch {}
+      } catch {
+        setRecentStudies([]);
+      }
     }
 
     loadDashboardData();
@@ -284,12 +278,12 @@ export default function EmpresaDashboardPage() {
           </div>
           <div className="mt-4">
             <div className="text-3xl font-extrabold text-slate-900 font-mono tabular-nums">
-              {vacancies.length}
+              {activeVacanciesCount}
             </div>
             <span className="text-[11px] text-slate-500 mt-0.5 block">
-              {vacancies.filter((v) => v.is_urgent).length > 0
-                ? `${vacancies.filter((v) => v.is_urgent).length} con relevo de urgencia`
-                : "Sin relevos urgentes"}
+              {activeVacanciesCount > 0
+                ? `${activeVacanciesCount} ofertas activas en la plataforma`
+                : "Sin vacantes publicadas"}
             </span>
           </div>
         </div>
@@ -326,13 +320,12 @@ export default function EmpresaDashboardPage() {
           </div>
           <div className="mt-4">
             <div className="text-3xl font-extrabold text-slate-900 font-mono tabular-nums">
-              {credits}{" "}
-              <span className="text-xs font-normal text-slate-400">créditos</span>
+              {totalStudiesCount}
             </div>
             <span className="text-[11px] text-slate-500 font-medium mt-0.5 block">
-              {recentStudies.length > 0
-                ? `${recentStudies.length} órdenes registradas`
-                : "Sin órdenes en proceso"}
+              {totalStudiesCount > 0
+                ? `${totalStudiesCount} órdenes (${credits} créditos disp.)`
+                : `0 órdenes (${credits} créditos disp.)`}
             </span>
           </div>
         </div>
@@ -473,13 +466,13 @@ export default function EmpresaDashboardPage() {
           {recentStudies.length === 0 ? (
             <div className="p-8 text-center rounded-xl border border-dashed border-slate-200 bg-slate-50/50">
               <Shield className="w-8 h-8 mx-auto mb-2 text-slate-300" strokeWidth={1.5} />
-              <p className="text-sm font-medium text-slate-700">No hay evaluaciones registradas</p>
+              <p className="text-sm font-medium text-slate-700">No has solicitado estudios de confiabilidad ni pruebas de poligrafía todavía</p>
               <p className="text-xs text-slate-400 mt-0.5">
-                Solicita estudios de seguridad, antecedentes o pruebas de polígrafo para tus candidatos.
+                Solicita investigaciones de antecedentes, verificación de domicilio o dictámenes de poligrafía para tus aspirantes.
               </p>
               <div className="mt-3">
                 <Link href="/empresa/estudios" className="btn-secondary text-xs py-1.5 px-3 inline-flex">
-                  Solicitar Evaluación
+                  Solicitar mi primer estudio
                 </Link>
               </div>
             </div>

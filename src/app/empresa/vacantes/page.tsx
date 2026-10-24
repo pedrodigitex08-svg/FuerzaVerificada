@@ -54,31 +54,17 @@ export default function EmpresaVacantesListPage() {
           if (comp?.id) currentCompanyId = comp.id;
         }
 
-        let query = supabase
+        if (!currentCompanyId) {
+          setVacancies([]);
+          setIsLoading(false);
+          return;
+        }
+
+        const { data, error } = await supabase
           .from("job_posts")
           .select("*, applications(count)")
+          .eq("company_id", currentCompanyId)
           .order("created_at", { ascending: false });
-
-        if (currentCompanyId) {
-          query = query.eq("company_id", currentCompanyId);
-        }
-
-        let { data, error } = await query;
-
-        if (error || !data || data.length === 0) {
-          let fbQuery = supabase
-            .from("jobs")
-            .select("*, applications(count)")
-            .order("created_at", { ascending: false });
-          if (currentCompanyId) {
-            fbQuery = fbQuery.eq("company_id", currentCompanyId);
-          }
-          const fb = await fbQuery;
-          if (!fb.error && fb.data && fb.data.length > 0) {
-            data = fb.data;
-            error = null;
-          }
-        }
 
         if (!error && data && data.length > 0) {
           setVacancies(
@@ -96,33 +82,12 @@ export default function EmpresaVacantesListPage() {
               date: new Date(j.created_at).toLocaleDateString("es-CO"),
             }))
           );
-        } else if (typeof window !== "undefined") {
-          const localJobs = localStorage.getItem("fv_company_jobs");
-          if (localJobs) {
-            try {
-              const parsed = JSON.parse(localJobs);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                setVacancies(
-                  parsed.map((j: any) => ({
-                    id: j.id,
-                    title: j.title,
-                    role: j.role_required || "Seguridad",
-                    shift: j.shift || "Turno rotativo",
-                    salary: j.salary_monthly || 0,
-                    zone: j.zone_neighborhood || j.city || "Colombia",
-                    applicants_count: 0,
-                    avg_match: 90,
-                    is_urgent: !!j.is_urgent_relief,
-                    status: "Activa",
-                    date: "Reciente",
-                  }))
-                );
-              }
-            } catch {}
-          }
+        } else {
+          setVacancies([]);
         }
       } catch (err) {
         console.error("Error loading jobs:", err);
+        setVacancies([]);
       } finally {
         setIsLoading(false);
       }
@@ -206,7 +171,7 @@ export default function EmpresaVacantesListPage() {
                           className="btn-primary text-xs py-2 px-4 inline-flex"
                         >
                           <PlusCircle className="w-3.5 h-3.5 text-amber-400 mr-1.5" />
-                          Publicar Primera Vacante
+                          Publicar mi primera vacante
                         </Link>
                       </div>
                     )}

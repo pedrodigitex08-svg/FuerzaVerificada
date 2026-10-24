@@ -92,14 +92,14 @@ export default function EmpresaLayout({
 
             const meta = user.user_metadata || {};
             const resolvedCompName =
-              meta.company_name || prof?.full_name || fullName || "Empresa de Seguridad";
+              meta.company_name || prof?.full_name || fullName || user.email?.split("@")[0] || "Empresa de Seguridad";
 
             const { data: createdComp } = await supabase
               .from("companies")
               .insert({
                 owner_id: user.id,
                 company_name: resolvedCompName,
-                nit: meta.nit || `NIT-${user.id.slice(0, 8)}`,
+                nit: meta.nit || "",
                 city: meta.city || "Bogotá D.C.",
                 contact_person: prof?.full_name || meta.full_name || "Contacto Principal",
                 contact_phone: prof?.phone_whatsapp || meta.phone_whatsapp || "",
@@ -116,8 +116,15 @@ export default function EmpresaLayout({
           }
 
           if (comp) {
-            if (comp.company_name) setCompanyName(comp.company_name);
-            if (comp.nit) setCompanyNit(`NIT ${comp.nit}`);
+            const validName = comp.company_name?.trim() || fullName || user.email?.split("@")[0] || "Empresa Registrada";
+            setCompanyName(validName);
+
+            const hasRealNit = comp.nit && !comp.nit.startsWith("NIT-") && comp.nit.trim().length > 0;
+            if (hasRealNit) {
+              setCompanyNit(`NIT ${comp.nit.trim()}`);
+            } else {
+              setCompanyNit("NIT pendiente de registrar");
+            }
             setIsVerifiedCompany(Boolean(comp.is_verified_company));
             setCredits(Number(comp.credits_security_studies ?? 0));
             if (comp.plan_name) setPlanName(comp.plan_name.replace(/_/g, " "));

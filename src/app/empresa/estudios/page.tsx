@@ -77,16 +77,17 @@ export default function EmpresaEstudiosPage() {
           }
         }
 
-        let sQuery = supabase
-          .from("security_study_orders")
-          .select("*, profiles(*)")
-          .order("created_at", { ascending: false });
-
-        if (currentCompanyId) {
-          sQuery = sQuery.eq("company_id", currentCompanyId);
+        if (!currentCompanyId) {
+          setOrders([]);
+          setIsLoading(false);
+          return;
         }
 
-        const { data, error } = await sQuery;
+        const { data, error } = await supabase
+          .from("security_study_orders")
+          .select("*, profiles(*)")
+          .eq("company_id", currentCompanyId)
+          .order("created_at", { ascending: false });
 
         if (!error && data && data.length > 0) {
           const candIds = data.map((s: any) => s.candidate_id).filter(Boolean);
@@ -116,22 +117,8 @@ export default function EmpresaEstudiosPage() {
               created_at: new Date(s.created_at).toLocaleDateString("es-CO"),
             }))
           );
-        } else if (typeof window !== "undefined") {
-          const stored = localStorage.getItem("fv_security_orders");
-          if (stored) {
-            try {
-              const parsed = JSON.parse(stored);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                setOrders(parsed);
-              } else {
-                setOrders([]);
-              }
-            } catch {
-              setOrders([]);
-            }
-          } else {
-            setOrders([]);
-          }
+        } else {
+          setOrders([]);
         }
       } catch (err) {
         console.error("Error loading security study orders:", err);
@@ -192,9 +179,6 @@ export default function EmpresaEstudiosPage() {
       setOrders((prev) => [newOrderItem, ...prev]);
 
       if (typeof window !== "undefined") {
-        const stored = JSON.parse(localStorage.getItem("fv_security_orders") || "[]");
-        stored.unshift(newOrderItem);
-        localStorage.setItem("fv_security_orders", JSON.stringify(stored));
         localStorage.setItem("fv_company_credits", updatedCredits.toString());
       }
 
@@ -333,21 +317,23 @@ export default function EmpresaEstudiosPage() {
           <h3 className="text-base font-bold text-slate-800">
             {searchTerm || selectedFilter !== "todos"
               ? "No se encontraron evaluaciones con ese criterio"
-              : "Aún no tienes evaluaciones de confiabilidad registradas"}
+              : "No has solicitado estudios de confiabilidad ni pruebas de poligrafía todavía"}
           </h3>
           <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
             {searchTerm || selectedFilter !== "todos"
               ? "Intenta con otro número de documento o cambia el filtro de estado."
-              : "Solicita estudios de seguridad, antecedentes periciales o pruebas de poligrafía para tus aspirantes desde la bandeja ATS de tus vacantes."}
+              : "Solicita estudios de seguridad, antecedentes periciales o pruebas de poligrafía para tus aspirantes desde este panel o directamente desde la bandeja ATS de tus vacantes."}
           </p>
           {!searchTerm && selectedFilter === "todos" && (
-            <div className="mt-4">
-              <Link
-                href="/empresa/vacantes"
-                className="btn-primary text-xs py-2 px-4 inline-flex"
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                className="btn-primary text-xs py-2 px-4 inline-flex items-center gap-1.5"
               >
-                Ir a Mis Vacantes
-              </Link>
+                <PlusCircle className="w-3.5 h-3.5 text-amber-400" />
+                <span>Solicitar mi primer estudio</span>
+              </button>
             </div>
           )}
         </div>
