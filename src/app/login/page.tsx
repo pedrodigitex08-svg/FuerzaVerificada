@@ -70,6 +70,9 @@ function LoginForm() {
   // Feedback states
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorType, setErrorType] = useState<
+    "not_registered_oauth" | "not_registered_credentials" | "generic" | null
+  >(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const supabase = createClient();
@@ -84,28 +87,42 @@ function LoginForm() {
     if (roleParam === "candidate") setSelectedRole("candidate");
 
     const errorParam = searchParams.get("error");
-    if (errorParam === "unauthorized_admin" || searchParams.get("unauthorized") === "true") {
+    if (errorParam === "not_registered") {
+      setErrorType("not_registered_oauth");
+      setErrorMsg("No te encuentras registrado. Debes registrarte primero aquí");
+    } else if (errorParam === "unauthorized_admin" || searchParams.get("unauthorized") === "true") {
+      setErrorType("generic");
       setErrorMsg(
         "Acceso restringido: Esta sección requiere rol de Super Administrador (Operaciones & Poligrafía)."
       );
     } else if (errorParam === "auth_callback_failed") {
+      setErrorType("generic");
       setErrorMsg("No fue posible completar la autenticación con Google. Por favor intenta de nuevo.");
     }
   }, [searchParams]);
 
-  // Google OAuth Login exclusively for Candidates
-  const handleGoogleLogin = async () => {
+  // Google OAuth Login exclusively for Candidates with dynamic intent
+  const handleGoogleLogin = async (intent: "login" | "register" = mode === "register" ? "register" : "login") => {
     setErrorMsg(null);
+    setErrorType(null);
     setLoading(true);
     try {
+      const origin =
+        typeof window !== "undefined" && window.location.origin
+          ? window.location.origin
+          : process.env.NEXT_PUBLIC_SITE_URL || "";
+
+      const redirectUrl = `${origin}/auth/callback?intent=${intent}`;
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: redirectUrl,
         },
       });
       if (error) throw error;
     } catch (err: any) {
+      setErrorType("generic");
       setErrorMsg(err.message || "Error al conectar con Google");
       setLoading(false);
     }
@@ -142,6 +159,7 @@ function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+    setErrorType(null);
     setSuccessMsg(null);
     setLoading(true);
 
@@ -153,7 +171,12 @@ function LoginForm() {
         });
 
         if (error) {
-          throw new Error(error.message);
+          setErrorType("not_registered_credentials");
+          setErrorMsg(
+            "No te encuentras registrado o tus datos son incorrectos. Si no tienes cuenta, debes registrarte primero aquí."
+          );
+          setLoading(false);
+          return;
         }
 
         if (data.user) {
@@ -162,7 +185,16 @@ function LoginForm() {
             .from("profiles")
             .select("role, full_name")
             .eq("id", data.user.id)
-            .single();
+            .maybeSingle();
+
+          // If user exists in auth but has no profile registered
+          if (!profile) {
+            await supabase.auth.signOut();
+            setErrorType("not_registered_oauth");
+            setErrorMsg("No te encuentras registrado. Debes registrarte primero aquí");
+            setLoading(false);
+            return;
+          }
 
           const role = (profile as any)?.role || data.user.user_metadata?.role || "candidate";
           const userFullName =
@@ -402,9 +434,43 @@ function LoginForm() {
 
             {/* FEEDBACK ALERTS */}
             {errorMsg && (
-              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" strokeWidth={1.5} />
-                <span>{errorMsg}</span>
+              <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" strokeWidth={1.75} />
+                <div className="flex-1 leading-relaxed">
+                  {errorType === "not_registered_oauth" ? (
+                    <>
+                      <span>No te encuentras registrado. Debes registrarte primero{" "}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMode("register");
+                          setErrorMsg(null);
+                          setErrorType(null);
+                        }}
+                        className="font-bold text-[#0F172A] underline hover:text-[#1E3A8A] transition-colors inline"
+                      >
+                        aquí
+                      </button>
+                    </>
+                  ) : errorType === "not_registered_credentials" ? (
+                    <>
+                      <span>No te encuentras registrado o tus datos son incorrectos. Si no tienes cuenta, debes registrarte primero{" "}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMode("register");
+                          setErrorMsg(null);
+                          setErrorType(null);
+                        }}
+                        className="font-bold text-[#0F172A] underline hover:text-[#1E3A8A] transition-colors inline"
+                      >
+                        aquí.
+                      </button>
+                    </>
+                  ) : (
+                    <span>{errorMsg}</span>
+                  )}
+                </div>
               </div>
             )}
 
@@ -421,7 +487,7 @@ function LoginForm() {
                 {/* Botón de Google en 1 clic */}
                 <button
                   type="button"
-                  onClick={handleGoogleLogin}
+                  onClick={() => handleGoogleLogin("login")}
                   disabled={loading}
                   className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] active:bg-[#F1F5F9] text-[#1E293B] text-xs font-bold transition-all shadow-sm min-h-[46px]"
                 >
@@ -585,6 +651,7 @@ function LoginForm() {
                   onClick={() => {
                     setMode("register");
                     setErrorMsg(null);
+                    setErrorType(null);
                     setSuccessMsg(null);
                   }}
                   className="font-bold text-[#0F172A] hover:text-[#1E3A8A] hover:underline transition-colors"
@@ -685,7 +752,7 @@ function LoginForm() {
                 {/* Botón Google OAuth */}
                 <button
                   type="button"
-                  onClick={handleGoogleLogin}
+                  onClick={() => handleGoogleLogin("register")}
                   disabled={loading}
                   className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] active:bg-[#F1F5F9] text-[#1E293B] text-xs font-bold transition-all shadow-sm min-h-[46px]"
                 >
@@ -991,6 +1058,7 @@ function LoginForm() {
                   onClick={() => {
                     setMode("login");
                     setErrorMsg(null);
+                    setErrorType(null);
                     setSuccessMsg(null);
                   }}
                   className="font-bold text-[#0F172A] hover:text-[#1E3A8A] hover:underline transition-colors"

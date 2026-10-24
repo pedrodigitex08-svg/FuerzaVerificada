@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
+  const intent = requestUrl.searchParams.get("intent") || "login";
   const origin = requestUrl.origin;
 
   if (code) {
@@ -13,13 +14,21 @@ export async function GET(request: Request) {
     if (!error && data?.session?.user) {
       const user = data.session.user;
 
-      // 1. Verify or create user profile in public.profiles
+      // 1. Verify if user already has an active profile in public.profiles
       const { data: profile } = await supabase
         .from("profiles")
         .select("id, role, full_name")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
+      // If user came through "Iniciar Sesión" (intent=login) and has no registered profile
+      if (intent === "login" && !profile) {
+        // Sign out temporary OAuth session to prevent unauthorized access
+        await supabase.auth.signOut();
+        return NextResponse.redirect(`${origin}/login?error=not_registered`);
+      }
+
+      // If user came through "Registro" (intent=register) and profile doesn't exist yet, create it
       if (!profile) {
         const googleFullName =
           user.user_metadata?.full_name ||
@@ -36,12 +45,21 @@ export async function GET(request: Request) {
         });
       }
 
-      // 2. Check if candidate has completed structured profile (national_id & course)
+      const activeRole = profile?.role || "candidate";
+
+      // Role-based destination
+      if (activeRole === "admin") {
+        return NextResponse.redirect(`${origin}/admin/estudios`);
+      } else if (activeRole === "company") {
+        return NextResponse.redirect(`${origin}/empresa/dashboard`);
+      }
+
+      // Candidate: Check if structured profile exists
       const { data: candidateProfile } = await supabase
         .from("candidate_profiles")
         .select("user_id, national_id, primary_role")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
       // If no candidate profile or national_id is missing, redirect to onboarding wizard
       if (!candidateProfile || !candidateProfile.national_id) {
