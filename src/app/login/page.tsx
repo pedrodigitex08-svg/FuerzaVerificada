@@ -116,6 +116,12 @@ function LoginForm() {
     // 1. Detección de sesión activa para evitar pantallas congeladas
     async function checkExistingUserSession() {
       try {
+        // Si hay un error o acción en la URL, no redirigir automáticamente para permitir ver el mensaje
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get("error") || urlParams.get("unauthorized")) {
+          return;
+        }
+
         const {
           data: { session },
         } = await supabase.auth.getSession();
@@ -123,19 +129,28 @@ function LoginForm() {
         if (session?.user) {
           const { data: profile } = await supabase
             .from("profiles")
-            .select("role")
+            .select("role, full_name")
             .eq("id", session.user.id)
             .maybeSingle();
 
           let userRole = profile?.role;
-          if (!userRole) {
+          if (userRole !== "admin" && userRole !== "company") {
             const { data: comp } = await supabase
               .from("companies")
               .select("id")
               .eq("owner_id", session.user.id)
               .maybeSingle();
-            if (comp) userRole = "company";
-            else userRole = session.user.user_metadata?.role || "candidate";
+            if (comp) {
+              userRole = "company";
+              await supabase
+                .from("profiles")
+                .update({ role: "company" })
+                .eq("id", session.user.id);
+            }
+          }
+
+          if (!userRole) {
+            userRole = session.user.user_metadata?.role || "candidate";
           }
 
           if (typeof window !== "undefined") {
@@ -164,19 +179,28 @@ function LoginForm() {
         try {
           const { data: profile } = await supabase
             .from("profiles")
-            .select("role")
+            .select("role, full_name")
             .eq("id", session.user.id)
             .maybeSingle();
 
           let userRole = profile?.role;
-          if (!userRole) {
+          if (userRole !== "admin" && userRole !== "company") {
             const { data: comp } = await supabase
               .from("companies")
               .select("id")
               .eq("owner_id", session.user.id)
               .maybeSingle();
-            if (comp) userRole = "company";
-            else userRole = session.user.user_metadata?.role || "candidate";
+            if (comp) {
+              userRole = "company";
+              await supabase
+                .from("profiles")
+                .update({ role: "company" })
+                .eq("id", session.user.id);
+            }
+          }
+
+          if (!userRole) {
+            userRole = session.user.user_metadata?.role || "candidate";
           }
 
           // Asegurar que el perfil exista (upsert automático solo si no existe)
@@ -211,8 +235,8 @@ function LoginForm() {
           } else {
             window.location.href = "/guarda/vacantes";
           }
-        } catch {
-          window.location.href = "/guarda/vacantes";
+        } catch (err) {
+          console.error("Error al redirigir tras inicio de sesión:", err);
         }
       }
     });
@@ -353,10 +377,10 @@ function LoginForm() {
         }
 
         if (data.user) {
-          // Consult role in public.profiles table
+          // Consult canonical role in public.profiles table
           const { data: profile } = await supabase
             .from("profiles")
-            .select("role, full_name")
+            .select("role, full_name, email")
             .eq("id", data.user.id)
             .maybeSingle();
 
@@ -369,18 +393,28 @@ function LoginForm() {
             return;
           }
 
-          let role = (profile as any)?.role;
-          if (!role) {
+          let role = profile?.role;
+          if (role !== "admin" && role !== "company") {
             const { data: comp } = await supabase
               .from("companies")
               .select("id")
               .eq("owner_id", data.user.id)
               .maybeSingle();
-            if (comp) role = "company";
-            else role = data.user.user_metadata?.role || "candidate";
+            if (comp) {
+              role = "company";
+              await supabase
+                .from("profiles")
+                .update({ role: "company" })
+                .eq("id", data.user.id);
+            }
           }
+
+          if (!role) {
+            role = data.user.user_metadata?.role || "candidate";
+          }
+
           const userFullName =
-            (profile as any)?.full_name ||
+            profile?.full_name ||
             data.user.user_metadata?.full_name ||
             (role === "company" ? "Empresa de Seguridad" : "Usuario Verificado");
 
@@ -394,16 +428,20 @@ function LoginForm() {
                 role,
               })
             );
+            if (role === "company") {
+              localStorage.setItem("fv_company_verified", "true");
+            }
           }
 
-          // Exact role-based redirection
+          // Exact role-based redirection via window.location.href for fresh context
           if (role === "admin") {
-            router.push("/admin/estudios");
+            window.location.href = "/admin/estudios";
           } else if (role === "company") {
-            router.push("/empresa/dashboard");
+            window.location.href = "/empresa/dashboard";
           } else {
-            router.push("/guarda/vacantes");
+            window.location.href = "/guarda/vacantes";
           }
+          return;
         }
       } else {
         const { data, error } = await supabase.auth.signUp({
@@ -600,105 +638,17 @@ function LoginForm() {
           </div>
         ) : mode === "login" ? (
           <>
-            {/* DOS BOTONES GRANDES Y ELEGANTES PARA ELEGIR EL ROL */}
-            <div className="space-y-2.5">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] block">
-                Selecciona tu tipo de ingreso:
-              </label>
-
-              {/* Botón 1: Personal Operativo */}
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedRole("candidate");
-                  setErrorMsg(null);
-                }}
-                className={`w-full p-3.5 rounded-xl border text-left transition-all flex items-center justify-between group min-h-[56px] ${
-                  selectedRole === "candidate"
-                    ? "border-[#0F172A] bg-[#0F172A] text-white shadow-sm"
-                    : "border-[#E2E8F0] bg-[#F8FAFC] text-[#1E293B] hover:border-slate-300 hover:bg-slate-50"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                      selectedRole === "candidate"
-                        ? "bg-white/10 text-[#10B981]"
-                        : "bg-white border border-[#E2E8F0] text-[#10B981]"
-                    }`}
-                  >
-                    <UserCheck className="w-4 h-4" strokeWidth={1.75} />
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold block leading-tight">
-                      Ingresar como personal operativo de seguridad
-                    </span>
-                    <span
-                      className={`text-[11px] block mt-0.5 ${
-                        selectedRole === "candidate" ? "text-slate-300" : "text-[#64748B]"
-                      }`}
-                    >
-                      Vigilantes, Escoltas, Supervisores y Operadores
-                    </span>
-                  </div>
-                </div>
-                <div
-                  className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
-                    selectedRole === "candidate"
-                      ? "border-[#10B981] bg-[#10B981] text-white"
-                      : "border-slate-300"
-                  }`}
-                >
-                  {selectedRole === "candidate" && <Check className="w-2.5 h-2.5" strokeWidth={3} />}
-                </div>
-              </button>
-
-              {/* Botón 2: Empresa de Seguridad */}
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedRole("company");
-                  setErrorMsg(null);
-                }}
-                className={`w-full p-3.5 rounded-xl border text-left transition-all flex items-center justify-between group min-h-[56px] ${
-                  selectedRole === "company"
-                    ? "border-[#0F172A] bg-[#0F172A] text-white shadow-sm"
-                    : "border-[#E2E8F0] bg-[#F8FAFC] text-[#1E293B] hover:border-slate-300 hover:bg-slate-50"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                      selectedRole === "company"
-                        ? "bg-white/10 text-white"
-                        : "bg-white border border-[#E2E8F0] text-[#0F172A]"
-                    }`}
-                  >
-                    <Building2 className="w-4 h-4" strokeWidth={1.75} />
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold block leading-tight">
-                      Ingresar como Empresa de Seguridad
-                    </span>
-                    <span
-                      className={`text-[11px] block mt-0.5 ${
-                        selectedRole === "company" ? "text-slate-300" : "text-[#64748B]"
-                      }`}
-                    >
-                      Portal B2B, ATS y Verificación de Personal
-                    </span>
-                  </div>
-                </div>
-                <div
-                  className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
-                    selectedRole === "company"
-                      ? "border-[#10B981] bg-[#10B981] text-white"
-                      : "border-slate-300"
-                  }`}
-                >
-                  {selectedRole === "company" && <Check className="w-2.5 h-2.5" strokeWidth={3} />}
-                </div>
-              </button>
+            {/* INFORMATIVE BADGE: DETECCIÓN AUTOMÁTICA DE ROL */}
+            <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-start gap-2.5 text-xs text-[#64748B]">
+              <Shield className="w-4 h-4 text-[#0F172A] shrink-0 mt-0.5" strokeWidth={1.5} />
+              <div className="leading-relaxed">
+                <strong className="text-[#1E293B] block font-bold">
+                  Acceso Único con Detección Automática de Rol
+                </strong>
+                <span className="text-[11px] text-[#64748B]">
+                  Personal Operativo, Empresas de Seguridad y Administradores. El sistema te dirigirá automáticamente al panel correspondiente según tu cuenta registrada.
+                </span>
+              </div>
             </div>
 
             {/* FEEDBACK ALERTS */}
@@ -750,194 +700,104 @@ function LoginForm() {
               </div>
             )}
 
-            {/* ACCESO DIRECTO CORRESPONDIENTE: PERSONAL OPERATIVO */}
-            {selectedRole === "candidate" ? (
-              <div className="space-y-4 pt-1">
-                {/* Botón de Google en 1 clic */}
+            {/* ACCESO UNIVERSAL */}
+            <div className="space-y-4 pt-1">
+              {/* Botón de Google en 1 clic para cualquier rol */}
+              <button
+                type="button"
+                onClick={() => handleGoogleLogin("login")}
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] active:bg-[#F1F5F9] text-[#1E293B] text-xs font-bold transition-all shadow-sm min-h-[46px] disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <GoogleIcon />
+                <span>{loading ? "Conectando con Google..." : "Continuar con Google"}</span>
+              </button>
+
+              <div className="relative flex items-center justify-center py-0.5">
+                <div className="border-t border-[#E2E8F0] w-full" />
+                <span className="bg-white px-3 text-[11px] text-[#64748B] font-medium uppercase tracking-wider relative">
+                  o con tu correo y contraseña
+                </span>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[#1E293B] mb-1">
+                    Correo Electrónico *
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-[#64748B] absolute left-3 top-3.5" strokeWidth={1.5} />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="usuario@correo.com"
+                      className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-9 pr-3 py-2.5 text-xs text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[44px]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-semibold text-[#1E293B]">
+                      Contraseña *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForgotEmail(email);
+                        setShowForgotPassword(true);
+                        setForgotSuccess(false);
+                        setForgotError(null);
+                      }}
+                      className="text-[11px] font-semibold text-[#0F172A] hover:text-[#1E3A8A] hover:underline transition-colors"
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-[#64748B] absolute left-3 top-3.5" strokeWidth={1.5} />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      minLength={6}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Tu contraseña"
+                      className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-9 pr-10 py-2.5 text-xs text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[44px]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-3.5 text-[#64748B] hover:text-[#1E293B]"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
                 <button
-                  type="button"
-                  onClick={() => handleGoogleLogin("login")}
+                  type="submit"
                   disabled={loading}
-                  className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] active:bg-[#F1F5F9] text-[#1E293B] text-xs font-bold transition-all shadow-sm min-h-[46px] disabled:opacity-60 disabled:cursor-not-allowed"
+                  className={`w-full font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-xs transition-all shadow-sm min-h-[48px] bg-[#0F172A] hover:bg-[#1E3A8A] text-white ${
+                    loading ? "opacity-75 cursor-not-allowed" : ""
+                  }`}
                 >
-                  <GoogleIcon />
-                  <span>{loading ? "Conectando con Google..." : "Continuar con Google"}</span>
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      Ingresando...
+                    </span>
+                  ) : (
+                    <>
+                      Ingresar a la Plataforma
+                      <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
+                    </>
+                  )}
                 </button>
-
-                <div className="relative flex items-center justify-center py-0.5">
-                  <div className="border-t border-[#E2E8F0] w-full" />
-                  <span className="bg-white px-3 text-[11px] text-[#64748B] font-medium uppercase tracking-wider relative">
-                    o con tu correo y contraseña
-                  </span>
-                </div>
-
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-[#1E293B] mb-1">
-                      Correo Electrónico *
-                    </label>
-                    <div className="relative">
-                      <Mail className="w-4 h-4 text-[#64748B] absolute left-3 top-3.5" strokeWidth={1.5} />
-                      <input
-                        type="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="profesional@correo.com"
-                        className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-9 pr-3 py-2.5 text-xs text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[44px]"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-semibold text-[#1E293B]">
-                        Contraseña *
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setForgotEmail(email);
-                          setShowForgotPassword(true);
-                          setForgotSuccess(false);
-                          setForgotError(null);
-                        }}
-                        className="text-[11px] font-semibold text-[#0F172A] hover:text-[#1E3A8A] hover:underline transition-colors"
-                      >
-                        ¿Olvidaste tu contraseña?
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <Lock className="w-4 h-4 text-[#64748B] absolute left-3 top-3.5" strokeWidth={1.5} />
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        required
-                        minLength={6}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Tu contraseña"
-                        className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-9 pr-10 py-2.5 text-xs text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[44px]"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-3.5 text-[#64748B] hover:text-[#1E293B]"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className={`w-full font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-xs transition-all shadow-sm min-h-[48px] bg-[#0F172A] hover:bg-[#1E3A8A] text-white ${
-                      loading ? "opacity-75 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    {loading ? (
-                      <span className="flex items-center gap-2">
-                        <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                        Ingresando...
-                      </span>
-                    ) : (
-                      <>
-                        Ingresar a la Plataforma
-                        <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
-                      </>
-                    )}
-                  </button>
-                </form>
-              </div>
-            ) : (
-              /* ACCESO DIRECTO CORRESPONDIENTE: EMPRESA DE SEGURIDAD */
-              <div className="space-y-4 pt-1">
-                <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-start gap-2.5 text-xs text-[#64748B]">
-                  <Shield className="w-4 h-4 text-[#0F172A] shrink-0 mt-0.5" strokeWidth={1.5} />
-                  <p className="leading-relaxed text-[11px]">
-                    <strong className="text-[#1E293B]">Portal Corporativo B2B:</strong> Acceso para empresas de seguridad privada y departamentos de talento humano.
-                  </p>
-                </div>
-
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-[#1E293B] mb-1">
-                      Correo Corporativo *
-                    </label>
-                    <div className="relative">
-                      <Mail className="w-4 h-4 text-[#64748B] absolute left-3 top-3.5" strokeWidth={1.5} />
-                      <input
-                        type="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="seleccion@seguridadatlas.com.co"
-                        className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-9 pr-3 py-2.5 text-xs text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[44px]"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-semibold text-[#1E293B]">
-                        Contraseña *
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setForgotEmail(email);
-                          setShowForgotPassword(true);
-                          setForgotSuccess(false);
-                          setForgotError(null);
-                        }}
-                        className="text-[11px] font-semibold text-[#0F172A] hover:text-[#1E3A8A] hover:underline transition-colors"
-                      >
-                        ¿Olvidaste tu contraseña?
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <Lock className="w-4 h-4 text-[#64748B] absolute left-3 top-3.5" strokeWidth={1.5} />
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        required
-                        minLength={6}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Contraseña corporativa"
-                        className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-9 pr-10 py-2.5 text-xs text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[44px]"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-3.5 text-[#64748B] hover:text-[#1E293B]"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className={`w-full font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-xs transition-all shadow-sm min-h-[48px] bg-[#0F172A] hover:bg-[#1E3A8A] text-white ${
-                      loading ? "opacity-75 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    {loading ? (
-                      <span className="flex items-center gap-2">
-                        <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                        Ingresando...
-                      </span>
-                    ) : (
-                      <>
-                        Ingresar al Panel Corporativo
-                        <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
-                      </>
-                    )}
-                  </button>
-                </form>
-              </div>
-            )}
+              </form>
+            </div>
 
             {/* TEXTO SUTIL Y DIRECTO AL PIE */}
             <div className="pt-2 text-center">
