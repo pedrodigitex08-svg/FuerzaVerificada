@@ -898,7 +898,7 @@ function VacantesContent() {
                     {isSelectedApplied ? (
                       <>
                         <CheckCircle2 className="w-4 h-4 text-emerald-600" strokeWidth={2} />
-                        Ya te has postulado a esta vacante
+                        Ya estás postulado
                       </>
                     ) : (
                       <>
@@ -976,7 +976,7 @@ function VacantesContent() {
                 }}
                 className="btn-primary w-full py-3 text-xs"
               >
-                {isSelectedApplied ? "Ya postulado" : "Postularme en 1 Clic"}
+                {isSelectedApplied ? "Ya estás postulado" : "Postularme en 1 Clic"}
               </button>
             )}
           </div>

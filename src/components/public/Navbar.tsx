@@ -82,7 +82,7 @@ export function Navbar() {
                 href="/guarda/vacantes"
                 className="hover:text-[#0F172A] transition-colors"
               >
-                Buscador de Vacantes
+                Vacantes / Buscar Empleo
               </Link>
               <Link
                 href="/guarda/postulaciones"
@@ -100,7 +100,13 @@ export function Navbar() {
                 href="/guarda/documentos"
                 className="hover:text-[#0F172A] transition-colors"
               >
-                Mis Cursos
+                Mis Cursos y Documentos
+              </Link>
+              <Link
+                href="/guarda/documentos#academias"
+                className="hover:text-[#0F172A] transition-colors"
+              >
+                Academias Aliadas
               </Link>
             </>
           )}
@@ -305,7 +311,7 @@ export function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
               >
-                Buscador de Vacantes
+                Vacantes / Buscar Empleo
               </Link>
               <Link
                 href="/guarda/postulaciones"
@@ -327,6 +333,13 @@ export function Navbar() {
                 className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
               >
                 Mis Cursos y Documentos
+              </Link>
+              <Link
+                href="/guarda/documentos#academias"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
+              >
+                Academias Aliadas
               </Link>
             </>
           )}

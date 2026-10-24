@@ -21,6 +21,7 @@ import {
   Zap,
   Building2,
   Lock,
+  GraduationCap,
 } from "lucide-react";
 import { BottomNav } from "@/components/guarda/BottomNav";
 import { useAuth } from "@/lib/supabase/useAuth";
@@ -111,9 +112,14 @@ export default function GuardaLayout({
       icon: Send,
     },
     {
-      label: "Curso SuperVigilancia",
+      label: "Mis Cursos y Documentos",
       href: "/guarda/documentos",
       icon: FileCheck,
+    },
+    {
+      label: "Academias Aliadas",
+      href: "/guarda/documentos#academias",
+      icon: GraduationCap,
     },
     {
       label: "Mi Hoja de Vida & CV",

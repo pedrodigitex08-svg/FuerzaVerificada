@@ -320,6 +320,30 @@ export default function PostulacionesPage() {
           })}
         </div>
       )}
+
+      {/* BANNER ACADEMIAS ALIADAS */}
+      <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center shrink-0">
+            <Shield className="w-5 h-5" strokeWidth={1.75} />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-slate-900">
+              ¿Tu curso de SuperVigilancia está próximo a vencer?
+            </h4>
+            <p className="text-[11px] text-slate-500">
+              Consulta nuestra Red de Academias Aliadas con hasta 15% de descuento por convenio institucional.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/guarda/documentos#academias"
+          className="btn-secondary text-xs py-2 px-3.5 font-semibold text-amber-700 hover:text-amber-800 shrink-0 self-start sm:self-auto"
+        >
+          <span>Ver Academias Aliadas</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
+      </div>
     </div>
   );
 }
