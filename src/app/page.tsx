@@ -353,7 +353,7 @@ export default function HomePage() {
             <div className="lg:col-span-5 space-y-4">
               <div className="pb-1">
                 <h2 className="text-base font-bold text-[#1E293B]">
-                  Credencial Táctica Verificada
+                  Expediente de Confiabilidad Verificado
                 </h2>
                 <p className="text-xs text-[#64748B]">
                   Así visualizan los directores de operaciones y analistas de seguridad el perfil del candidato
@@ -375,7 +375,7 @@ export default function HomePage() {
                       <CheckCircle className="w-4 h-4 text-[#10B981] shrink-0" strokeWidth={1.5} />
                     </div>
                     <p className="text-xs font-semibold text-[#1E3A8A]">
-                      Vigilante Fijo & Escolta VIP
+                      Personal Operativo & Seguridad Integral
                     </p>
                     <p className="text-[11px] text-[#64748B] mt-0.5">
                       6 años de experiencia • Bogotá D.C.
@@ -441,35 +441,20 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Action Buttons: Poligrafía button is strictly visible ONLY to company / admin */}
-                <div className="pt-2 flex gap-2.5">
-                  <a
-                    href="https://demo.fuerzaverificada.com/hv-carlos.pdf"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex-1 bg-white border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#1E293B] rounded-xl py-2.5 px-3 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-sm"
-                  >
+                {/* Action Buttons: Demonstrative visual indicators */}
+                <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
+                  <div className="flex-1 bg-[#F8FAFC] border border-[#E2E8F0] text-[#475569] rounded-xl py-2.5 px-3 font-semibold text-xs flex items-center justify-center gap-1.5 select-none">
                     <FileText className="w-3.5 h-3.5 text-[#64748B]" strokeWidth={1.5} />
-                    <span>Hoja de Vida PDF</span>
-                  </a>
+                    <span>Hoja de Vida (Auditada)</span>
+                  </div>
 
-                  {isCompanyOrAdmin ? (
-                    <Link
-                      href="/empresa/vacantes/vac-001"
-                      className="flex-1 bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl py-2.5 px-3 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-sm text-center"
-                    >
-                      <Lock className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
-                      <span>Solicitar Polígrafo</span>
-                    </Link>
-                  ) : (
-                    <Link
-                      href="/precios-empresas"
-                      className="flex-1 bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#E2E8F0] text-[#1E293B] rounded-xl py-2.5 px-3 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors text-center"
-                    >
-                      <Shield className="w-3.5 h-3.5 text-[#64748B]" strokeWidth={1.5} />
-                      <span>Ver Planes B2B</span>
-                    </Link>
-                  )}
+                  <Link
+                    href="/precios-empresas"
+                    className="flex-1 bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl py-2.5 px-3 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-sm text-center"
+                  >
+                    <Shield className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
+                    <span>Planes para Empresas</span>
+                  </Link>
                 </div>
               </div>
             </div>

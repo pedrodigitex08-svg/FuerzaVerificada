@@ -125,13 +125,7 @@ export function Navbar() {
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <Link
-                href="/login"
-                className="text-xs font-semibold text-[#1E293B] hover:text-[#0F172A] px-3.5 py-2 rounded-xl transition-colors"
-              >
-                Iniciar Sesión
-              </Link>
+            <div className="flex items-center">
               <Link
                 href="/login"
                 className="bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl px-4 py-2 text-xs font-semibold shadow-sm transition-all duration-200"
