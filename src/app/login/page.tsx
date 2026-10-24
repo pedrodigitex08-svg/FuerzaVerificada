@@ -84,6 +84,7 @@ function LoginForm() {
   const [forgotError, setForgotError] = useState<string | null>(null);
   const [resendLoading, setResendLoading] = useState(false);
   const [pendingConfirmEmail, setPendingConfirmEmail] = useState<string | null>(null);
+  const [registrationCompleted, setRegistrationCompleted] = useState(false);
 
   // Evita condición de carrera entre onAuthStateChange y handleSubmit durante el registro
   const isSubmittingRef = useRef(false);
@@ -92,8 +93,14 @@ function LoginForm() {
 
   useEffect(() => {
     const tab = searchParams.get("tab");
-    if (tab === "register") setMode("register");
-    if (tab === "login") setMode("login");
+    if (tab === "register") {
+      setMode("register");
+      setRegistrationCompleted(false);
+    }
+    if (tab === "login") {
+      setMode("login");
+      setRegistrationCompleted(false);
+    }
 
     const roleParam = searchParams.get("role");
     if (roleParam === "company") setSelectedRole("company");
@@ -831,6 +838,9 @@ function LoginForm() {
           }
 
           setPendingConfirmEmail(cleanEmail);
+          setRegistrationCompleted(true);
+          setErrorMsg(null);
+          setErrorType(null);
           setSuccessMsg(
             `¡Cuenta creada exitosamente! Hemos enviado un enlace de activación a ${cleanEmail}. Por favor abre tu correo (revisa también Spam) y haz clic en el enlace para activar tu cuenta y continuar.`
           );
@@ -864,7 +874,16 @@ function LoginForm() {
           </div>
         </Link>
 
-        {mode === "login" ? (
+        {registrationCompleted ? (
+          <div className="pt-1">
+            <h1 className="text-base sm:text-lg font-bold text-[#1E293B] tracking-tight">
+              Activa tu Cuenta Profesional
+            </h1>
+            <p className="text-xs text-[#64748B] mt-0.5">
+              Hemos enviado un enlace de confirmación a tu correo
+            </p>
+          </div>
+        ) : mode === "login" ? (
           <p className="text-xs text-[#64748B] max-w-sm mx-auto leading-relaxed">
             La red de empleo y validación especializada para el sector de seguridad privada
           </p>
@@ -883,9 +902,83 @@ function LoginForm() {
       {/* 2. MAIN CARD */}
       <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 sm:p-8 shadow-md space-y-5">
         {/* ========================================================================= */}
-        {/* CASO 0: RECUPERACIÓN DE CONTRASEÑA                                        */}
+        {/* CASO: CONFIRMACIÓN EXCLUSIVA DE CUENTA CREADA                            */}
         {/* ========================================================================= */}
-        {showForgotPassword ? (
+        {registrationCompleted ? (
+          <div className="space-y-5 text-center py-2 animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-[#ECFDF5] border border-[#10B981]/30 flex items-center justify-center text-[#10B981] shadow-xs">
+              <CheckCircle className="w-8 h-8" strokeWidth={1.75} />
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="text-base sm:text-lg font-bold text-[#1E293B]">
+                ¡Cuenta creada exitosamente!
+              </h2>
+              <div className="p-4 rounded-xl bg-[#ECFDF5] border border-[#10B981]/30 text-xs text-[#065F46] leading-relaxed text-left space-y-2">
+                <p>
+                  Hemos enviado un enlace de activación a{" "}
+                  <strong className="font-bold text-[#065F46] font-mono underline">
+                    {pendingConfirmEmail || email}
+                  </strong>
+                  .
+                </p>
+                <p>
+                  Por favor abre tu correo (revisa también Spam) y haz clic en el enlace para activar tu cuenta y continuar.
+                </p>
+                {successMsg && successMsg.includes("reenviado") && (
+                  <p className="font-bold text-emerald-800 pt-1.5 border-t border-emerald-200/80">
+                    ✓ {successMsg}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {errorMsg && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 text-left flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" strokeWidth={1.5} />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            {/* 2. Botón secundario: Reenviar correo de confirmación */}
+            <button
+              type="button"
+              onClick={handleResendConfirmation}
+              disabled={resendLoading}
+              className="w-full py-2.5 px-4 rounded-xl bg-[#F8FAFC] hover:bg-slate-100 border border-[#E2E8F0] text-[#1E293B] font-semibold text-xs transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {resendLoading ? (
+                <>
+                  <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  <span>Reenviando correo...</span>
+                </>
+              ) : (
+                <span>Reenviar correo de confirmación</span>
+              )}
+            </button>
+
+            {/* 3. Botón principal oscuro: Ir a Iniciar Sesión -> */}
+            <div className="pt-2 border-t border-[#E2E8F0]">
+              <button
+                type="button"
+                onClick={() => {
+                  setRegistrationCompleted(false);
+                  setPendingConfirmEmail(null);
+                  setSuccessMsg(null);
+                  setErrorMsg(null);
+                  setErrorType(null);
+                  setEmail(pendingConfirmEmail || email);
+                  setPassword("");
+                  setMode("login");
+                }}
+                className="w-full bg-[#0F172A] hover:bg-[#1E3A8A] text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-xs transition-all shadow-sm min-h-[48px]"
+              >
+                <span>Ir a Iniciar Sesión</span>
+                <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
+              </button>
+            </div>
+          </div>
+        ) : showForgotPassword ? (
           <div className="space-y-4">
             <div className="flex items-center gap-2.5 pb-2 border-b border-[#E2E8F0]">
               <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-[#0F172A]">
@@ -1152,6 +1245,7 @@ function LoginForm() {
                 <button
                   type="button"
                   onClick={() => {
+                    setRegistrationCompleted(false);
                     setMode("register");
                     setErrorMsg(null);
                     setErrorType(null);
@@ -1169,7 +1263,7 @@ function LoginForm() {
         {/* ========================================================================= */}
         {/* CASO 2: PANTALLA / MODAL DE REGISTRO SEPARADO                             */}
         {/* ========================================================================= */}
-        {mode === "register" && (
+        {!registrationCompleted && mode === "register" && (
           <>
             {/* DOS TARJETAS LIMPIAS Y SEPARADAS */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1636,6 +1730,7 @@ function LoginForm() {
                 <button
                   type="button"
                   onClick={() => {
+                    setRegistrationCompleted(false);
                     setMode("login");
                     setErrorMsg(null);
                     setErrorType(null);
