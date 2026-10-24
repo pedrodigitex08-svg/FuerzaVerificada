@@ -45,6 +45,7 @@ export default function RadarRelevosPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRole, setSelectedRole] = useState("Todos");
   const [onlyMotorcycle, setOnlyMotorcycle] = useState(false);
+  const [onlyImmediate, setOnlyImmediate] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -56,8 +57,7 @@ export default function RadarRelevosPage() {
         // 1. Try canonical SQL view v_candidates_with_course_status first
         const { data: viewData, error: viewError } = await supabase
           .from("v_candidates_with_course_status")
-          .select("*")
-          .eq("available_immediately", true);
+          .select("*");
 
         if (!viewError && viewData && viewData.length > 0) {
           setGuards(
@@ -75,7 +75,7 @@ export default function RadarRelevosPage() {
               motorcycle_cc: c.motorcycle_cc || null,
               days_remaining: 180,
               resume_pdf_url: c.resume_pdf_url || "",
-              available_immediately: true,
+              available_immediately: !!c.available_immediately,
             }))
           );
           return;
@@ -84,8 +84,7 @@ export default function RadarRelevosPage() {
         // 2. Fallback to candidate_profiles joined with profiles
         const { data, error } = await supabase
           .from("candidate_profiles")
-          .select("*, profiles(*)")
-          .eq("available_immediately", true);
+          .select("*, profiles(*)");
 
         if (!error && data && data.length > 0) {
           setGuards(
@@ -103,7 +102,7 @@ export default function RadarRelevosPage() {
               motorcycle_cc: c.motorcycle_cc || null,
               days_remaining: 180,
               resume_pdf_url: c.resume_pdf_url || "",
-              available_immediately: true,
+              available_immediately: !!c.available_immediately,
             }))
           );
         } else {
@@ -126,7 +125,8 @@ export default function RadarRelevosPage() {
       g.locality.toLowerCase().includes(searchTerm.toLowerCase());
     const matchRole = selectedRole === "Todos" || g.primary_role === selectedRole;
     const matchMoto = !onlyMotorcycle || g.has_own_motorcycle;
-    return matchSearch && matchRole && matchMoto;
+    const matchImmediate = !onlyImmediate || g.available_immediately;
+    return matchSearch && matchRole && matchMoto && matchImmediate;
   });
 
   return (
@@ -137,21 +137,21 @@ export default function RadarRelevosPage() {
           <div className="flex items-center gap-2 mb-1">
             <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">
-              Radar Operativo en Tiempo Real
+              Directorio Verificado & Radar Operativo
             </span>
           </div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-            Guardas Disponibles para Relevos de Emergencia
+            Directorio de Personal Verificado & Radar de Relevos
           </h1>
           <p className="text-xs text-slate-500 font-normal">
-            Personal con credencial SuperVigilancia vigente activo para cubrir incapacidades y turnos hoy mismo.
+            Base de datos de guardas, escoltas y personal con credencial SuperVigilancia vigente y filtro para relevos de emergencia.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <span className="badge-emerald text-xs py-1 px-3">
             <Zap className="w-3.5 h-3.5 fill-emerald-600 text-emerald-600" />
-            {filtered.length} {filtered.length === 1 ? "guarda listo" : "guardas listos"}
+            {filtered.length} {filtered.length === 1 ? "candidato listo" : "candidatos listos"}
           </span>
         </div>
       </div>
@@ -170,7 +170,7 @@ export default function RadarRelevosPage() {
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
-          {["Todos", "Vigilante Fijo", "Supervisor Motorizado"].map((role) => (
+          {["Todos", "Vigilante Fijo", "Supervisor Motorizado", "Escolta VIP"].map((role) => (
             <button
               key={role}
               type="button"
@@ -184,6 +184,19 @@ export default function RadarRelevosPage() {
               {role}
             </button>
           ))}
+
+          <button
+            type="button"
+            onClick={() => setOnlyImmediate(!onlyImmediate)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap border flex items-center gap-1.5 transition-all ${
+              onlyImmediate
+                ? "bg-[#10B981] text-white border-[#10B981] shadow-sm"
+                : "bg-white text-[#64748B] border-[#E2E8F0] hover:bg-[#F8FAFC]"
+            }`}
+          >
+            <Zap className={`w-3.5 h-3.5 ${onlyImmediate ? "fill-white text-white" : "text-amber-500"}`} />
+            Solo Relevos Urgentes
+          </button>
 
           <button
             type="button"

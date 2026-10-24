@@ -170,7 +170,7 @@ export default function EmpresaLayout({
       icon: PlusCircle,
     },
     {
-      label: "Radar de Relevos Hoy",
+      label: "Directorio de Personal Verificado",
       href: "/empresa/relevos",
       icon: Zap,
     },
@@ -178,6 +178,11 @@ export default function EmpresaLayout({
       label: "Estudios & Poligrafía",
       href: "/empresa/estudios",
       icon: FileCheck,
+    },
+    {
+      label: "Planes Corporativos B2B",
+      href: "/precios-empresas",
+      icon: Shield,
     },
   ];
 
