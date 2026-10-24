@@ -1069,36 +1069,6 @@ function LoginForm() {
             </div>
           </>
         )}
-
-        {/* DEMO FAST ACCESS FOR DEV / TESTING */}
-        <div className="pt-4 border-t border-[#E2E8F0] text-center space-y-2">
-          <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">
-            Acceso Rápido de Demostración
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => handleDemoLogin("candidate")}
-              className="py-2 px-1 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-[#065F46] hover:bg-[#ECFDF5] text-[11px] font-bold transition-all"
-            >
-              Personal Op. Demo
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDemoLogin("company")}
-              className="py-2 px-1 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-[#0F172A] hover:bg-slate-100 text-[11px] font-bold transition-all"
-            >
-              Empresa Demo
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDemoLogin("admin")}
-              className="py-2 px-1 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-[#1E3A8A] hover:bg-slate-100 text-[11px] font-bold transition-all"
-            >
-              Admin Demo
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
