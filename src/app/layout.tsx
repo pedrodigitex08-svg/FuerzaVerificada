@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
-import { DemoRoleSwitcher } from "@/components/ui/DemoRoleSwitcher";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -25,7 +24,6 @@ export default function RootLayout({
     <html lang="es" className={jakarta.variable}>
       <body className="font-sans antialiased bg-white text-[#1E293B] selection:bg-[#0F172A] selection:text-white">
         {children}
-        <DemoRoleSwitcher />
       </body>
     </html>
   );

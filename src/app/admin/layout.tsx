@@ -53,11 +53,8 @@ export default function AdminLayout({
           window.location.hostname === "127.0.0.1" ||
           process.env.NODE_ENV === "development");
 
-      const demoRole =
-        typeof window !== "undefined" ? localStorage.getItem("fv_demo_role") : null;
-
-      // In local development or if user switched to admin in DemoRoleSwitcher, grant access
-      if (isLocalhost || demoRole === "admin") {
+      // In local development, grant quick access for testing
+      if (isLocalhost) {
         if (isMounted) {
           setIsDevOrDemo(true);
           setIsAuthorized(true);
