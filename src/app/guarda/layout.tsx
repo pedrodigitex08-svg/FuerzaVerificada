@@ -16,6 +16,11 @@ import {
   ExternalLink,
   CheckCircle,
   ChevronRight,
+  LayoutDashboard,
+  PlusCircle,
+  Zap,
+  Building2,
+  Lock,
 } from "lucide-react";
 import { BottomNav } from "@/components/guarda/BottomNav";
 import { useAuth } from "@/lib/supabase/useAuth";
@@ -34,28 +39,62 @@ export default function GuardaLayout({
   useEffect(() => {
     if (isLoading) return;
 
-    const isLocalhost =
-      typeof window !== "undefined" &&
-      (window.location.hostname === "localhost" ||
-        window.location.hostname === "127.0.0.1" ||
-        process.env.NODE_ENV === "development");
-
     const isPublicJobFeed = pathname === "/guarda/vacantes";
 
     // Non-public candidate routes require active authentication
-    if (!isPublicJobFeed && !isAuthenticated && !isLocalhost) {
+    if (!isPublicJobFeed && !isAuthenticated) {
       router.push(`/login?error=unauthorized_candidate&redirect=${encodeURIComponent(pathname)}`);
       return;
     }
 
     // Company accounts attempting to enter private candidate CV/Applications are redirected to ATS
-    if (!isPublicJobFeed && role === "company" && !isLocalhost) {
+    if (!isPublicJobFeed && role === "company") {
       router.push("/empresa/dashboard");
       return;
     }
   }, [isAuthenticated, role, isLoading, pathname, router]);
 
-  const navItems = [
+  const isCompany = role === "company";
+
+  const companyNavItems = [
+    {
+      label: "Panel de Empresa",
+      href: "/empresa/dashboard",
+      icon: LayoutDashboard,
+    },
+    {
+      label: "Publicar Vacante",
+      href: "/empresa/vacantes/nueva",
+      icon: PlusCircle,
+    },
+    {
+      label: "Mis Vacantes & ATS",
+      href: "/empresa/vacantes",
+      icon: Briefcase,
+    },
+    {
+      label: "Personal Verificado",
+      href: "/empresa/relevos",
+      icon: Zap,
+    },
+    {
+      label: "Estudios & Poligrafía",
+      href: "/empresa/estudios",
+      icon: FileCheck,
+    },
+    {
+      label: "Planes Empresas",
+      href: "/precios-empresas",
+      icon: Shield,
+    },
+    {
+      label: "Buscador de Vacantes",
+      href: "/guarda/vacantes",
+      icon: Briefcase,
+    },
+  ];
+
+  const candidateNavItems = [
     {
       label: "Buscador de Vacantes",
       href: "/guarda/vacantes",
@@ -78,13 +117,15 @@ export default function GuardaLayout({
     },
   ];
 
-  const displayName = fullName || "Carlos Moreno";
+  const navItems = isCompany ? companyNavItems : candidateNavItems;
+
+  const displayName = fullName || (isCompany ? "Empresa de Seguridad" : "Carlos Moreno");
   const initials = displayName
     .split(" ")
     .map((w) => w[0])
     .slice(0, 2)
     .join("")
-    .toUpperCase();
+    .toUpperCase() || (isCompany ? "ES" : "PO");
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#1E293B] flex">
@@ -92,7 +133,7 @@ export default function GuardaLayout({
       <aside className="hidden md:flex flex-col w-60 border-r border-[#E2E8F0] bg-white shrink-0 sticky top-0 h-screen z-30 select-none">
         {/* Brand */}
         <div className="h-16 px-5 border-b border-[#E2E8F0] flex items-center justify-between">
-          <Link href="/guarda/vacantes" className="flex items-center gap-2.5 group">
+          <Link href={isCompany ? "/empresa/dashboard" : "/guarda/vacantes"} className="flex items-center gap-2.5 group">
             <div className="w-8 h-8 rounded-xl bg-[#0F172A] flex items-center justify-center text-white shadow-sm group-hover:bg-[#1E3A8A] transition-colors">
               <Shield className="w-4 h-4 text-white" strokeWidth={1.5} />
             </div>
@@ -101,21 +142,19 @@ export default function GuardaLayout({
                 Fuerza<span className="text-[#0F172A]">Verificada</span>
               </span>
               <span className="text-[10px] uppercase tracking-wider text-[#64748B] font-semibold mt-0.5">
-                Portal Operativo
+                {isCompany ? "Portal Empresas B2B" : "Portal Operativo"}
               </span>
             </div>
           </Link>
         </div>
 
         {/* Navigation list */}
-        <div className="p-3 space-y-1.5 flex-1">
+        <div className="p-3 space-y-1.5 flex-1 overflow-y-auto">
           <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[#64748B]">
-            Navegación Operativa
+            {isCompany ? "Módulos de Empresa" : "Navegación Operativa"}
           </div>
           {navItems.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.href === "/guarda/vacantes" && pathname.startsWith("/guarda/vacantes"));
+            const isActive = pathname === item.href;
             const Icon = item.icon;
 
             return (
@@ -143,7 +182,7 @@ export default function GuardaLayout({
           <div className="p-2.5 rounded-xl bg-white border border-[#E2E8F0] shadow-sm flex items-center justify-between">
             <div className="flex items-center gap-2.5 overflow-hidden">
               <div className="w-8 h-8 rounded-xl bg-[#0F172A] text-white font-bold text-xs flex items-center justify-center shrink-0">
-                {initials || "PO"}
+                {initials}
               </div>
               <div className="overflow-hidden">
                 <div className="text-xs font-bold text-[#1E293B] truncate">
@@ -151,7 +190,7 @@ export default function GuardaLayout({
                 </div>
                 <div className="text-[10px] text-[#065F46] font-semibold flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
-                  Perfil Verificado
+                  {isCompany ? "Cuenta Corporativa" : "Perfil Verificado"}
                 </div>
               </div>
             </div>
@@ -205,10 +244,12 @@ export default function GuardaLayout({
 
             {/* Desktop breadcrumb */}
             <div className="hidden md:flex items-center gap-2 text-xs text-[#64748B]">
-              <span>Portal Operativo</span>
+              <span>{isCompany ? "Portal Empresas" : "Portal Operativo"}</span>
               <ChevronRight className="w-3.5 h-3.5 text-[#94A3B8]" />
               <span className="text-[#1E293B] font-semibold">
-                {pathname.includes("/vacantes")
+                {isCompany
+                  ? "Bolsa de Vacantes (Vista de Mercado)"
+                  : pathname.includes("/vacantes")
                   ? "Buscador de Vacantes"
                   : pathname.includes("/postulaciones")
                   ? "Seguimiento de Postulaciones"
@@ -223,10 +264,20 @@ export default function GuardaLayout({
 
           {/* Right Header Status */}
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-[#ECFDF5] border border-[#10B981]/30 text-[11px] font-semibold text-[#065F46]">
-              <CheckCircle className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
-              <span>Garantía Cero Cobros al Candidato</span>
-            </div>
+            {isCompany ? (
+              <Link
+                href="/empresa/vacantes/nueva"
+                className="bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl py-2 px-3.5 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
+              >
+                <PlusCircle className="w-3.5 h-3.5" strokeWidth={1.5} />
+                <span>Publicar Vacante</span>
+              </Link>
+            ) : (
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-[#ECFDF5] border border-[#10B981]/30 text-[11px] font-semibold text-[#065F46]">
+                <CheckCircle className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
+                <span>Garantía Cero Cobros al Candidato</span>
+              </div>
+            )}
 
             <Link
               href="/"

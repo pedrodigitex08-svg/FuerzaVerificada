@@ -31,7 +31,7 @@ export function useAuth(): AuthState {
     if (typeof window !== "undefined") {
       const cachedRole = localStorage.getItem("fv_demo_role") as UserRole;
       const cachedUserStr = localStorage.getItem("fv_demo_user");
-      if (cachedRole) {
+      if (cachedRole && ["candidate", "company", "admin"].includes(cachedRole)) {
         setRole(cachedRole);
       }
       if (cachedUserStr) {
@@ -43,7 +43,7 @@ export function useAuth(): AuthState {
       }
     }
 
-    // 2. Fetch live Supabase session
+    // 2. Fetch live Supabase session and canonical role from public.profiles
     async function checkSession() {
       try {
         const {
@@ -51,20 +51,17 @@ export function useAuth(): AuthState {
         } = await supabase.auth.getSession();
 
         if (!session?.user) {
-          if (typeof window !== "undefined") {
-            const cachedRole = localStorage.getItem("fv_demo_role");
-            if (!cachedRole) {
-              if (isMounted) {
-                setUser(null);
-                setRole(null);
-                setFullName("");
-                setEmail("");
-                setIsLoading(false);
-              }
-              return;
-            }
+          if (isMounted) {
+            setUser(null);
+            setRole(null);
+            setFullName("");
+            setEmail("");
+            setIsLoading(false);
           }
-          if (isMounted) setIsLoading(false);
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("fv_demo_role");
+            localStorage.removeItem("fv_demo_user");
+          }
           return;
         }
 
@@ -74,32 +71,62 @@ export function useAuth(): AuthState {
           setEmail(currentUser.email || "");
         }
 
-        // Fetch role and profile from public.profiles
+        // Fuente Única de Verdad: consultar directamente la columna role de public.profiles
         const { data: profile } = await supabase
           .from("profiles")
-          .select("role, full_name")
+          .select("role, full_name, email")
           .eq("id", currentUser.id)
           .maybeSingle();
 
-        const userRole =
-          (profile as any)?.role ||
-          currentUser.user_metadata?.role ||
-          "candidate";
+        let userRole: UserRole = null;
+
+        // Validar si el rol viene directamente de la base de datos
+        if (
+          profile?.role &&
+          (profile.role === "company" || profile.role === "candidate" || profile.role === "admin")
+        ) {
+          userRole = profile.role as UserRole;
+        } else {
+          // Verificación secundaria: si el usuario es propietario de una empresa registrada
+          const { data: comp } = await supabase
+            .from("companies")
+            .select("id, company_name")
+            .eq("owner_id", currentUser.id)
+            .maybeSingle();
+
+          if (comp) {
+            userRole = "company";
+            // Sincronizar en profiles si estaba vacío o desactualizado
+            await supabase
+              .from("profiles")
+              .update({ role: "company" })
+              .eq("id", currentUser.id);
+          } else if (
+            currentUser.user_metadata?.role &&
+            (currentUser.user_metadata.role === "company" ||
+              currentUser.user_metadata.role === "candidate" ||
+              currentUser.user_metadata.role === "admin")
+          ) {
+            userRole = currentUser.user_metadata.role as UserRole;
+          } else {
+            userRole = "candidate";
+          }
+        }
 
         const name =
           (profile as any)?.full_name ||
           currentUser.user_metadata?.full_name ||
           currentUser.user_metadata?.name ||
           currentUser.email?.split("@")[0] ||
-          "Usuario";
+          (userRole === "company" ? "Empresa de Seguridad" : "Personal Operativo");
 
         if (isMounted) {
-          setRole(userRole as UserRole);
+          setRole(userRole);
           setFullName(name);
           setIsLoading(false);
         }
 
-        if (typeof window !== "undefined") {
+        if (typeof window !== "undefined" && userRole) {
           localStorage.setItem("fv_demo_role", userRole);
           localStorage.setItem(
             "fv_demo_user",
@@ -110,7 +137,8 @@ export function useAuth(): AuthState {
             })
           );
         }
-      } catch {
+      } catch (err) {
+        console.error("Error al verificar sesión y rol en Supabase:", err);
         if (isMounted) setIsLoading(false);
       }
     }

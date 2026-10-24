@@ -23,6 +23,7 @@ import {
   ChevronRight,
   X,
   CreditCard,
+  PlusCircle,
 } from "lucide-react";
 import { ReliefToggle } from "@/components/guarda/ReliefToggle";
 import { CityAutocompleteInput } from "@/components/ui/CityAutocompleteInput";
@@ -233,97 +234,209 @@ function VacantesContent() {
     <div className="space-y-6">
       {/* 1. TOP EXECUTIVE CONTROL BAR (BENTO GRID - 3 CARDS) */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-        {/* Card 1: SuperVigilancia Credential Status (4 cols) */}
-        <div className="md:col-span-4 bg-white border border-slate-200/80 rounded-xl p-4 shadow-subtle flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-              Credencial SuperVigilancia
-            </span>
-            <span className="badge-emerald text-[10px]">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              Vigente
-            </span>
-          </div>
+        {role === "company" ? (
+          <>
+            {/* Empresa Card 1: ATS & Vacantes */}
+            <div className="md:col-span-4 bg-white border border-slate-200/80 rounded-xl p-4 shadow-subtle flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  Panel ATS Corporativo
+                </span>
+                <span className="badge-emerald text-[10px]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
+                  Cuenta B2B
+                </span>
+              </div>
 
-          <div className="py-2">
-            <div className="flex items-baseline justify-between">
-              <span className="text-xl font-bold text-slate-900 tabular-nums">
-                {candidateProfile.daysRemaining || 184} días
-              </span>
-              <span className="text-xs text-slate-400 font-medium">de 365 días</span>
+              <div className="py-2 space-y-1">
+                <span className="text-base font-bold text-slate-900 block">
+                  Gestión de Candidatos & Vacantes
+                </span>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Publica nuevas ofertas o revisa hojas de vida postuladas en tiempo real.
+                </p>
+              </div>
+
+              <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-100">
+                <Link
+                  href="/empresa/vacantes/nueva"
+                  className="text-xs text-[#0F172A] hover:text-[#1E3A8A] font-bold flex items-center gap-1"
+                >
+                  <PlusCircle className="w-3.5 h-3.5 text-[#10B981]" />
+                  <span>Publicar Vacante</span>
+                </Link>
+                <Link
+                  href="/empresa/vacantes"
+                  className="text-[#1E3A8A] hover:underline font-semibold text-[11px]"
+                >
+                  Ir al ATS →
+                </Link>
+              </div>
             </div>
-            {/* Fine hairline progress bar */}
-            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1.5">
-              <div
-                className="bg-emerald-500 h-full rounded-full transition-all"
-                style={{
-                  width: `${Math.min(
-                    100,
-                    Math.round(((candidateProfile.daysRemaining || 184) / 365) * 100)
-                  )}%`,
+
+            {/* Empresa Card 2: Radar de Relevos */}
+            <div className="md:col-span-4 bg-white border border-slate-200/80 rounded-xl p-4 shadow-subtle flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  Radar de Personal Operativo
+                </span>
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                  <Zap className="w-2.5 h-2.5 fill-amber-500 text-amber-500" />
+                  Relevos Urgentes
+                </span>
+              </div>
+
+              <div className="py-2 space-y-1">
+                <span className="text-base font-bold text-slate-900 block">
+                  Personal con Credencial Vigente
+                </span>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Encuentra guardas y escoltas verificados disponibles para contratación inmediata.
+                </p>
+              </div>
+
+              <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-100">
+                <span className="text-emerald-600 font-medium">Validación SuperVigilancia</span>
+                <Link
+                  href="/empresa/relevos"
+                  className="text-amber-600 hover:text-amber-700 font-semibold text-[11px]"
+                >
+                  Ver Radar →
+                </Link>
+              </div>
+            </div>
+
+            {/* Empresa Card 3: Estudios & Poligrafía */}
+            <div className="md:col-span-4 bg-white border border-slate-200/80 rounded-xl p-4 shadow-subtle flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  Blindaje & Confiabilidad
+                </span>
+                <span className="text-xs font-semibold text-slate-600 tabular-nums">
+                  Dictamen 24-48h
+                </span>
+              </div>
+
+              <div className="py-2 space-y-1">
+                <span className="text-base font-bold text-slate-900 block">
+                  Poligrafía & Visita Domiciliaria
+                </span>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Estudios de seguridad integrales con informe pericial auditado bajo Ley 1581.
+                </p>
+              </div>
+
+              <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-100 flex items-center justify-between">
+                <Link
+                  href="/precios-empresas"
+                  className="text-xs text-[#64748B] hover:text-[#0F172A] font-semibold"
+                >
+                  Ver Planes B2B
+                </Link>
+                <Link
+                  href="/empresa/estudios"
+                  className="text-[#10B981] hover:text-[#059669] font-bold text-[11px]"
+                >
+                  Solicitar Estudios →
+                </Link>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Candidate Card 1: SuperVigilancia Credential Status (4 cols) */}
+            <div className="md:col-span-4 bg-white border border-slate-200/80 rounded-xl p-4 shadow-subtle flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  Credencial SuperVigilancia
+                </span>
+                <span className="badge-emerald text-[10px]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Vigente
+                </span>
+              </div>
+
+              <div className="py-2">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-xl font-bold text-slate-900 tabular-nums">
+                    {candidateProfile.daysRemaining || 184} días
+                  </span>
+                  <span className="text-xs text-slate-400 font-medium">de 365 días</span>
+                </div>
+                {/* Fine hairline progress bar */}
+                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1.5">
+                  <div
+                    className="bg-emerald-500 h-full rounded-full transition-all"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        Math.round(((candidateProfile.daysRemaining || 184) / 365) * 100)
+                      )}%`,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-100">
+                <span>Apto para contratación</span>
+                <Link
+                  href="/guarda/documentos"
+                  className="text-amber-600 hover:text-amber-700 font-semibold text-[11px]"
+                >
+                  Ver Credencial →
+                </Link>
+              </div>
+            </div>
+
+            {/* Candidate Card 2: Relief Availability Toggle (4 cols) */}
+            <div className="md:col-span-4">
+              <ReliefToggle
+                initialValue={candidateProfile.available_immediately}
+                onToggle={(val) => {
+                  setCandidateProfile((prev) => ({ ...prev, available_immediately: val }));
+                  if (typeof window !== "undefined") {
+                    const p = { ...candidateProfile, available_immediately: val };
+                    localStorage.setItem("fv_candidate_profile", JSON.stringify(p));
+                  }
                 }}
               />
             </div>
-          </div>
 
-          <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-100">
-            <span>Apto para contratación</span>
-            <Link
-              href="/guarda/documentos"
-              className="text-amber-600 hover:text-amber-700 font-semibold text-[11px]"
-            >
-              Ver Credencial →
-            </Link>
-          </div>
-        </div>
+            {/* Candidate Card 3: Quick Metrics & Filters (4 cols) */}
+            <div className="md:col-span-4 bg-white border border-slate-200/80 rounded-xl p-4 shadow-subtle flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  Filtro Rápido de Turno
+                </span>
+                <span className="text-xs font-semibold text-slate-600 tabular-nums">
+                  {filteredJobs.length} vacantes
+                </span>
+              </div>
 
-        {/* Card 2: Relief Availability Toggle (4 cols) */}
-        <div className="md:col-span-4">
-          <ReliefToggle
-            initialValue={candidateProfile.available_immediately}
-            onToggle={(val) => {
-              setCandidateProfile((prev) => ({ ...prev, available_immediately: val }));
-              if (typeof window !== "undefined") {
-                const p = { ...candidateProfile, available_immediately: val };
-                localStorage.setItem("fv_candidate_profile", JSON.stringify(p));
-              }
-            }}
-          />
-        </div>
+              <div className="flex gap-1.5 pt-2">
+                {["Todos", "2x2x2", "4x2", "6x1"].map((shift) => (
+                  <button
+                    key={shift}
+                    type="button"
+                    onClick={() => setSelectedShiftFilter(shift)}
+                    className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold border transition-all ${
+                      selectedShiftFilter === shift
+                        ? "bg-slate-900 text-white border-slate-900 shadow-subtle"
+                        : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    {shift}
+                  </button>
+                ))}
+              </div>
 
-        {/* Card 3: Quick Metrics & Filters (4 cols) */}
-        <div className="md:col-span-4 bg-white border border-slate-200/80 rounded-xl p-4 shadow-subtle flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-              Filtro Rápido de Turno
-            </span>
-            <span className="text-xs font-semibold text-slate-600 tabular-nums">
-              {filteredJobs.length} vacantes
-            </span>
-          </div>
-
-          <div className="flex gap-1.5 pt-2">
-            {["Todos", "2x2x2", "4x2", "6x1"].map((shift) => (
-              <button
-                key={shift}
-                type="button"
-                onClick={() => setSelectedShiftFilter(shift)}
-                className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold border transition-all ${
-                  selectedShiftFilter === shift
-                    ? "bg-slate-900 text-white border-slate-900 shadow-subtle"
-                    : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
-                }`}
-              >
-                {shift}
-              </button>
-            ))}
-          </div>
-
-          <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-100 flex items-center justify-between">
-            <span>Sede: {candidateProfile.city}</span>
-            <span className="text-emerald-600 font-medium">Garantía Cero Cobros</span>
-          </div>
-        </div>
+              <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-100 flex items-center justify-between">
+                <span>Sede: {candidateProfile.city}</span>
+                <span className="text-emerald-600 font-medium">Garantía Cero Cobros</span>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* FEEDBACK TOAST */}
@@ -672,8 +785,17 @@ function VacantesContent() {
               {/* Application Action Button */}
               <div className="pt-2">
                 {role === "company" ? (
-                  <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-center text-xs text-slate-500 font-medium">
-                    Postulaciones inhabilitadas para cuentas de Empresa de Seguridad.
+                  <div className="space-y-2.5">
+                    <Link
+                      href="/empresa/vacantes/nueva"
+                      className="w-full bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl py-3 px-4 text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition-all"
+                    >
+                      <PlusCircle className="w-4 h-4 text-[#10B981]" />
+                      <span>Publicar Vacante Similar para tu Empresa</span>
+                    </Link>
+                    <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-center text-[11px] text-[#64748B]">
+                      Estás en modo Empresa. Las postulaciones de empleo son exclusivas para candidatos.
+                    </div>
                   </div>
                 ) : (
                   <button
@@ -742,8 +864,18 @@ function VacantesContent() {
             </p>
 
             {role === "company" ? (
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center text-xs text-slate-500 font-medium">
-                Inhabilitado para cuentas de Empresa
+              <div className="space-y-2">
+                <Link
+                  href="/empresa/vacantes/nueva"
+                  onClick={() => setMobileDetailOpen(false)}
+                  className="w-full bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl py-3 px-4 text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition-all text-center"
+                >
+                  <PlusCircle className="w-4 h-4 text-[#10B981]" />
+                  <span>Publicar Vacante para tu Empresa</span>
+                </Link>
+                <p className="text-[11px] text-center text-slate-500">
+                  Modo Empresa • Postulaciones exclusivas para candidatos
+                </p>
               </div>
             ) : (
               <button

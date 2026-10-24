@@ -114,7 +114,20 @@ function LoginForm() {
             .eq("id", session.user.id)
             .maybeSingle();
 
-          const userRole = profile?.role || session.user.user_metadata?.role || "candidate";
+          let userRole = profile?.role;
+          if (!userRole) {
+            const { data: comp } = await supabase
+              .from("companies")
+              .select("id")
+              .eq("owner_id", session.user.id)
+              .maybeSingle();
+            if (comp) userRole = "company";
+            else userRole = session.user.user_metadata?.role || "candidate";
+          }
+
+          if (typeof window !== "undefined") {
+            localStorage.setItem("fv_demo_role", userRole);
+          }
 
           if (userRole === "admin") {
             window.location.href = "/admin/estudios";
@@ -142,15 +155,24 @@ function LoginForm() {
             .eq("id", session.user.id)
             .maybeSingle();
 
-          const userRole = profile?.role || session.user.user_metadata?.role || "candidate";
+          let userRole = profile?.role;
+          if (!userRole) {
+            const { data: comp } = await supabase
+              .from("companies")
+              .select("id")
+              .eq("owner_id", session.user.id)
+              .maybeSingle();
+            if (comp) userRole = "company";
+            else userRole = session.user.user_metadata?.role || "candidate";
+          }
 
-          // Asegurar que el perfil exista (upsert automático)
+          // Asegurar que el perfil exista (upsert automático solo si no existe)
           if (!profile) {
             const googleFullName =
               session.user.user_metadata?.full_name ||
               session.user.user_metadata?.name ||
               session.user.email?.split("@")[0] ||
-              "Personal Operativo";
+              (userRole === "company" ? "Empresa de Seguridad" : "Personal Operativo");
 
             await supabase.from("profiles").upsert(
               {
@@ -163,6 +185,10 @@ function LoginForm() {
               },
               { onConflict: "id" }
             );
+          }
+
+          if (typeof window !== "undefined") {
+            localStorage.setItem("fv_demo_role", userRole);
           }
 
           if (userRole === "admin") {
@@ -299,9 +325,20 @@ function LoginForm() {
             return;
           }
 
-          const role = (profile as any)?.role || data.user.user_metadata?.role || "candidate";
+          let role = (profile as any)?.role;
+          if (!role) {
+            const { data: comp } = await supabase
+              .from("companies")
+              .select("id")
+              .eq("owner_id", data.user.id)
+              .maybeSingle();
+            if (comp) role = "company";
+            else role = data.user.user_metadata?.role || "candidate";
+          }
           const userFullName =
-            (profile as any)?.full_name || data.user.user_metadata?.full_name || "Usuario Verificado";
+            (profile as any)?.full_name ||
+            data.user.user_metadata?.full_name ||
+            (role === "company" ? "Empresa de Seguridad" : "Usuario Verificado");
 
           if (typeof window !== "undefined") {
             localStorage.setItem("fv_demo_role", role);

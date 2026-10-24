@@ -2,12 +2,52 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Briefcase, Send, FileCheck, User } from "lucide-react";
+import {
+  Briefcase,
+  Send,
+  FileCheck,
+  User,
+  LayoutDashboard,
+  PlusCircle,
+  Zap,
+} from "lucide-react";
+import { useAuth } from "@/lib/supabase/useAuth";
 
 export function BottomNav() {
   const pathname = usePathname();
+  const { role } = useAuth();
 
-  const navItems = [
+  const isCompany = role === "company";
+
+  const companyNavItems = [
+    {
+      label: "Panel",
+      href: "/empresa/dashboard",
+      icon: LayoutDashboard,
+    },
+    {
+      label: "Mis Vacantes",
+      href: "/empresa/vacantes",
+      icon: Briefcase,
+    },
+    {
+      label: "Publicar",
+      href: "/empresa/vacantes/nueva",
+      icon: PlusCircle,
+    },
+    {
+      label: "Relevos",
+      href: "/empresa/relevos",
+      icon: Zap,
+    },
+    {
+      label: "Estudios",
+      href: "/empresa/estudios",
+      icon: FileCheck,
+    },
+  ];
+
+  const candidateNavItems = [
     {
       label: "Vacantes",
       href: "/guarda/vacantes",
@@ -30,9 +70,15 @@ export function BottomNav() {
     },
   ];
 
+  const navItems = isCompany ? companyNavItems : candidateNavItems;
+
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E2E8F0] safe-area-bottom shadow-lg">
-      <div className="max-w-md mx-auto grid grid-cols-4 h-16">
+      <div
+        className={`max-w-md mx-auto grid h-16 ${
+          isCompany ? "grid-cols-5" : "grid-cols-4"
+        }`}
+      >
         {navItems.map((item) => {
           const isActive =
             pathname === item.href ||
@@ -55,7 +101,9 @@ export function BottomNav() {
                   <span className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-[#10B981]" />
                 )}
               </div>
-              <span className="text-[10px] mt-1 tracking-tight">{item.label}</span>
+              <span className="text-[10px] mt-1 tracking-tight truncate max-w-[64px] text-center">
+                {item.label}
+              </span>
             </Link>
           );
         })}

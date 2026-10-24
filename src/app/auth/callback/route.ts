@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
+  const intent = requestUrl.searchParams.get("intent");
   const origin = requestUrl.origin;
 
   if (code) {
@@ -13,14 +14,20 @@ export async function GET(request: Request) {
     if (!error && data?.session?.user) {
       const user = data.session.user;
 
-      // 1. Verify or ensure profile exists in public.profiles
+      // 1. Verify canonical profile in public.profiles
       let { data: profile } = await supabase
         .from("profiles")
         .select("id, role, full_name")
         .eq("id", user.id)
         .maybeSingle();
 
-      // If user profile is missing (or failed to create during initial registration), auto-upsert
+      // Si intent es 'login' y el usuario no tiene perfil registrado, bloquear ingreso
+      if (intent === "login" && !profile) {
+        await supabase.auth.signOut();
+        return NextResponse.redirect(`${origin}/login?error=not_registered`);
+      }
+
+      // Si el perfil no existe y viene de registro, crearlo con rol candidate por defecto
       if (!profile) {
         const googleFullName =
           user.user_metadata?.full_name ||
@@ -49,7 +56,29 @@ export async function GET(request: Request) {
         }
       }
 
-      const activeRole = profile?.role || "candidate";
+      // Verificación de rol: Si el perfil tiene role definido en public.profiles
+      let activeRole = profile?.role;
+
+      // Si no es admin ni company, verificar si tiene empresa registrada como propietario
+      if (activeRole !== "admin" && activeRole !== "company") {
+        const { data: comp } = await supabase
+          .from("companies")
+          .select("id")
+          .eq("owner_id", user.id)
+          .maybeSingle();
+
+        if (comp) {
+          activeRole = "company";
+          await supabase
+            .from("profiles")
+            .update({ role: "company" })
+            .eq("id", user.id);
+        }
+      }
+
+      if (!activeRole) {
+        activeRole = "candidate";
+      }
 
       // Role-based destination
       if (activeRole === "admin") {

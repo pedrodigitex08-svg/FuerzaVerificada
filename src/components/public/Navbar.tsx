@@ -32,35 +32,58 @@ export function Navbar() {
 
         {/* Central Navigation */}
         <nav className="hidden lg:flex items-center gap-6 text-xs font-semibold text-[#64748B]">
-          <Link
-            href="/guarda/vacantes"
-            className="hover:text-[#0F172A] transition-colors"
-          >
-            Explorar Vacantes
-          </Link>
-
-          {/* Exclusive Links for Company / SuperAdmin */}
-          {isCompanyOrAdmin && (
+          {/* CASO 1: Empresa de Seguridad */}
+          {role === "company" && (
             <>
+              <Link
+                href="/empresa/dashboard"
+                className="hover:text-[#0F172A] transition-colors"
+              >
+                Panel de Empresa
+              </Link>
+              <Link
+                href="/empresa/vacantes/nueva"
+                className="hover:text-[#0F172A] transition-colors"
+              >
+                Publicar Vacante
+              </Link>
+              <Link
+                href="/empresa/vacantes"
+                className="hover:text-[#0F172A] transition-colors"
+              >
+                Mis Vacantes
+              </Link>
               <Link
                 href="/empresa/relevos"
                 className="hover:text-[#0F172A] transition-colors"
               >
-                Perfiles Verificados
+                Personal Verificado
               </Link>
               <Link
                 href="/empresa/estudios"
                 className="hover:text-[#0F172A] transition-colors flex items-center gap-1.5 text-[#1E293B]"
               >
                 <Lock className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
-                <span>Poligrafía & Visita Domiciliaria</span>
+                <span>Estudios & Poligrafía</span>
+              </Link>
+              <Link
+                href="/precios-empresas"
+                className="hover:text-[#0F172A] transition-colors"
+              >
+                Planes Empresas
               </Link>
             </>
           )}
 
-          {/* Links for Candidate */}
-          {isCandidate && (
+          {/* CASO 2: Personal Operativo (Candidato) */}
+          {role === "candidate" && (
             <>
+              <Link
+                href="/guarda/vacantes"
+                className="hover:text-[#0F172A] transition-colors"
+              >
+                Buscador de Vacantes
+              </Link>
               <Link
                 href="/guarda/postulaciones"
                 className="hover:text-[#0F172A] transition-colors"
@@ -76,29 +99,69 @@ export function Navbar() {
             </>
           )}
 
-          <Link
-            href="/precios-empresas"
-            className="hover:text-[#0F172A] transition-colors"
-          >
-            Planes Empresas
-          </Link>
+          {/* CASO 3: SuperAdmin */}
+          {role === "admin" && (
+            <>
+              <Link
+                href="/admin/estudios"
+                className="hover:text-[#0F172A] transition-colors"
+              >
+                Bandeja de Estudios
+              </Link>
+              <Link
+                href="/admin/empresas"
+                className="hover:text-[#0F172A] transition-colors"
+              >
+                Empresas B2B
+              </Link>
+              <Link
+                href="/admin/planes"
+                className="hover:text-[#0F172A] transition-colors"
+              >
+                Planes B2B
+              </Link>
+              <Link
+                href="/admin/configuracion"
+                className="hover:text-[#0F172A] transition-colors"
+              >
+                Configuración
+              </Link>
+            </>
+          )}
+
+          {/* CASO 4: Visitante No Autenticado */}
+          {!isAuthenticated && (
+            <>
+              <Link
+                href="/guarda/vacantes"
+                className="hover:text-[#0F172A] transition-colors"
+              >
+                Explorar Vacantes
+              </Link>
+              <Link
+                href="/precios-empresas"
+                className="hover:text-[#0F172A] transition-colors"
+              >
+                Planes Empresas
+              </Link>
+            </>
+          )}
         </nav>
 
         {/* Right CTA Buttons */}
         <div className="hidden sm:flex items-center gap-3">
           {isAuthenticated ? (
             <div className="flex items-center gap-3">
-              {isCompanyOrAdmin ? (
+              {role === "company" ? (
                 <>
                   <Link
-                    href={role === "admin" ? "/admin/estudios" : "/empresa/dashboard"}
+                    href="/empresa/dashboard"
                     className="text-xs font-semibold text-[#1E293B] hover:text-[#0F172A] px-3 py-1.5 rounded-xl border border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors flex items-center gap-1.5"
                   >
                     <Building2 className="w-3.5 h-3.5 text-[#64748B]" strokeWidth={1.5} />
-                    <span>{role === "admin" ? "Panel Admin" : "Panel ATS"}</span>
+                    <span>Panel ATS</span>
                   </Link>
 
-                  {/* Publicar Vacante strictly visible ONLY to company / admin */}
                   <Link
                     href="/empresa/vacantes/nueva"
                     className="bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl px-4 py-2 text-xs font-semibold shadow-sm transition-all duration-200"
@@ -106,6 +169,14 @@ export function Navbar() {
                     Publicar Vacante
                   </Link>
                 </>
+              ) : role === "admin" ? (
+                <Link
+                  href="/admin/estudios"
+                  className="text-xs font-semibold text-[#1E293B] hover:text-[#0F172A] px-3.5 py-2 rounded-xl border border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors flex items-center gap-1.5"
+                >
+                  <Shield className="w-3.5 h-3.5 text-amber-500" strokeWidth={1.75} />
+                  <span>Panel SuperAdmin</span>
+                </Link>
               ) : (
                 <Link
                   href="/guarda/vacantes"
@@ -165,22 +236,36 @@ export function Navbar() {
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
         <div className="lg:hidden absolute top-16 inset-x-0 bg-white border-b border-[#E2E8F0] p-4 shadow-lg space-y-3 animate-in fade-in slide-in-from-top-2">
-          <Link
-            href="/guarda/vacantes"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
-          >
-            Explorar Vacantes
-          </Link>
-
-          {isCompanyOrAdmin && (
+          {/* CASO 1: Empresa de Seguridad */}
+          {role === "company" && (
             <>
+              <Link
+                href="/empresa/dashboard"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
+              >
+                Panel de Empresa
+              </Link>
+              <Link
+                href="/empresa/vacantes/nueva"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
+              >
+                Publicar Vacante
+              </Link>
+              <Link
+                href="/empresa/vacantes"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
+              >
+                Mis Vacantes
+              </Link>
               <Link
                 href="/empresa/relevos"
                 onClick={() => setMobileMenuOpen(false)}
                 className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
               >
-                Perfiles Verificados
+                Directorio de Personal Verificado / Relevos
               </Link>
               <Link
                 href="/empresa/estudios"
@@ -188,13 +273,28 @@ export function Navbar() {
                 className="flex items-center gap-2 text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
               >
                 <Lock className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
-                <span>Poligrafía & Visita Domiciliaria</span>
+                <span>Solicitar Estudios & Poligrafía</span>
+              </Link>
+              <Link
+                href="/precios-empresas"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
+              >
+                Planes Empresas
               </Link>
             </>
           )}
 
-          {isCandidate && (
+          {/* CASO 2: Personal Operativo (Candidato) */}
+          {role === "candidate" && (
             <>
+              <Link
+                href="/guarda/vacantes"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
+              >
+                Buscador de Vacantes
+              </Link>
               <Link
                 href="/guarda/postulaciones"
                 onClick={() => setMobileMenuOpen(false)}
@@ -212,18 +312,64 @@ export function Navbar() {
             </>
           )}
 
-          <Link
-            href="/precios-empresas"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
-          >
-            Planes Empresas
-          </Link>
+          {/* CASO 3: SuperAdmin */}
+          {role === "admin" && (
+            <>
+              <Link
+                href="/admin/estudios"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
+              >
+                Bandeja de Estudios & Poligrafía
+              </Link>
+              <Link
+                href="/admin/empresas"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
+              >
+                Empresas & Recarga B2B
+              </Link>
+              <Link
+                href="/admin/planes"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
+              >
+                Planes & Tarifas B2B
+              </Link>
+              <Link
+                href="/admin/configuracion"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
+              >
+                Configuración Comercial
+              </Link>
+            </>
+          )}
+
+          {/* CASO 4: Visitante No Autenticado */}
+          {!isAuthenticated && (
+            <>
+              <Link
+                href="/guarda/vacantes"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
+              >
+                Explorar Vacantes
+              </Link>
+              <Link
+                href="/precios-empresas"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
+              >
+                Planes Empresas
+              </Link>
+            </>
+          )}
 
           <div className="pt-2 border-t border-[#E2E8F0] flex flex-col gap-2">
             {isAuthenticated ? (
               <>
-                {isCompanyOrAdmin && (
+                {role === "company" && (
                   <Link
                     href="/empresa/vacantes/nueva"
                     onClick={() => setMobileMenuOpen(false)}
@@ -240,7 +386,7 @@ export function Navbar() {
                   className="text-xs text-rose-600 font-semibold p-2 rounded-lg hover:bg-rose-50 text-center flex items-center justify-center gap-1.5"
                 >
                   <LogOut className="w-3.5 h-3.5" />
-                  <span>Cerrar Sesión ({fullName || "Usuario"})</span>
+                  <span>Cerrar Sesión ({fullName || (role === "company" ? "Empresa" : "Usuario")})</span>
                 </button>
               </>
             ) : (
@@ -250,7 +396,7 @@ export function Navbar() {
                   onClick={() => setMobileMenuOpen(false)}
                   className="bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl py-2.5 text-xs font-semibold w-full text-center"
                 >
-                  Iniciar Sesión / Registro
+                  Ingresar / Registrarse
                 </Link>
               </>
             )}
