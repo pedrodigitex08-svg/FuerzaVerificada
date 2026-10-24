@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { generatePackageRechargeLink } from "@/lib/utils/whatsappTemplates";
 import { useAuth } from "@/lib/supabase/useAuth";
+import { createClient } from "@/lib/supabase/client";
 
 export default function EmpresaLayout({
   children,
@@ -36,59 +37,87 @@ export default function EmpresaLayout({
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [credits, setCredits] = useState(5);
-  const [companyName, setCompanyName] = useState("Seguridad Atlas de Colombia");
-  const [planName, setPlanName] = useState("Contratación Segura x5");
-  const [isVerifiedCompany, setIsVerifiedCompany] = useState(true);
+  const [credits, setCredits] = useState(0);
+  const [companyName, setCompanyName] = useState("Empresa de Seguridad");
+  const [companyNit, setCompanyNit] = useState("En validación");
+  const [planName, setPlanName] = useState("Plan Corporativo");
+  const [isVerifiedCompany, setIsVerifiedCompany] = useState(false);
 
   // 1. Route Authorization Guard
   useEffect(() => {
     if (isLoading) return;
 
-    const isLocalhost =
-      typeof window !== "undefined" &&
-      (window.location.hostname === "localhost" ||
-        window.location.hostname === "127.0.0.1" ||
-        process.env.NODE_ENV === "development");
-
-    if (!isAuthenticated && !isLocalhost) {
-      router.push(`/login?error=unauthorized_company&redirect=${encodeURIComponent(pathname)}`);
+    if (!isAuthenticated) {
+      setIsAuthorized(false);
+      router.replace(`/login?error=unauthorized_company&redirect=${encodeURIComponent(pathname)}`);
       return;
     }
 
-    if (role === "candidate" && !isLocalhost) {
-      router.push("/guarda/vacantes");
+    if (role === "candidate") {
+      setIsAuthorized(false);
+      router.replace("/guarda/vacantes");
       return;
     }
 
     setIsAuthorized(true);
   }, [isAuthenticated, role, isLoading, pathname, router]);
 
-  // 2. Company Metadata Sync
+  // 2. Company Metadata Sync from Supabase
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedCredits = localStorage.getItem("fv_company_credits");
-      if (savedCredits !== null) {
-        setCredits(parseInt(savedCredits, 10));
-      } else {
-        localStorage.setItem("fv_company_credits", "5");
-      }
-
-      const savedVerified = localStorage.getItem("fv_company_verified");
-      if (savedVerified !== null) {
-        setIsVerifiedCompany(savedVerified === "true");
-      }
-
-      const savedUser = localStorage.getItem("fv_demo_user");
-      if (savedUser) {
-        try {
-          const parsed = JSON.parse(savedUser);
-          if (parsed.full_name) setCompanyName(parsed.full_name);
-        } catch {}
-      } else if (fullName) {
+    async function loadCompanyMetadata() {
+      if (fullName) {
         setCompanyName(fullName);
       }
+
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          const { data: comp } = await supabase
+            .from("companies")
+            .select("*")
+            .eq("owner_id", user.id)
+            .maybeSingle();
+
+          if (comp) {
+            if (comp.company_name) setCompanyName(comp.company_name);
+            if (comp.nit) setCompanyNit(`NIT ${comp.nit}`);
+            setIsVerifiedCompany(Boolean(comp.is_verified_company));
+            setCredits(Number(comp.credits_security_studies ?? 0));
+            if (comp.plan_name) setPlanName(comp.plan_name.replace(/_/g, " "));
+
+            if (typeof window !== "undefined") {
+              localStorage.setItem(
+                "fv_company_credits",
+                String(comp.credits_security_studies ?? 0)
+              );
+              localStorage.setItem(
+                "fv_company_verified",
+                String(Boolean(comp.is_verified_company))
+              );
+            }
+            return;
+          }
+        }
+      } catch {}
+
+      if (typeof window !== "undefined") {
+        const savedCredits = localStorage.getItem("fv_company_credits");
+        if (savedCredits !== null) {
+          setCredits(parseInt(savedCredits, 10) || 0);
+        }
+
+        const savedVerified = localStorage.getItem("fv_company_verified");
+        if (savedVerified !== null) {
+          setIsVerifiedCompany(savedVerified === "true");
+        }
+      }
     }
+
+    loadCompanyMetadata();
   }, [pathname, fullName]);
 
   const navItems = [
@@ -169,7 +198,7 @@ export default function EmpresaLayout({
                 <h4 className="text-xs font-bold text-[#1E293B] truncate">
                   {companyName}
                 </h4>
-                <p className="text-[10px] text-[#64748B] truncate">NIT 900.582.114-1</p>
+                <p className="text-[10px] text-[#64748B] truncate">{companyNit}</p>
               </div>
             </div>
 

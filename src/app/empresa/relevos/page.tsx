@@ -53,6 +53,35 @@ export default function RadarRelevosPage() {
       const supabase = createClient();
 
       try {
+        // 1. Try canonical SQL view v_candidates_with_course_status first
+        const { data: viewData, error: viewError } = await supabase
+          .from("v_candidates_with_course_status")
+          .select("*")
+          .eq("available_immediately", true);
+
+        if (!viewError && viewData && viewData.length > 0) {
+          setGuards(
+            viewData.map((c: any) => ({
+              id: c.user_id || c.id,
+              full_name: c.full_name || "Aspirante",
+              national_id: c.national_id || "En verificación",
+              phone_whatsapp: c.phone_whatsapp || "573000000000",
+              city: c.city || "Bogotá D.C.",
+              locality: c.locality_neighborhood || c.locality || c.city || "Bogotá",
+              primary_role: c.primary_role || "Vigilante Fijo",
+              years_experience: c.years_experience || 0,
+              has_military_booklet: !!c.has_military_booklet,
+              has_own_motorcycle: !!c.has_own_motorcycle,
+              motorcycle_cc: c.motorcycle_cc || null,
+              days_remaining: 180,
+              resume_pdf_url: c.resume_pdf_url || "",
+              available_immediately: true,
+            }))
+          );
+          return;
+        }
+
+        // 2. Fallback to candidate_profiles joined with profiles
         const { data, error } = await supabase
           .from("candidate_profiles")
           .select("*, profiles(*)")
@@ -61,12 +90,12 @@ export default function RadarRelevosPage() {
         if (!error && data && data.length > 0) {
           setGuards(
             data.map((c: any) => ({
-              id: c.id,
+              id: c.user_id || c.id,
               full_name: c.profiles?.full_name || "Aspirante",
-              national_id: c.profiles?.phone_whatsapp || "Sin documento",
+              national_id: c.national_id || "En verificación",
               phone_whatsapp: c.profiles?.phone_whatsapp || "573000000000",
               city: c.city || "Bogotá D.C.",
-              locality: c.locality || c.city || "Bogotá",
+              locality: c.locality_neighborhood || c.locality || c.city || "Bogotá",
               primary_role: c.primary_role || "Vigilante Fijo",
               years_experience: c.years_experience || 0,
               has_military_booklet: !!c.has_military_booklet,

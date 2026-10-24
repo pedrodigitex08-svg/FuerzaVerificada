@@ -71,6 +71,14 @@ export default function PerfilGuardaPage() {
             .eq("user_id", user.id)
             .maybeSingle();
 
+          const { data: candCourse } = await supabase
+            .from("candidate_courses")
+            .select("*")
+            .eq("candidate_id", user.id)
+            .order("completion_date", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
           if (profile) {
             if (profile.full_name) setFullName(profile.full_name);
             if (profile.phone_whatsapp) setPhone(profile.phone_whatsapp);
@@ -79,14 +87,21 @@ export default function PerfilGuardaPage() {
           }
 
           if (candProfile) {
+            if (candProfile.national_id) setNationalId(candProfile.national_id);
             if (candProfile.city) setCity(candProfile.city);
-            if (candProfile.locality) setLocality(candProfile.locality);
+            if (candProfile.locality_neighborhood || candProfile.locality) {
+              setLocality(candProfile.locality_neighborhood || candProfile.locality);
+            }
             if (candProfile.primary_role) setPrimaryRole(candProfile.primary_role);
             if (candProfile.years_experience !== undefined) setYearsExperience(candProfile.years_experience);
             if (candProfile.has_military_booklet !== undefined) setHasMilitaryBooklet(candProfile.has_military_booklet);
             if (candProfile.has_own_motorcycle !== undefined) setHasMotorcycle(candProfile.has_own_motorcycle);
             if (candProfile.motorcycle_cc) setMotorcycleCc(candProfile.motorcycle_cc);
             if (candProfile.resume_pdf_url) setResumeUrl(candProfile.resume_pdf_url);
+          }
+
+          if (candCourse?.completion_date) {
+            setCourseDate(candCourse.completion_date);
           }
         } else if (typeof window !== "undefined") {
           const saved = localStorage.getItem("fv_candidate_profile");
@@ -130,21 +145,27 @@ export default function PerfilGuardaPage() {
           .update({
             full_name: fullName,
             phone_whatsapp: phone,
+            updated_at: new Date().toISOString(),
           })
           .eq("id", user.id);
 
         await supabase
           .from("candidate_profiles")
-          .upsert({
-            user_id: user.id,
-            city,
-            locality,
-            primary_role: primaryRole,
-            years_experience: yearsExperience,
-            has_military_booklet: hasMilitaryBooklet,
-            has_own_motorcycle: hasMotorcycle,
-            motorcycle_cc: hasMotorcycle ? motorcycleCc : null,
-          });
+          .upsert(
+            {
+              user_id: user.id,
+              national_id: nationalId.trim() || `TEMP-${user.id.slice(0, 8)}`,
+              city,
+              locality_neighborhood: locality,
+              primary_role: primaryRole,
+              years_experience: yearsExperience,
+              has_military_booklet: hasMilitaryBooklet,
+              has_own_motorcycle: hasMotorcycle,
+              motorcycle_cc: hasMotorcycle ? motorcycleCc : null,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id" }
+          );
       }
 
       if (typeof window !== "undefined") {

@@ -37,6 +37,10 @@ export default function AdminLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeStudiesCount, setActiveStudiesCount] = useState(0);
   const [companiesCount, setCompaniesCount] = useState(0);
+  const [verifiedCompaniesCount, setVerifiedCompaniesCount] = useState(0);
+  const [candidatesCount, setCandidatesCount] = useState(0);
+  const [academiesCount, setAcademiesCount] = useState(0);
+  const [adminName, setAdminName] = useState("SuperAdmin B2B");
 
   // Authentication & Route Protection States
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
@@ -46,23 +50,6 @@ export default function AdminLayout({
     let isMounted = true;
 
     async function verifyAdminAuthorization() {
-      // 1. Check if running in development / localhost mode
-      const isLocalhost =
-        typeof window !== "undefined" &&
-        (window.location.hostname === "localhost" ||
-          window.location.hostname === "127.0.0.1" ||
-          process.env.NODE_ENV === "development");
-
-      // In local development, grant quick access for testing
-      if (isLocalhost) {
-        if (isMounted) {
-          setIsDevOrDemo(true);
-          setIsAuthorized(true);
-        }
-        return;
-      }
-
-      // 2. Production mode: Strictly verify real session & role in public.profiles
       try {
         const supabase = createClient();
         const {
@@ -72,14 +59,14 @@ export default function AdminLayout({
         if (!session?.user) {
           if (isMounted) {
             setIsAuthorized(false);
-            router.push("/login?error=unauthorized_admin");
+            router.replace("/login?error=unauthorized_admin");
           }
           return;
         }
 
         const { data: profile, error } = await supabase
           .from("profiles")
-          .select("role")
+          .select("role, full_name")
           .eq("id", session.user.id)
           .single();
 
@@ -87,23 +74,24 @@ export default function AdminLayout({
           if (isMounted) {
             setIsAuthorized(false);
             if (profile?.role === "company") {
-              router.push("/empresa/dashboard");
+              router.replace("/empresa/dashboard");
             } else if (profile?.role === "candidate") {
-              router.push("/guarda/vacantes");
+              router.replace("/guarda/vacantes");
             } else {
-              router.push("/login?error=unauthorized_admin");
+              router.replace("/login?error=unauthorized_admin");
             }
           }
           return;
         }
 
         if (isMounted) {
+          if (profile.full_name) setAdminName(profile.full_name);
           setIsAuthorized(true);
         }
       } catch {
         if (isMounted) {
           setIsAuthorized(false);
-          router.push("/login?error=unauthorized_admin");
+          router.replace("/login?error=unauthorized_admin");
         }
       }
     }
@@ -127,6 +115,28 @@ export default function AdminLayout({
         if (compsCount !== null && compsCount !== undefined) {
           setCompaniesCount(compsCount);
         }
+
+        const { count: verCompsCount } = await supabase
+          .from("companies")
+          .select("*", { count: "exact", head: true })
+          .eq("is_verified_company", true);
+        if (verCompsCount !== null && verCompsCount !== undefined) {
+          setVerifiedCompaniesCount(verCompsCount);
+        }
+
+        const { count: candsCount } = await supabase
+          .from("candidate_profiles")
+          .select("*", { count: "exact", head: true });
+        if (candsCount !== null && candsCount !== undefined) {
+          setCandidatesCount(candsCount);
+        }
+
+        const { count: acadsCount } = await supabase
+          .from("partner_academies")
+          .select("*", { count: "exact", head: true });
+        if (acadsCount !== null && acadsCount !== undefined) {
+          setAcademiesCount(acadsCount);
+        }
       } catch {}
 
       if (typeof window !== "undefined") {
@@ -135,7 +145,7 @@ export default function AdminLayout({
           try {
             const parsed = JSON.parse(storedOrders);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              setActiveStudiesCount(parsed.length);
+              setActiveStudiesCount((prev) => Math.max(prev, parsed.length));
             }
           } catch {}
         }
@@ -145,7 +155,7 @@ export default function AdminLayout({
           try {
             const parsed = JSON.parse(storedCompanies);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              setCompaniesCount(parsed.length);
+              setCompaniesCount((prev) => Math.max(prev, parsed.length));
             }
           } catch {}
         }
@@ -176,7 +186,7 @@ export default function AdminLayout({
       name: "Red de Academias Aliadas",
       href: "/admin/academias",
       icon: GraduationCap,
-      badge: "5",
+      badge: academiesCount.toString(),
     },
     {
       name: "Planes & Tarifas B2B",
@@ -292,14 +302,19 @@ export default function AdminLayout({
           <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/80 border border-slate-800/80">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-slate-300 shrink-0">
-                RB
+                {adminName
+                  .split(" ")
+                  .map((w) => w[0])
+                  .slice(0, 2)
+                  .join("")
+                  .toUpperCase() || "SA"}
               </div>
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-slate-200 truncate">
-                  Dr. Ricardo Beltrán
+                  {adminName}
                 </p>
                 <p className="text-[10px] text-slate-400 truncate">
-                  Director de Poligrafía
+                  Dirección Operativa & Poligrafía
                 </p>
               </div>
             </div>
@@ -412,11 +427,11 @@ export default function AdminLayout({
                 </div>
                 <div>
                   <div className="text-[10px] text-slate-600 uppercase font-semibold">
-                    Facturación / Paquetes B2B
+                    Empresas Registradas
                   </div>
                   <div className="text-xs font-bold text-slate-900 tabular-nums">
-                    $18.450.000 COP{" "}
-                    <span className="text-[10px] text-emerald-600 font-semibold">(12 activos)</span>
+                    {companiesCount} Empresas{" "}
+                    <span className="text-[10px] text-emerald-600 font-semibold">(B2B)</span>
                   </div>
                 </div>
               </div>
@@ -429,10 +444,10 @@ export default function AdminLayout({
                 </div>
                 <div>
                   <div className="text-[10px] text-slate-600 uppercase font-semibold">
-                    Dictámenes Para Hoy
+                    Órdenes de Estudio
                   </div>
                   <div className="text-xs font-bold text-slate-900 tabular-nums">
-                    3 Prioritarios{" "}
+                    {activeStudiesCount} Órdenes{" "}
                     <span className="text-[10px] text-amber-600 font-semibold">(Polígrafo/Visita)</span>
                   </div>
                 </div>
@@ -449,7 +464,7 @@ export default function AdminLayout({
                     Empresas Verificadas
                   </div>
                   <div className="text-xs font-bold text-slate-900 tabular-nums">
-                    8 de 10{" "}
+                    {verifiedCompaniesCount} de {companiesCount}{" "}
                     <span className="text-[10px] text-slate-600 font-normal">(SuperVigilancia)</span>
                   </div>
                 </div>
@@ -463,10 +478,10 @@ export default function AdminLayout({
                 </div>
                 <div>
                   <div className="text-[10px] text-slate-600 uppercase font-semibold">
-                    Guardas Registrados
+                    Perfiles Operativos
                   </div>
                   <div className="text-xs font-bold text-slate-900 tabular-nums">
-                    1.428 <span className="text-[10px] text-slate-600 font-normal">Base Nacional</span>
+                    {candidatesCount} <span className="text-[10px] text-slate-600 font-normal">Base Nacional</span>
                   </div>
                 </div>
               </div>

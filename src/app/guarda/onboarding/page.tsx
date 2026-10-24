@@ -89,7 +89,7 @@ export default function OnboardingPage() {
     }
 
     loadInitialUserData();
-  }, []);
+  }, [supabase]);
   const [newDates, setNewDates] = useState("");
 
   // Files
@@ -121,22 +121,108 @@ export default function OnboardingPage() {
 
     try {
       const { data: authData } = await supabase.auth.getUser();
-      const userId = authData?.user?.id || "demo-candidate-user-id";
+      const userId = authData?.user?.id;
 
-      await supabase.from("candidate_profiles").upsert({
-        user_id: userId,
-        national_id: nationalId,
-        city,
-        locality_neighborhood: locality,
-        primary_role: primaryRole,
-        years_experience: yearsExperience,
-        has_military_booklet: hasMilitaryBooklet,
-        has_own_motorcycle: hasMotorcycle,
-        motorcycle_cc: hasMotorcycle ? motorcycleCc : null,
-        available_immediately: true,
-        resume_pdf_url: null,
-        work_experience_json: experiences as any,
-      });
+      let uploadedResumeUrl: string | null = null;
+      let uploadedCourseUrl: string | null = null;
+      let uploadedCedulaUrl: string | null = null;
+
+      if (userId) {
+        // 1. Update public.profiles
+        await supabase
+          .from("profiles")
+          .update({
+            full_name: fullName.trim() || "Personal Operativo",
+            phone_whatsapp: phone.trim(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", userId);
+
+        // 2. Upload files to Storage bucket 'documents' if provided
+        const uploadDoc = async (file: File, folder: string) => {
+          try {
+            const ext = file.name.split(".").pop() || "pdf";
+            const path = `${folder}/${userId}-${Date.now()}.${ext}`;
+            const { data: upData, error: upErr } = await supabase.storage
+              .from("documents")
+              .upload(path, file, { upsert: true });
+            if (!upErr && upData) {
+              const { data: pub } = supabase.storage
+                .from("documents")
+                .getPublicUrl(upData.path);
+              return pub.publicUrl;
+            }
+          } catch {}
+          return null;
+        };
+
+        if (resumeFile) uploadedResumeUrl = await uploadDoc(resumeFile, "resumes");
+        if (courseFile) uploadedCourseUrl = await uploadDoc(courseFile, "courses");
+        if (cedulaFile) uploadedCedulaUrl = await uploadDoc(cedulaFile, "id_cards");
+
+        // 3. Upsert candidate_profiles
+        await supabase.from("candidate_profiles").upsert(
+          {
+            user_id: userId,
+            national_id: nationalId.trim() || `CC-${userId.slice(0, 8)}`,
+            city,
+            locality_neighborhood: locality,
+            primary_role: primaryRole,
+            years_experience: yearsExperience,
+            has_military_booklet: hasMilitaryBooklet,
+            has_own_motorcycle: hasMotorcycle,
+            motorcycle_cc: hasMotorcycle ? motorcycleCc : null,
+            available_immediately: true,
+            resume_pdf_url: uploadedResumeUrl,
+            work_experience_json: experiences as any,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
+
+        // 4. Insert/update candidate_courses if completion date was provided
+        if (courseCompletionDate) {
+          await supabase.from("candidate_courses").insert({
+            candidate_id: userId,
+            course_name: `Reentrenamiento - ${primaryRole}`,
+            academy_name: courseAcademy.trim() || "Academia Autorizada SuperVigilancia",
+            completion_date: courseCompletionDate,
+            credential_number: credencialSupervigilancia.trim() || null,
+            diploma_pdf_url: uploadedCourseUrl,
+            is_verified: false,
+          });
+        }
+
+        // 5. Record documents in candidate_documents
+        const docsToInsert: any[] = [];
+        if (resumeFile && uploadedResumeUrl) {
+          docsToInsert.push({
+            candidate_id: userId,
+            document_type: "hoja_de_vida_pdf",
+            file_name: resumeFile.name,
+            file_url: uploadedResumeUrl,
+          });
+        }
+        if (courseFile && uploadedCourseUrl) {
+          docsToInsert.push({
+            candidate_id: userId,
+            document_type: "diploma_curso",
+            file_name: courseFile.name,
+            file_url: uploadedCourseUrl,
+          });
+        }
+        if (cedulaFile && uploadedCedulaUrl) {
+          docsToInsert.push({
+            candidate_id: userId,
+            document_type: "cedula_ciudadania",
+            file_name: cedulaFile.name,
+            file_url: uploadedCedulaUrl,
+          });
+        }
+        if (docsToInsert.length > 0) {
+          await supabase.from("candidate_documents").insert(docsToInsert);
+        }
+      }
 
       if (typeof window !== "undefined") {
         localStorage.setItem(
@@ -144,6 +230,7 @@ export default function OnboardingPage() {
           JSON.stringify({
             full_name: fullName,
             national_id: nationalId,
+            phone,
             city,
             locality,
             primary_role: primaryRole,
@@ -153,8 +240,8 @@ export default function OnboardingPage() {
             motorcycle_cc: motorcycleCc,
             available_immediately: true,
             course_completion_date: courseCompletionDate,
-            course_semaphore: "VIGENTE",
-            daysRemaining: 184,
+            course_academy: courseAcademy,
+            credencial_supervigilancia: credencialSupervigilancia,
           })
         );
       }

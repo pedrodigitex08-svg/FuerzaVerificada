@@ -30,6 +30,7 @@ import { createClient } from "@/lib/supabase/client";
 
 interface ATSCandidate {
   id: string;
+  candidate_user_id?: string;
   full_name: string;
   national_id: string;
   phone_whatsapp: string;
@@ -54,12 +55,14 @@ export default function ATSVacantePage() {
   const vacancyId = params?.id as string;
 
   const [candidates, setCandidates] = useState<ATSCandidate[]>([]);
+  const [companyId, setCompanyId] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState<string>("Empresa de Seguridad");
   const [vacancyTitle, setVacancyTitle] = useState<string>("Vacante de Seguridad");
   const [vacancyShift, setVacancyShift] = useState<string>("Turno rotativo");
   const [vacancyAddress, setVacancyAddress] = useState<string>("Colombia");
   const [selectedCandidateForDrawer, setSelectedCandidateForDrawer] = useState<ATSCandidate | null>(null);
   const [selectedCandidateForStudy, setSelectedCandidateForStudy] = useState<ATSCandidate | null>(null);
-  const [credits, setCredits] = useState(5);
+  const [credits, setCredits] = useState(0);
   const [filterStatus, setFilterStatus] = useState<string>("todos");
   const [searchTerm, setSearchTerm] = useState("");
   const [notificationToast, setNotificationToast] = useState<string | null>(null);
@@ -68,20 +71,48 @@ export default function ATSVacantePage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedCredits = localStorage.getItem("fv_company_credits");
-      if (savedCredits !== null) setCredits(parseInt(savedCredits, 10));
+      if (savedCredits !== null) setCredits(parseInt(savedCredits, 10) || 0);
     }
 
     async function loadVacancyAndCandidates() {
       setIsLoading(true);
       const supabase = createClient();
 
+      // 0. Load Company Info & Credits
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          const { data: comp } = await supabase
+            .from("companies")
+            .select("id, company_name, credits_security_studies")
+            .eq("owner_id", user.id)
+            .maybeSingle();
+          if (comp) {
+            setCompanyId(comp.id);
+            if (comp.company_name) setCompanyName(comp.company_name);
+            setCredits(Number(comp.credits_security_studies ?? 0));
+          }
+        }
+      } catch {}
+
       // 1. Load Vacancy Details
       try {
-        const { data: jobData } = await supabase
-          .from("jobs")
+        let { data: jobData } = await supabase
+          .from("job_posts")
           .select("*")
           .eq("id", vacancyId)
           .maybeSingle();
+
+        if (!jobData) {
+          const fb = await supabase
+            .from("jobs")
+            .select("*")
+            .eq("id", vacancyId)
+            .maybeSingle();
+          if (fb.data) jobData = fb.data;
+        }
 
         if (jobData) {
           setVacancyTitle(jobData.title);
@@ -118,11 +149,12 @@ export default function ATSVacantePage() {
             const candProf = a.candidate_profiles || {};
             return {
               id: a.id,
+              candidate_user_id: a.candidate_id,
               full_name: prof.full_name || "Aspirante",
-              national_id: prof.phone_whatsapp || "Sin cédula",
+              national_id: candProf.national_id || "En verificación",
               phone_whatsapp: prof.phone_whatsapp || "573000000000",
               city: candProf.city || "Bogotá D.C.",
-              locality: candProf.locality || "",
+              locality: candProf.locality_neighborhood || candProf.locality || "",
               primary_role: candProf.primary_role || "Vigilante Fijo",
               years_experience: candProf.years_experience || 0,
               has_military_booklet: !!candProf.has_military_booklet,
@@ -132,7 +164,7 @@ export default function ATSVacantePage() {
               resume_pdf_url: candProf.resume_pdf_url || "",
               course_semaphore: "VIGENTE",
               days_remaining: 180,
-              match_score: a.compatibility_score || 85,
+              match_score: a.match_score ?? a.compatibility_score ?? 85,
               status: a.status || "postulado",
             };
           });
@@ -164,7 +196,7 @@ export default function ATSVacantePage() {
       const supabase = createClient();
       await supabase
         .from("applications")
-        .update({ status: newStatus })
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq("id", candId);
     } catch {}
   };
@@ -176,6 +208,29 @@ export default function ATSVacantePage() {
     const newCredits = credits - 1;
     setCredits(newCredits);
 
+    try {
+      const supabase = createClient();
+      if (companyId) {
+        await supabase
+          .from("companies")
+          .update({ credits_security_studies: newCredits })
+          .eq("id", companyId);
+
+        if (selectedCandidateForStudy.candidate_user_id) {
+          await supabase.from("security_study_orders").insert({
+            company_id: companyId,
+            candidate_id: selectedCandidateForStudy.candidate_user_id,
+            application_id: selectedCandidateForStudy.id,
+            study_type: "combo_integral_poligrafo_visita",
+            status: "solicitado",
+            scheduled_date: "Programando visita domiciliaria...",
+            final_concept: "En verificación de antecedentes y prueba de poligrafía",
+            report_pdf_url: null,
+          });
+        }
+      }
+    } catch {}
+
     if (typeof window !== "undefined") {
       localStorage.setItem("fv_company_credits", newCredits.toString());
 
@@ -185,7 +240,9 @@ export default function ATSVacantePage() {
         const orders = JSON.parse(existingOrdersStr);
         orders.unshift({
           id: `order-${Date.now()}`,
+          company_name: companyName,
           candidate_name: selectedCandidateForStudy.full_name,
+          candidate_phone: selectedCandidateForStudy.phone_whatsapp,
           national_id: selectedCandidateForStudy.national_id,
           job_title: vacancyTitle,
           status: "solicitado",

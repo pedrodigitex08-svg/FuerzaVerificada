@@ -76,26 +76,45 @@ export default function PostulacionesPage() {
         } = await supabase.auth.getUser();
 
         if (user) {
-          const { data, error } = await supabase
+          let { data, error } = await supabase
             .from("applications")
-            .select("*, jobs(*, companies(*))")
+            .select("*, job_posts(*, companies(*))")
             .eq("candidate_id", user.id)
             .order("created_at", { ascending: false });
 
+          if (error || !data || data.length === 0) {
+            const fallback = await supabase
+              .from("applications")
+              .select("*, jobs(*, companies(*))")
+              .eq("candidate_id", user.id)
+              .order("created_at", { ascending: false });
+            if (!fallback.error && fallback.data && fallback.data.length > 0) {
+              data = fallback.data;
+              error = null;
+            }
+          }
+
           if (!error && data && data.length > 0) {
             setApplications(
-              data.map((app: any) => ({
-                id: app.id,
-                job_id: app.job_id,
-                job_title: app.jobs?.title || "Vacante de Seguridad",
-                company_name: app.jobs?.companies?.commercial_name || "Empresa de Seguridad",
-                shift: app.jobs?.shift || "Turno rotativo",
-                salary_monthly: app.jobs?.salary_monthly || 0,
-                interview_address: app.jobs?.zone_neighborhood || app.jobs?.city || "Oficina principal",
-                match_score: app.compatibility_score || 90,
-                status: app.status as ApplicationStatus,
-                created_at: app.created_at,
-              }))
+              data.map((app: any) => {
+                const jobObj = app.job_posts || app.jobs;
+                return {
+                  id: app.id,
+                  job_id: app.job_id,
+                  job_title: jobObj?.title || "Vacante de Seguridad",
+                  company_name:
+                    jobObj?.companies?.company_name ||
+                    jobObj?.companies?.commercial_name ||
+                    "Empresa de Seguridad",
+                  shift: jobObj?.shift || "Turno rotativo",
+                  salary_monthly: Number(jobObj?.salary_monthly) || 0,
+                  interview_address:
+                    jobObj?.zone_neighborhood || jobObj?.city || "Oficina principal",
+                  match_score: app.match_score ?? app.compatibility_score ?? 90,
+                  status: app.status as ApplicationStatus,
+                  created_at: app.created_at,
+                };
+              })
             );
             setIsLoading(false);
             return;

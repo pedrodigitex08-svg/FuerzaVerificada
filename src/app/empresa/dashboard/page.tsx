@@ -21,17 +21,19 @@ import { JobPost, ApplicationStatus, SecurityStudyStatus } from "@/types/databas
 import { createClient } from "@/lib/supabase/client";
 
 export default function EmpresaDashboardPage() {
-  const [credits, setCredits] = useState(5);
+  const [credits, setCredits] = useState(0);
   const [isVerifiedCompany, setIsVerifiedCompany] = useState<boolean>(true);
   const [vacancies, setVacancies] = useState<any[]>([]);
   const [recentStudies, setRecentStudies] = useState<any[]>([]);
+  const [totalApplicantsCount, setTotalApplicantsCount] = useState(0);
+  const [reliefCount, setReliefCount] = useState(0);
 
   useEffect(() => {
     const supabase = createClient();
 
     if (typeof window !== "undefined") {
       const savedCredits = localStorage.getItem("fv_company_credits");
-      if (savedCredits !== null) setCredits(parseInt(savedCredits, 10));
+      if (savedCredits !== null) setCredits(parseInt(savedCredits, 10) || 0);
 
       const savedVerified = localStorage.getItem("fv_company_verified");
       if (savedVerified !== null) {
@@ -40,29 +42,90 @@ export default function EmpresaDashboardPage() {
     }
 
     async function loadDashboardData() {
+      let currentCompanyId: string | null = null;
+
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          const { data: comp } = await supabase
+            .from("companies")
+            .select("*")
+            .eq("owner_id", user.id)
+            .maybeSingle();
+
+          if (comp) {
+            currentCompanyId = comp.id;
+            setCredits(Number(comp.credits_security_studies ?? 0));
+            setIsVerifiedCompany(Boolean(comp.is_verified_company));
+          }
+        }
+      } catch {}
+
+      // 0. Count available relief candidates
+      try {
+        const { count: rCount } = await supabase
+          .from("candidate_profiles")
+          .select("*", { count: "exact", head: true })
+          .eq("available_immediately", true);
+        if (rCount !== null && rCount !== undefined) {
+          setReliefCount(rCount);
+        }
+      } catch {}
+
       // 1. Load real vacancies from Supabase / localStorage
       try {
-        const { data: jobsData, error: jobsError } = await supabase
-          .from("jobs")
-          .select("*")
+        let query = supabase
+          .from("job_posts")
+          .select("*, applications(count)")
           .order("created_at", { ascending: false })
           .limit(5);
 
+        if (currentCompanyId) {
+          query = query.eq("company_id", currentCompanyId);
+        }
+
+        let { data: jobsData, error: jobsError } = await query;
+
+        if (jobsError || !jobsData || jobsData.length === 0) {
+          let fbQuery = supabase
+            .from("jobs")
+            .select("*, applications(count)")
+            .order("created_at", { ascending: false })
+            .limit(5);
+          if (currentCompanyId) {
+            fbQuery = fbQuery.eq("company_id", currentCompanyId);
+          }
+          const fb = await fbQuery;
+          if (!fb.error && fb.data && fb.data.length > 0) {
+            jobsData = fb.data;
+            jobsError = null;
+          }
+        }
+
         if (!jobsError && jobsData && jobsData.length > 0) {
+          let appsTotal = 0;
           setVacancies(
-            jobsData.map((j) => ({
-              id: j.id,
-              title: j.title,
-              role_required: j.role_required,
-              shift: j.shift,
-              salary: j.salary_monthly,
-              zone: j.zone_neighborhood || j.city,
-              applicants_count: 0,
-              avg_match: 90,
-              is_urgent: j.is_urgent_relief,
-              created_at: new Date(j.created_at).toLocaleDateString("es-CO"),
-            }))
+            jobsData.map((j: any) => {
+              const appCount = j.applications?.[0]?.count ?? 0;
+              appsTotal += appCount;
+              return {
+                id: j.id,
+                title: j.title,
+                role_required: j.role_required,
+                shift: j.shift,
+                salary: j.salary_monthly,
+                zone: j.zone_neighborhood || j.city,
+                applicants_count: appCount,
+                avg_match: 90,
+                is_urgent: j.is_urgent_relief,
+                created_at: new Date(j.created_at).toLocaleDateString("es-CO"),
+              };
+            })
           );
+          setTotalApplicantsCount(appsTotal);
         } else if (typeof window !== "undefined") {
           const localJobs = localStorage.getItem("fv_company_jobs");
           if (localJobs) {
@@ -91,18 +154,36 @@ export default function EmpresaDashboardPage() {
 
       // 2. Load real security study orders
       try {
-        const { data: studiesData, error: studiesError } = await supabase
+        let sQuery = supabase
           .from("security_study_orders")
           .select("*, profiles(*)")
           .order("created_at", { ascending: false })
           .limit(5);
 
+        if (currentCompanyId) {
+          sQuery = sQuery.eq("company_id", currentCompanyId);
+        }
+
+        const { data: studiesData, error: studiesError } = await sQuery;
+
         if (!studiesError && studiesData && studiesData.length > 0) {
+          const candIds = studiesData.map((s: any) => s.candidate_id).filter(Boolean);
+          const { data: candProfs } =
+            candIds.length > 0
+              ? await supabase
+                  .from("candidate_profiles")
+                  .select("user_id, national_id")
+                  .in("user_id", candIds)
+              : { data: [] as any[] };
+          const natMap = new Map(
+            (candProfs || []).map((cp: any) => [cp.user_id, cp.national_id])
+          );
+
           setRecentStudies(
-            studiesData.map((s) => ({
+            studiesData.map((s: any) => ({
               id: s.id,
               candidate_name: s.profiles?.full_name || "Aspirante",
-              national_id: s.profiles?.phone_whatsapp || "Sin documento",
+              national_id: natMap.get(s.candidate_id) || "En verificación",
               job_title: "Estudio Solicitado",
               status: s.status,
               concept: s.final_concept || "En proceso de validación",
@@ -180,19 +261,12 @@ export default function EmpresaDashboardPage() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setIsVerifiedCompany(true);
-              if (typeof window !== "undefined") {
-                localStorage.setItem("fv_company_verified", "true");
-              }
-            }}
+          <Link
+            href="/precios-empresas"
             className="btn-secondary text-[11px] py-1.5 px-3 shrink-0 font-bold text-amber-900 border-amber-300 hover:bg-amber-100"
-            title="Simular validación exitosa de NIT para pruebas"
           >
-            Validar NIT (Demo)
-          </button>
+            Planes para Empresas
+          </Link>
         </div>
       )}
 
@@ -232,7 +306,7 @@ export default function EmpresaDashboardPage() {
           </div>
           <div className="mt-4">
             <div className="text-3xl font-extrabold text-slate-900 font-mono tabular-nums">
-              0
+              {totalApplicantsCount}
             </div>
             <span className="text-[11px] text-slate-500 font-medium mt-0.5 block">
               Aspirantes postulados a tus procesos
@@ -275,7 +349,7 @@ export default function EmpresaDashboardPage() {
           </div>
           <div className="mt-4">
             <div className="text-3xl font-extrabold text-slate-900 font-mono tabular-nums">
-              0
+              {reliefCount}
             </div>
             <span className="text-[11px] text-slate-500 mt-0.5 block">
               Personal activo en radar hoy
@@ -404,7 +478,7 @@ export default function EmpresaDashboardPage() {
                 Solicita estudios de seguridad, antecedentes o pruebas de polígrafo para tus candidatos.
               </p>
               <div className="mt-3">
-                <Link href="/empresa/estudios/nuevo" className="btn-secondary text-xs py-1.5 px-3 inline-flex">
+                <Link href="/empresa/estudios" className="btn-secondary text-xs py-1.5 px-3 inline-flex">
                   Solicitar Evaluación
                 </Link>
               </div>

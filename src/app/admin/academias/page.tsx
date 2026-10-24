@@ -22,6 +22,7 @@ import {
 import { PartnerAcademy } from "@/types/database";
 import { INITIAL_DEMO_ACADEMIES, initializeSeedData } from "@/lib/utils/seedData";
 import { generateAcademyRenewalLink } from "@/lib/utils/whatsappTemplates";
+import { createClient } from "@/lib/supabase/client";
 
 export default function AdminAcademiasPage() {
   const [academies, setAcademies] = useState<PartnerAcademy[]>([]);
@@ -39,8 +40,25 @@ export default function AdminAcademiasPage() {
   const [isActive, setIsActive] = useState(true);
 
   useEffect(() => {
-    const { academies: seededAcademies } = initializeSeedData(false);
-    setAcademies(seededAcademies);
+    async function loadAcademies() {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("partner_academies")
+          .select("*")
+          .order("name", { ascending: true });
+
+        if (!error && data && data.length > 0) {
+          setAcademies(data as PartnerAcademy[]);
+          return;
+        }
+      } catch {}
+
+      const { academies: seededAcademies } = initializeSeedData(false);
+      setAcademies(seededAcademies);
+    }
+
+    loadAcademies();
   }, []);
 
   const syncAcademies = (updated: PartnerAcademy[]) => {
@@ -72,10 +90,12 @@ export default function AdminAcademiasPage() {
     setIsModalOpen(true);
   };
 
-  const handleToggleActive = (acadId: string) => {
+  const handleToggleActive = async (acadId: string) => {
+    let nextActiveForDb = false;
     const updated = academies.map((a) => {
       if (a.id === acadId) {
         const next = !a.is_active;
+        nextActiveForDb = next;
         setNotification(
           next
             ? `Convenio con "${a.name}" activado. Los guardas en ${a.city} serán redirigidos a su WhatsApp.`
@@ -86,12 +106,23 @@ export default function AdminAcademiasPage() {
       return a;
     });
     syncAcademies(updated);
+
+    try {
+      const supabase = createClient();
+      await supabase
+        .from("partner_academies")
+        .update({ is_active: nextActiveForDb })
+        .eq("id", acadId);
+    } catch {}
+
     setTimeout(() => setNotification(null), 3500);
   };
 
-  const handleSaveAcademy = (e: React.FormEvent) => {
+  const handleSaveAcademy = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !whatsappNumber) return;
+
+    const supabase = createClient();
 
     if (editingAcademy) {
       const updated = academies.map((a) =>
@@ -108,6 +139,21 @@ export default function AdminAcademiasPage() {
           : a
       );
       syncAcademies(updated);
+
+      try {
+        await supabase
+          .from("partner_academies")
+          .update({
+            name,
+            city,
+            whatsapp_number: whatsappNumber,
+            discount_text: discountText,
+            referral_code: referralCode,
+            is_active: isActive,
+          })
+          .eq("id", editingAcademy.id);
+      } catch {}
+
       setNotification(`Academia "${name}" actualizada correctamente.`);
     } else {
       const newAcad: PartnerAcademy = {
@@ -119,6 +165,26 @@ export default function AdminAcademiasPage() {
         referral_code: referralCode,
         is_active: isActive,
       };
+
+      try {
+        const { data: inserted } = await supabase
+          .from("partner_academies")
+          .insert({
+            name,
+            city,
+            whatsapp_number: whatsappNumber,
+            discount_text: discountText,
+            referral_code: referralCode,
+            is_active: isActive,
+          })
+          .select("*")
+          .maybeSingle();
+
+        if (inserted) {
+          newAcad.id = inserted.id;
+        }
+      } catch {}
+
       const updated = [newAcad, ...academies];
       syncAcademies(updated);
       setNotification(`Nueva academia "${name}" registrada en el convenio.`);
@@ -128,10 +194,16 @@ export default function AdminAcademiasPage() {
     setTimeout(() => setNotification(null), 3500);
   };
 
-  const handleDeleteAcademy = (acadId: string, acadName: string) => {
+  const handleDeleteAcademy = async (acadId: string, acadName: string) => {
     if (!confirm(`¿Eliminar la academia "${acadName}" del listado de convenios?`)) return;
     const updated = academies.filter((a) => a.id !== acadId);
     syncAcademies(updated);
+
+    try {
+      const supabase = createClient();
+      await supabase.from("partner_academies").delete().eq("id", acadId);
+    } catch {}
+
     setNotification(`Academia "${acadName}" eliminada del sistema.`);
     setTimeout(() => setNotification(null), 3000);
   };

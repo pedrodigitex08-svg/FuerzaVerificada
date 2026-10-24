@@ -72,11 +72,23 @@ function VacantesContent() {
   useEffect(() => {
     async function fetchRealJobs() {
       try {
-        const { data, error } = await supabase
-          .from("jobs")
+        let { data, error } = await supabase
+          .from("job_posts")
           .select("*, companies(company_name, is_verified_company)")
           .eq("is_active", true)
           .order("created_at", { ascending: false });
+
+        if (error || !data || data.length === 0) {
+          const fallback = await supabase
+            .from("jobs")
+            .select("*, companies(company_name, is_verified_company)")
+            .eq("is_active", true)
+            .order("created_at", { ascending: false });
+          if (!fallback.error && fallback.data && fallback.data.length > 0) {
+            data = fallback.data;
+            error = null;
+          }
+        }
 
         if (!error && data && data.length > 0) {
           const mapped: JobPostWithCompany[] = data.map((j: any) => ({
@@ -143,7 +155,84 @@ function VacantesContent() {
         } catch {}
       }
     }
-  }, []);
+
+    async function loadCandidateState() {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // 1. Load candidate_profiles
+        const { data: candProf } = await supabase
+          .from("candidate_profiles")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        // 2. Load candidate_courses
+        const { data: course } = await supabase
+          .from("candidate_courses")
+          .select("*")
+          .eq("candidate_id", user.id)
+          .order("completion_date", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (candProf || course) {
+          let semaphore: CourseSemaphore = "SIN_CURSO";
+          let daysRem = 0;
+
+          if (course?.completion_date) {
+            const expDate = new Date(course.completion_date);
+            expDate.setFullYear(expDate.getFullYear() + 1);
+            const diffDays = Math.ceil(
+              (expDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+            );
+            daysRem = diffDays;
+            if (diffDays > 30) semaphore = "VIGENTE";
+            else if (diffDays >= 0) semaphore = "PROXIMO_A_VENCER";
+            else semaphore = "VENCIDO";
+          }
+
+          setCandidateProfile((prev) => ({
+            ...prev,
+            city: candProf?.city || prev.city,
+            primary_role: candProf?.primary_role || prev.primary_role,
+            years_experience:
+              candProf?.years_experience !== undefined
+                ? candProf.years_experience
+                : prev.years_experience,
+            has_military_booklet:
+              candProf?.has_military_booklet ?? prev.has_military_booklet,
+            has_own_motorcycle:
+              candProf?.has_own_motorcycle ?? prev.has_own_motorcycle,
+            motorcycle_cc: candProf?.motorcycle_cc || prev.motorcycle_cc,
+            available_immediately:
+              candProf?.available_immediately ?? prev.available_immediately,
+            course_semaphore: course ? semaphore : prev.course_semaphore,
+            daysRemaining: course ? daysRem : prev.daysRemaining,
+          }));
+        }
+
+        // 3. Load existing applications to prevent duplicate submissions
+        const { data: apps } = await supabase
+          .from("applications")
+          .select("job_id")
+          .eq("candidate_id", user.id);
+
+        if (apps && apps.length > 0) {
+          const map: Record<string, boolean> = {};
+          apps.forEach((a: any) => {
+            if (a.job_id) map[a.job_id] = true;
+          });
+          setAppliedJobIds((prev) => ({ ...prev, ...map }));
+        }
+      } catch {}
+    }
+
+    loadCandidateState();
+  }, [supabase]);
 
   const handleApply = async (job: JobPostWithCompany) => {
     // 1. Bloqueo de Acciones sin Sesión: Intercepta y redirige a /login

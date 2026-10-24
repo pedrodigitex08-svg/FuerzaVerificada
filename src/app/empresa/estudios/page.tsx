@@ -42,18 +42,52 @@ export default function EmpresaEstudiosPage() {
       const supabase = createClient();
 
       try {
-        const { data, error } = await supabase
+        let currentCompanyId: string | null = null;
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          const { data: comp } = await supabase
+            .from("companies")
+            .select("id")
+            .eq("owner_id", user.id)
+            .maybeSingle();
+          if (comp?.id) currentCompanyId = comp.id;
+        }
+
+        let sQuery = supabase
           .from("security_study_orders")
           .select("*, profiles(*)")
           .order("created_at", { ascending: false });
 
+        if (currentCompanyId) {
+          sQuery = sQuery.eq("company_id", currentCompanyId);
+        }
+
+        const { data, error } = await sQuery;
+
         if (!error && data && data.length > 0) {
+          const candIds = data.map((s: any) => s.candidate_id).filter(Boolean);
+          const { data: candProfs } =
+            candIds.length > 0
+              ? await supabase
+                  .from("candidate_profiles")
+                  .select("user_id, national_id")
+                  .in("user_id", candIds)
+              : { data: [] as any[] };
+          const natMap = new Map(
+            (candProfs || []).map((cp: any) => [cp.user_id, cp.national_id])
+          );
+
           setOrders(
             data.map((s: any) => ({
               id: s.id,
               candidate_name: s.profiles?.full_name || "Aspirante",
-              national_id: s.profiles?.phone_whatsapp || "Sin documento",
-              job_title: "Estudio Solicitado",
+              national_id: natMap.get(s.candidate_id) || "En verificación",
+              job_title: s.study_type
+                ? s.study_type.replace(/_/g, " ").toUpperCase()
+                : "Estudio Solicitado",
               status: s.status as SecurityStudyStatus,
               scheduled_date: s.scheduled_date || "En programación",
               final_concept: s.final_concept || "En proceso de validación",

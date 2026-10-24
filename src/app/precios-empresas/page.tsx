@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Shield,
   Check,
@@ -28,10 +29,19 @@ import {
 } from "@/lib/utils/subscriptionPlans";
 import { SubscriptionPlan } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/lib/supabase/useAuth";
 
 export default function PricingPage() {
+  const router = useRouter();
+  const { role, isLoading: authLoading } = useAuth();
   const [plans, setPlans] = useState<SubscriptionPlan[]>(getStoredPlans());
   const [salesPhone, setSalesPhone] = useState(getStoredWhatsAppSalesNumber());
+
+  useEffect(() => {
+    if (!authLoading && role === "candidate") {
+      router.replace("/guarda/vacantes");
+    }
+  }, [authLoading, role, router]);
 
   useEffect(() => {
     async function loadData() {

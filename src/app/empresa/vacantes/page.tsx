@@ -40,21 +40,56 @@ export default function EmpresaVacantesListPage() {
       const supabase = createClient();
 
       try {
-        const { data, error } = await supabase
-          .from("jobs")
-          .select("*")
+        let currentCompanyId: string | null = null;
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          const { data: comp } = await supabase
+            .from("companies")
+            .select("id")
+            .eq("owner_id", user.id)
+            .maybeSingle();
+          if (comp?.id) currentCompanyId = comp.id;
+        }
+
+        let query = supabase
+          .from("job_posts")
+          .select("*, applications(count)")
           .order("created_at", { ascending: false });
+
+        if (currentCompanyId) {
+          query = query.eq("company_id", currentCompanyId);
+        }
+
+        let { data, error } = await query;
+
+        if (error || !data || data.length === 0) {
+          let fbQuery = supabase
+            .from("jobs")
+            .select("*, applications(count)")
+            .order("created_at", { ascending: false });
+          if (currentCompanyId) {
+            fbQuery = fbQuery.eq("company_id", currentCompanyId);
+          }
+          const fb = await fbQuery;
+          if (!fb.error && fb.data && fb.data.length > 0) {
+            data = fb.data;
+            error = null;
+          }
+        }
 
         if (!error && data && data.length > 0) {
           setVacancies(
-            data.map((j) => ({
+            data.map((j: any) => ({
               id: j.id,
               title: j.title,
               role: j.role_required || "Seguridad",
               shift: j.shift || "Turno rotativo",
               salary: j.salary_monthly || 0,
               zone: j.zone_neighborhood || j.city || "Colombia",
-              applicants_count: 0,
+              applicants_count: j.applications?.[0]?.count ?? 0,
               avg_match: 90,
               is_urgent: !!j.is_urgent_relief,
               status: j.is_active ? "Activa" : "Pausada",

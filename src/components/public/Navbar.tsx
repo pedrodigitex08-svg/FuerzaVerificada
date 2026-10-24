@@ -96,6 +96,12 @@ export function Navbar() {
               >
                 Mi Hoja de Vida
               </Link>
+              <Link
+                href="/guarda/documentos"
+                className="hover:text-[#0F172A] transition-colors"
+              >
+                Mis Cursos
+              </Link>
             </>
           )}
 
@@ -113,6 +119,12 @@ export function Navbar() {
                 className="hover:text-[#0F172A] transition-colors"
               >
                 Empresas B2B
+              </Link>
+              <Link
+                href="/admin/academias"
+                className="hover:text-[#0F172A] transition-colors"
+              >
+                Academias Aliadas
               </Link>
               <Link
                 href="/admin/planes"
@@ -214,9 +226,9 @@ export function Navbar() {
           {!isAuthenticated && (
             <Link
               href="/login"
-              className="text-xs font-semibold text-[#1E293B] px-2.5 py-1.5"
+              className="bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl px-3 py-1.5 text-xs font-semibold shadow-sm transition-all"
             >
-              Entrar
+              Ingresar / Registrarse
             </Link>
           )}
           <button
@@ -309,6 +321,13 @@ export function Navbar() {
               >
                 Mi Hoja de Vida
               </Link>
+              <Link
+                href="/guarda/documentos"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
+              >
+                Mis Cursos y Documentos
+              </Link>
             </>
           )}
 
@@ -328,6 +347,13 @@ export function Navbar() {
                 className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
               >
                 Empresas & Recarga B2B
+              </Link>
+              <Link
+                href="/admin/academias"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
+              >
+                Red de Academias Aliadas
               </Link>
               <Link
                 href="/admin/planes"

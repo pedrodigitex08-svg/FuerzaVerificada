@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Company } from "@/types/database";
 import { INITIAL_DEMO_COMPANIES, initializeSeedData } from "@/lib/utils/seedData";
+import { createClient } from "@/lib/supabase/client";
 
 export default function AdminEmpresasPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -47,8 +48,25 @@ export default function AdminEmpresasPage() {
   const [newCompanyInitialCredits, setNewCompanyInitialCredits] = useState(5);
 
   useEffect(() => {
-    const { companies: seededCompanies } = initializeSeedData(false);
-    setCompanies(seededCompanies);
+    async function loadCompanies() {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("companies")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          setCompanies(data as Company[]);
+          return;
+        }
+      } catch {}
+
+      const { companies: seededCompanies } = initializeSeedData(false);
+      setCompanies(seededCompanies);
+    }
+
+    loadCompanies();
   }, []);
 
   // Save to localStorage helper
@@ -60,10 +78,12 @@ export default function AdminEmpresasPage() {
   };
 
   // Toggle Verification Switch
-  const handleToggleVerification = (companyId: string) => {
+  const handleToggleVerification = async (companyId: string) => {
+    let nextStatusForDb = false;
     const updated = companies.map((c) => {
       if (c.id === companyId) {
         const nextStatus = !c.is_verified_company;
+        nextStatusForDb = nextStatus;
         setNotification(
           nextStatus
             ? `Empresa "${c.company_name}" verificada ante SuperVigilancia (Sello Dorado Activo).`
@@ -74,52 +94,75 @@ export default function AdminEmpresasPage() {
       return c;
     });
     syncCompanies(updated);
+
+    try {
+      const supabase = createClient();
+      await supabase
+        .from("companies")
+        .update({ is_verified_company: nextStatusForDb })
+        .eq("id", companyId);
+    } catch {}
+
     setTimeout(() => setNotification(null), 3500);
   };
 
   // Handle Recharge Confirmation
-  const handleConfirmRecharge = () => {
+  const handleConfirmRecharge = async () => {
     if (!selectedCompanyForRecharge) return;
     setIsProcessing(true);
 
-    setTimeout(() => {
-      const updated = companies.map((c) => {
-        if (c.id === selectedCompanyForRecharge.id) {
-          const nextCredits = c.credits_security_studies + creditAmount;
-          return {
-            ...c,
-            plan_name: selectedPlan,
-            credits_security_studies: nextCredits,
-          };
-        }
-        return c;
-      });
+    const targetCompany = selectedCompanyForRecharge;
+    const nextCredits = (targetCompany.credits_security_studies || 0) + creditAmount;
 
-      syncCompanies(updated);
+    try {
+      const supabase = createClient();
+      await supabase
+        .from("companies")
+        .update({
+          plan_name: selectedPlan,
+          credits_security_studies: nextCredits,
+        })
+        .eq("id", targetCompany.id);
+    } catch {}
 
-      // Sync company credits in company session if it's the active demo
-      if (typeof window !== "undefined") {
-        const currentActiveCredits = parseInt(localStorage.getItem("fv_company_credits") || "5", 10);
-        localStorage.setItem("fv_company_credits", (currentActiveCredits + creditAmount).toString());
+    const updated = companies.map((c) => {
+      if (c.id === targetCompany.id) {
+        return {
+          ...c,
+          plan_name: selectedPlan,
+          credits_security_studies: nextCredits,
+        };
       }
+      return c;
+    });
 
-      setNotification(
-        `¡Se acreditaron +${creditAmount} créditos B2B a "${selectedCompanyForRecharge.company_name}" bajo el plan ${selectedPlan.toUpperCase()}!`
-      );
-      setIsProcessing(false);
-      setSelectedCompanyForRecharge(null);
-      setTimeout(() => setNotification(null), 4000);
-    }, 400);
+    syncCompanies(updated);
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("fv_company_credits", nextCredits.toString());
+    }
+
+    setNotification(
+      `¡Se acreditaron +${creditAmount} créditos B2B a "${targetCompany.company_name}" bajo el plan ${selectedPlan.toUpperCase()}!`
+    );
+    setIsProcessing(false);
+    setSelectedCompanyForRecharge(null);
+    setTimeout(() => setNotification(null), 4000);
   };
 
   // Handle Create Company
-  const handleCreateCompany = (e: React.FormEvent) => {
+  const handleCreateCompany = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCompanyName || !newCompanyNit) return;
 
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     const newComp: Company = {
       id: `comp-${Date.now()}`,
-      owner_id: `usr-comp-${Date.now()}`,
+      owner_id: user?.id || `usr-comp-${Date.now()}`,
       company_name: newCompanyName,
       nit: newCompanyNit,
       supervigilancia_license: newCompanyLicense || "En proceso de validación",
@@ -133,6 +176,31 @@ export default function AdminEmpresasPage() {
       credits_security_studies: newCompanyInitialCredits,
       created_at: new Date().toISOString(),
     };
+
+    try {
+      if (user?.id) {
+        const { data: inserted } = await supabase
+          .from("companies")
+          .insert({
+            owner_id: user.id,
+            company_name: newComp.company_name,
+            nit: newComp.nit,
+            supervigilancia_license: newComp.supervigilancia_license,
+            city: newComp.city,
+            contact_person: newComp.contact_person,
+            contact_phone: newComp.contact_phone,
+            is_verified_company: true,
+            plan_name: "pack_operativo",
+            credits_security_studies: newCompanyInitialCredits,
+          })
+          .select("*")
+          .maybeSingle();
+
+        if (inserted) {
+          newComp.id = inserted.id;
+        }
+      }
+    } catch {}
 
     const updated = [newComp, ...companies];
     syncCompanies(updated);

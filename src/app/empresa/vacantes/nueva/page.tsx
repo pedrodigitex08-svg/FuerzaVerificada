@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -47,19 +47,18 @@ export default function NuevaVacantePage() {
 
   const [loading, setLoading] = useState(false);
   const [successToast, setSuccessToast] = useState(false);
+  const [companyName, setCompanyName] = useState("Empresa de Seguridad");
 
   // Form Fields
-  const [title, setTitle] = useState("Vigilante Fijo - Centro Comercial");
+  const [title, setTitle] = useState("");
   const [roleRequired, setRoleRequired] = useState<SecurityRoleType>("Vigilante Fijo");
   const [city, setCity] = useState("Bogotá D.C.");
-  const [zone, setZone] = useState("Chicó Norte");
+  const [zone, setZone] = useState("");
   const [shift, setShift] = useState(SHIFTS[0]);
   const [salaryMonthly, setSalaryMonthly] = useState(1950000);
   const [includesSurcharges, setIncludesSurcharges] = useState(true);
-  const [description, setDescription] = useState(
-    "Control de accesos peatonales, inspección de paquetes y atención a usuarios. Indispensable curso de vigilancia al día y excelente presentación personal."
-  );
-  const [interviewAddress, setInterviewAddress] = useState("Cra 15 # 98-42, Oficina 301, Bogotá");
+  const [description, setDescription] = useState("");
+  const [interviewAddress, setInterviewAddress] = useState("");
 
   // Exclusions
   const [requiresCourse, setRequiresCourse] = useState(true);
@@ -70,20 +69,92 @@ export default function NuevaVacantePage() {
   const [isStrictFilter, setIsStrictFilter] = useState(true);
   const [isUrgentRelief, setIsUrgentRelief] = useState(false);
 
+  useEffect(() => {
+    async function loadCompanyInfo() {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: comp } = await supabase
+          .from("companies")
+          .select("company_name, city")
+          .eq("owner_id", user.id)
+          .maybeSingle();
+
+        if (comp?.company_name) {
+          setCompanyName(comp.company_name);
+          if (comp.city) setCity(comp.city);
+          return;
+        }
+
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (prof?.full_name) setCompanyName(prof.full_name);
+      } catch {}
+    }
+
+    loadCompanyInfo();
+  }, [supabase]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       const { data: authData } = await supabase.auth.getUser();
-      const userId = authData?.user?.id || "demo-company-user-id";
+      const userId = authData?.user?.id;
+      let resolvedCompanyId = userId || "demo-company-id";
+      let resolvedCompanyName = companyName;
+      let resolvedVerified = true;
 
-      await supabase.from("job_posts").insert({
-        company_id: userId,
-        title,
+      if (userId) {
+        const { data: existingComp } = await supabase
+          .from("companies")
+          .select("id, company_name, is_verified_company")
+          .eq("owner_id", userId)
+          .maybeSingle();
+
+        if (existingComp) {
+          resolvedCompanyId = existingComp.id;
+          resolvedCompanyName = existingComp.company_name || companyName;
+          resolvedVerified = Boolean(existingComp.is_verified_company);
+        } else {
+          // Auto-create company record if company user does not have one yet
+          const { data: createdComp } = await supabase
+            .from("companies")
+            .insert({
+              owner_id: userId,
+              company_name: companyName || "Empresa de Seguridad",
+              nit: `900.${Math.floor(100000 + Math.random() * 900000)}-1`,
+              city,
+              contact_person: companyName || "Dirección de Selección",
+              contact_phone: "3000000000",
+              is_verified_company: false,
+              plan_name: "basico",
+              credits_security_studies: 0,
+            })
+            .select("id, company_name, is_verified_company")
+            .maybeSingle();
+
+          if (createdComp) {
+            resolvedCompanyId = createdComp.id;
+            resolvedCompanyName = createdComp.company_name;
+            resolvedVerified = Boolean(createdComp.is_verified_company);
+          }
+        }
+      }
+
+      const payload = {
+        company_id: resolvedCompanyId,
+        title: title.trim() || `${roleRequired} - ${city}`,
         role_required: roleRequired,
         city,
-        zone_neighborhood: zone,
+        zone_neighborhood: zone.trim() || "Zona Principal",
         shift,
         salary_monthly: salaryMonthly,
         includes_surcharges: includesSurcharges,
@@ -94,15 +165,41 @@ export default function NuevaVacantePage() {
         min_experience_years: minExperienceYears,
         is_strict_filter: isStrictFilter,
         is_urgent_relief: isUrgentRelief,
-        description,
-        interview_address: interviewAddress,
+        description:
+          description.trim() ||
+          "Control de accesos, rondas preventivas y cumplimiento de protocolos de seguridad.",
+        interview_address: interviewAddress.trim() || null,
         is_active: true,
-      });
+      };
+
+      const { data: insertedJob, error: jobPostErr } = await supabase
+        .from("job_posts")
+        .insert(payload)
+        .select("*")
+        .maybeSingle();
+
+      if (jobPostErr) {
+        await supabase.from("jobs").insert(payload);
+      }
+
+      if (typeof window !== "undefined") {
+        const existingLocal = JSON.parse(
+          localStorage.getItem("fv_company_jobs") || "[]"
+        );
+        existingLocal.unshift({
+          id: insertedJob?.id || `job-${Date.now()}`,
+          ...payload,
+          company_name: resolvedCompanyName,
+          is_verified_company: resolvedVerified,
+          created_at: new Date().toISOString(),
+        });
+        localStorage.setItem("fv_company_jobs", JSON.stringify(existingLocal));
+      }
 
       setSuccessToast(true);
       setTimeout(() => {
         router.push("/empresa/vacantes");
-      }, 1400);
+      }, 1200);
     } catch {
       router.push("/empresa/vacantes");
     } finally {
@@ -436,13 +533,15 @@ export default function NuevaVacantePage() {
 
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs text-slate-500 font-medium">Seguridad Andina Ltda.</span>
+                <span className="text-xs text-slate-500 font-medium">{companyName}</span>
                 <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">
                   <Shield className="w-2.5 h-2.5 fill-amber-500/30" />
                   Auditada
                 </span>
               </div>
-              <h3 className="text-base font-bold text-slate-900 mt-0.5">{title}</h3>
+              <h3 className="text-base font-bold text-slate-900 mt-0.5">
+                {title || `${roleRequired} - ${city}`}
+              </h3>
             </div>
 
             <div className="p-3 rounded-xl bg-slate-900 text-white flex items-center justify-between">

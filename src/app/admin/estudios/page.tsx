@@ -22,6 +22,7 @@ import {
 import { DemoSecurityOrder, initializeSeedData } from "@/lib/utils/seedData";
 import { SecurityStudyStatus } from "@/types/database";
 import { AdminStudyDrawerModal } from "@/components/admin/AdminStudyDrawerModal";
+import { createClient } from "@/lib/supabase/client";
 
 export default function AdminEstudiosPage() {
   const [orders, setOrders] = useState<DemoSecurityOrder[]>([]);
@@ -30,20 +31,96 @@ export default function AdminEstudiosPage() {
   const [selectedOrderForDrawer, setSelectedOrderForDrawer] = useState<DemoSecurityOrder | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
 
-  // Initialize data from seed or localStorage
-  useEffect(() => {
+  const loadOrdersFromSupabase = async () => {
+    const supabase = createClient();
+    try {
+      const { data, error } = await supabase
+        .from("security_study_orders")
+        .select("*, companies(*), profiles(*)")
+        .order("created_at", { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        const candIds = data.map((s: any) => s.candidate_id).filter(Boolean);
+        const { data: candProfs } =
+          candIds.length > 0
+            ? await supabase
+                .from("candidate_profiles")
+                .select("user_id, national_id, city, locality_neighborhood, resume_pdf_url")
+                .in("user_id", candIds)
+            : { data: [] as any[] };
+        const candMap = new Map(
+          (candProfs || []).map((cp: any) => [cp.user_id, cp])
+        );
+
+        const mapped: DemoSecurityOrder[] = data.map((s: any) => {
+          const cp = candMap.get(s.candidate_id);
+          return {
+            id: s.id,
+            company_id: s.company_id,
+            company_name: s.companies?.company_name || "Empresa Solicitante",
+            company_phone: s.companies?.contact_phone || "3150000000",
+            candidate_id: s.candidate_id,
+            candidate_name: s.profiles?.full_name || "Aspirante",
+            candidate_phone: s.profiles?.phone_whatsapp || "3000000000",
+            candidate_address:
+              cp?.locality_neighborhood && cp?.city
+                ? `${cp.locality_neighborhood}, ${cp.city}`
+                : cp?.city || "Por confirmar",
+            national_id: cp?.national_id || "En verificación",
+            job_title: s.study_type
+              ? s.study_type.replace(/_/g, " ").toUpperCase()
+              : "Estudio Integral",
+            study_type: s.study_type || "combo_integral_poligrafo_visita",
+            status: (s.status as SecurityStudyStatus) || "solicitado",
+            scheduled_date: s.scheduled_date || "Por agendar",
+            final_concept: s.final_concept || "",
+            report_pdf_url: s.report_pdf_url || null,
+            resume_pdf_url: cp?.resume_pdf_url || null,
+            course_diploma_url: null,
+            include_polygraph: true,
+            include_home_visit: true,
+            include_background_study: true,
+            created_at: s.created_at,
+          };
+        });
+        setOrders(mapped);
+        return;
+      }
+    } catch {}
+
     const { orders: seededOrders } = initializeSeedData(false);
     setOrders(seededOrders);
+  };
+
+  useEffect(() => {
+    loadOrdersFromSupabase();
   }, []);
 
-  // Save updated order
-  const handleSaveOrder = (updated: DemoSecurityOrder) => {
+  // Save updated order to Supabase & localStorage
+  const handleSaveOrder = async (updated: DemoSecurityOrder) => {
     const updatedList = orders.map((o) => (o.id === updated.id ? updated : o));
     setOrders(updatedList);
     if (typeof window !== "undefined") {
       localStorage.setItem("fv_security_orders", JSON.stringify(updatedList));
     }
-    setNotification(`¡Orden #${updated.id} actualizada! El dictamen ya está disponible para ${updated.company_name}.`);
+
+    try {
+      const supabase = createClient();
+      await supabase
+        .from("security_study_orders")
+        .update({
+          status: updated.status,
+          scheduled_date: updated.scheduled_date,
+          final_concept: updated.final_concept,
+          report_pdf_url: updated.report_pdf_url,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", updated.id);
+    } catch {}
+
+    setNotification(
+      `¡Orden #${updated.id} actualizada en Supabase! El dictamen ya está disponible para ${updated.company_name}.`
+    );
     setTimeout(() => setNotification(null), 4000);
   };
 
@@ -138,10 +215,10 @@ export default function AdminEstudiosPage() {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => {
-              const { orders: reloaded } = initializeSeedData(true);
-              setOrders(reloaded);
-              setNotification("Datos de órdenes restaurados a valores de fábrica.");
+            onClick={async () => {
+              await loadOrdersFromSupabase();
+              setNotification("Bandeja de órdenes sincronizada con Supabase.");
+              setTimeout(() => setNotification(null), 3000);
             }}
             className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5"
             title="Recargar órdenes"

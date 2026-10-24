@@ -43,12 +43,25 @@ export default function HomePage() {
     async function loadFeaturedJobs() {
       try {
         const supabase = createClient();
-        const { data, error } = await supabase
-          .from("jobs")
+        let { data, error } = await supabase
+          .from("job_posts")
           .select("*, companies(company_name, is_verified_company)")
           .eq("is_active", true)
           .order("created_at", { ascending: false })
           .limit(3);
+
+        if (error || !data || data.length === 0) {
+          const fallback = await supabase
+            .from("jobs")
+            .select("*, companies(company_name, is_verified_company)")
+            .eq("is_active", true)
+            .order("created_at", { ascending: false })
+            .limit(3);
+          if (!fallback.error && fallback.data && fallback.data.length > 0) {
+            data = fallback.data;
+            error = null;
+          }
+        }
 
         if (!error && data && data.length > 0) {
           const mapped = data.map((j: any) => ({
@@ -498,13 +511,23 @@ export default function HomePage() {
                     <span>Hoja de Vida (Auditada)</span>
                   </div>
 
-                  <Link
-                    href="/precios-empresas"
-                    className="flex-1 bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl py-2.5 px-3 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-sm text-center"
-                  >
-                    <Shield className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
-                    <span>Planes para Empresas</span>
-                  </Link>
+                  {role === "candidate" ? (
+                    <Link
+                      href="/guarda/perfil"
+                      className="flex-1 bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl py-2.5 px-3 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-sm text-center"
+                    >
+                      <Shield className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
+                      <span>Mi Hoja de Vida</span>
+                    </Link>
+                  ) : (
+                    <Link
+                      href="/precios-empresas"
+                      className="flex-1 bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl py-2.5 px-3 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-sm text-center"
+                    >
+                      <Shield className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
+                      <span>Planes para Empresas</span>
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>

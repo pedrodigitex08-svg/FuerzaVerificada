@@ -18,19 +18,36 @@ import {
 import { CourseSemaphoreBanner } from "@/components/guarda/CourseSemaphoreBanner";
 import { generateAcademyRenewalLink } from "@/lib/utils/whatsappTemplates";
 import { createClient } from "@/lib/supabase/client";
+import { PartnerAcademy } from "@/types/database";
 
 export default function DocumentosPage() {
   const [candidateName, setCandidateName] = useState("Aspirante");
-  const [courseCompletionDate, setCourseCompletionDate] = useState("2026-04-15");
-  const [credencialSupervigilancia, setCredencialSupervigilancia] = useState("SV-PENDIENTE");
+  const [candidateCity, setCandidateCity] = useState("Bogotá D.C.");
+  const [courseCompletionDate, setCourseCompletionDate] = useState<string | null>(null);
+  const [credencialSupervigilancia, setCredencialSupervigilancia] = useState("Sin registrar");
+  const [courseAcademy, setCourseAcademy] = useState("Pendiente de registro");
   const [hasResume, setHasResume] = useState(false);
+  const [resumeUrl, setResumeUrl] = useState<string | null>(null);
   const [hasCourseDiploma, setHasCourseDiploma] = useState(false);
+  const [courseDiplomaUrl, setCourseDiplomaUrl] = useState<string | null>(null);
   const [hasIdCard, setHasIdCard] = useState(false);
+  const [idCardUrl, setIdCardUrl] = useState<string | null>(null);
+  const [partnerAcademies, setPartnerAcademies] = useState<PartnerAcademy[]>([]);
 
   useEffect(() => {
     async function loadData() {
       const supabase = createClient();
       try {
+        // Load active partner academies from Supabase
+        const { data: acads } = await supabase
+          .from("partner_academies")
+          .select("*")
+          .eq("is_active", true)
+          .order("name", { ascending: true });
+        if (acads && acads.length > 0) {
+          setPartnerAcademies(acads as PartnerAcademy[]);
+        }
+
         const {
           data: { user },
         } = await supabase.auth.getUser();
@@ -55,7 +72,51 @@ export default function DocumentosPage() {
             .maybeSingle();
 
           if (candProfile) {
-            if (candProfile.resume_pdf_url) setHasResume(true);
+            if (candProfile.city) setCandidateCity(candProfile.city);
+            if (candProfile.resume_pdf_url) {
+              setHasResume(true);
+              setResumeUrl(candProfile.resume_pdf_url);
+            }
+          }
+
+          // Load latest course from public.candidate_courses
+          const { data: course } = await supabase
+            .from("candidate_courses")
+            .select("*")
+            .eq("candidate_id", user.id)
+            .order("completion_date", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (course) {
+            if (course.completion_date) setCourseCompletionDate(course.completion_date);
+            if (course.credential_number) setCredencialSupervigilancia(course.credential_number);
+            if (course.academy_name) setCourseAcademy(course.academy_name);
+            if (course.diploma_pdf_url) {
+              setHasCourseDiploma(true);
+              setCourseDiplomaUrl(course.diploma_pdf_url);
+            }
+          }
+
+          // Load candidate_documents
+          const { data: docs } = await supabase
+            .from("candidate_documents")
+            .select("*")
+            .eq("candidate_id", user.id);
+
+          if (docs && docs.length > 0) {
+            docs.forEach((d: any) => {
+              if (d.document_type === "hoja_de_vida_pdf") {
+                setHasResume(true);
+                setResumeUrl(d.file_url);
+              } else if (d.document_type === "diploma_curso") {
+                setHasCourseDiploma(true);
+                setCourseDiplomaUrl(d.file_url);
+              } else if (d.document_type === "cedula_ciudadania") {
+                setHasIdCard(true);
+                setIdCardUrl(d.file_url);
+              }
+            });
           }
         } else if (typeof window !== "undefined") {
           const saved = localStorage.getItem("fv_candidate_profile");
@@ -63,6 +124,10 @@ export default function DocumentosPage() {
             try {
               const parsed = JSON.parse(saved);
               if (parsed.full_name) setCandidateName(parsed.full_name);
+              if (parsed.city) setCandidateCity(parsed.city);
+              if (parsed.course_completion_date) setCourseCompletionDate(parsed.course_completion_date);
+              if (parsed.credencial_supervigilancia) setCredencialSupervigilancia(parsed.credencial_supervigilancia);
+              if (parsed.course_academy) setCourseAcademy(parsed.course_academy);
             } catch {}
           }
         }
@@ -74,13 +139,16 @@ export default function DocumentosPage() {
     loadData();
   }, []);
 
+  const primaryAcademy =
+    partnerAcademies.find((a) => a.city === candidateCity) || partnerAcademies[0];
+
   const renewalLink = generateAcademyRenewalLink({
-    academyPhone: "573158901234",
-    academyName: "Academia Nacional de Seguridad",
+    academyPhone: primaryAcademy?.whatsapp_number || "573158901234",
+    academyName: primaryAcademy?.name || "Academia Nacional de Seguridad",
     candidateName: candidateName,
-    city: "Bogotá D.C.",
-    referralCode: "FUERZA2026",
-    discountText: "15% Descuento Convenio FuerzaVerificada",
+    city: primaryAcademy?.city || candidateCity,
+    referralCode: primaryAcademy?.referral_code || "FUERZA2026",
+    discountText: primaryAcademy?.discount_text || "15% Descuento Convenio FuerzaVerificada",
   });
 
   return (
@@ -145,7 +213,7 @@ export default function DocumentosPage() {
               Fecha de Realización
             </span>
             <span className="font-bold text-slate-900 font-mono text-sm tabular-nums mt-0.5 block">
-              {courseCompletionDate}
+              {courseCompletionDate || "Sin registrar"}
             </span>
           </div>
           <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
@@ -153,7 +221,7 @@ export default function DocumentosPage() {
               Academia Emisora
             </span>
             <span className="font-semibold text-slate-800 text-xs mt-0.5 block truncate">
-              Academia Autorizada SuperVigilancia
+              {courseAcademy}
             </span>
           </div>
         </div>
@@ -193,9 +261,19 @@ export default function DocumentosPage() {
               <h4 className="text-xs font-bold text-slate-900">Hoja de Vida en PDF</h4>
               <p className="text-[11px] text-slate-500 mt-0.5">Formato tradicional descargable</p>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono">
-              {hasResume ? "Hoja_de_Vida.pdf" : "Sin archivo"}
-            </span>
+            {resumeUrl ? (
+              <a
+                href={resumeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] font-semibold text-emerald-700 hover:underline flex items-center gap-1"
+              >
+                <span>Ver Hoja_de_Vida.pdf</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            ) : (
+              <span className="text-[10px] text-slate-400 font-mono">Sin archivo</span>
+            )}
           </div>
 
           {/* Doc 2 */}
@@ -210,9 +288,19 @@ export default function DocumentosPage() {
               <h4 className="text-xs font-bold text-slate-900">Diploma del Curso</h4>
               <p className="text-[11px] text-slate-500 mt-0.5">Certificado de Reentrenamiento</p>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono">
-              {hasCourseDiploma ? "Diploma_Vigilancia.pdf" : "Sin archivo"}
-            </span>
+            {courseDiplomaUrl ? (
+              <a
+                href={courseDiplomaUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] font-semibold text-emerald-700 hover:underline flex items-center gap-1"
+              >
+                <span>Ver Diploma_Vigilancia.pdf</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            ) : (
+              <span className="text-[10px] text-slate-400 font-mono">Sin archivo</span>
+            )}
           </div>
 
           {/* Doc 3 */}
@@ -227,9 +315,19 @@ export default function DocumentosPage() {
               <h4 className="text-xs font-bold text-slate-900">Cédula de Ciudadanía</h4>
               <p className="text-[11px] text-slate-500 mt-0.5">Documento de identidad nacional</p>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono">
-              {hasIdCard ? "Documento_Identidad.pdf" : "Sin archivo"}
-            </span>
+            {idCardUrl ? (
+              <a
+                href={idCardUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] font-semibold text-emerald-700 hover:underline flex items-center gap-1"
+              >
+                <span>Ver Documento_Identidad.pdf</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            ) : (
+              <span className="text-[10px] text-slate-400 font-mono">Sin archivo</span>
+            )}
           </div>
         </div>
       </div>

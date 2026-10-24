@@ -49,7 +49,12 @@ export default function GuardaLayout({
 
     // Company accounts attempting to enter private candidate CV/Applications are redirected to ATS
     if (!isPublicJobFeed && role === "company") {
-      router.push("/empresa/dashboard");
+      router.replace("/empresa/dashboard");
+      return;
+    }
+
+    if (!isPublicJobFeed && role === "admin") {
+      router.replace("/admin/estudios");
       return;
     }
   }, [isAuthenticated, role, isLoading, pathname, router]);
@@ -119,13 +124,20 @@ export default function GuardaLayout({
 
   const navItems = isCompany ? companyNavItems : candidateNavItems;
 
-  const displayName = fullName || (isCompany ? "Empresa de Seguridad" : "Carlos Moreno");
-  const initials = displayName
-    .split(" ")
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase() || (isCompany ? "ES" : "PO");
+  const displayName =
+    fullName ||
+    (isCompany
+      ? "Empresa de Seguridad"
+      : isAuthenticated
+      ? "Personal Operativo"
+      : "Visitante");
+  const initials =
+    displayName
+      .split(" ")
+      .map((w) => w[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || (isCompany ? "ES" : "PO");
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#1E293B] flex">
@@ -189,8 +201,12 @@ export default function GuardaLayout({
                   {displayName}
                 </div>
                 <div className="text-[10px] text-[#065F46] font-semibold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
-                  {isCompany ? "Cuenta Corporativa" : "Perfil Verificado"}
+                  <span className={`w-1.5 h-1.5 rounded-full ${isAuthenticated ? "bg-[#10B981]" : "bg-slate-400"}`} />
+                  {isCompany
+                    ? "Cuenta Corporativa"
+                    : isAuthenticated
+                    ? "Perfil Operativo"
+                    : "Acceso Público"}
                 </div>
               </div>
             </div>
