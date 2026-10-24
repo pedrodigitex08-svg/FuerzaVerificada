@@ -46,7 +46,7 @@ export default function AdminLayout({
     let isMounted = true;
 
     async function verifyAdminAuthorization() {
-      // 1. Check if running in development / localhost / demo switcher mode
+      // 1. Check if running in development / localhost mode
       const isLocalhost =
         typeof window !== "undefined" &&
         (window.location.hostname === "localhost" ||

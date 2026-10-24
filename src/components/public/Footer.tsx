@@ -1,7 +1,13 @@
+"use client";
+
 import Link from "next/link";
 import { Shield, Lock, FileCheck, CheckCircle } from "lucide-react";
+import { useAuth } from "@/lib/supabase/useAuth";
 
 export function Footer() {
+  const { role } = useAuth();
+  const isCompanyOrAdmin = role === "company" || role === "admin";
+
   return (
     <footer className="bg-[#F8FAFC] text-[#64748B] border-t border-[#E2E8F0]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -17,7 +23,7 @@ export function Footer() {
               </span>
             </div>
             <p className="text-xs text-[#64748B] leading-relaxed">
-              Infraestructura digital para la seguridad privada en Colombia. Conexión de talento operativo verificado y blindaje de contrataciones con estudios de confiabilidad y poligrafía.
+              Infraestructura digital para la seguridad privada en Colombia. Conexión de personal operativo y profesionales certificados, con blindaje en estudios de confiabilidad y poligrafía.
             </p>
             <div className="flex items-center gap-2 text-xs text-[#065F46] font-semibold">
               <CheckCircle className="w-4 h-4 text-[#10B981]" strokeWidth={1.5} />
@@ -37,17 +43,17 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/guarda/onboarding" className="hover:text-[#0F172A] transition-colors">
+                <Link href="/login" className="hover:text-[#0F172A] transition-colors">
                   Registro de Hoja de Vida
                 </Link>
               </li>
               <li>
-                <Link href="/guarda/documentos" className="hover:text-[#0F172A] transition-colors">
-                  Semáforo de Curso SuperVigilancia
+                <Link href="/guarda/vacantes" className="hover:text-[#0F172A] transition-colors">
+                  Credencial SuperVigilancia
                 </Link>
               </li>
               <li>
-                <Link href="/guarda/postulaciones" className="hover:text-[#0F172A] transition-colors">
+                <Link href="/guarda/vacantes" className="hover:text-[#0F172A] transition-colors">
                   Seguimiento de Postulaciones
                 </Link>
               </li>
@@ -60,27 +66,49 @@ export function Footer() {
               Para Empresas de Seguridad
             </h4>
             <ul className="space-y-2 text-xs">
-              <li>
-                <Link href="/empresa/vacantes/nueva" className="hover:text-[#0F172A] transition-colors">
-                  Publicar Nueva Vacante
-                </Link>
-              </li>
-              <li>
-                <Link href="/empresa/relevos" className="hover:text-[#0F172A] transition-colors">
-                  Radar de Relevos Hoy
-                </Link>
-              </li>
-              <li>
-                <Link href="/empresa/estudios" className="hover:text-[#0F172A] transition-colors flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
-                  <span>Poligrafía y Visitas</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/precios-empresas" className="hover:text-[#0F172A] transition-colors">
-                  Paquetes Comerciales B2B
-                </Link>
-              </li>
+              {isCompanyOrAdmin ? (
+                <>
+                  <li>
+                    <Link href="/empresa/vacantes/nueva" className="hover:text-[#0F172A] transition-colors font-medium text-[#1E293B]">
+                      Publicar Nueva Vacante
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/empresa/vacantes" className="hover:text-[#0F172A] transition-colors">
+                      Panel ATS & Vacantes
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/empresa/relevos" className="hover:text-[#0F172A] transition-colors">
+                      Radar de Relevos Hoy
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/empresa/estudios" className="hover:text-[#0F172A] transition-colors flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
+                      <span>Poligrafía y Visitas</span>
+                    </Link>
+                  </li>
+                </>
+              ) : (
+                <>
+                  <li>
+                    <Link href="/login" className="hover:text-[#0F172A] transition-colors">
+                      Portal Empresarial (Ingreso)
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/precios-empresas" className="hover:text-[#0F172A] transition-colors">
+                      Paquetes Comerciales B2B
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/precios-empresas" className="hover:text-[#0F172A] transition-colors">
+                      Estructura de Poligrafía y ATS
+                    </Link>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
 
@@ -106,7 +134,11 @@ export function Footer() {
           <div className="flex gap-4">
             <Link href="/" className="hover:text-[#0F172A]">Términos de Servicio</Link>
             <Link href="/" className="hover:text-[#0F172A]">Aviso de Privacidad</Link>
-            <Link href="/admin/estudios" className="text-slate-400 hover:text-[#0F172A]">Mando SuperAdmin</Link>
+            {isCompanyOrAdmin && (
+              <Link href="/admin/estudios" className="text-slate-400 hover:text-[#0F172A]">
+                Mando SuperAdmin
+              </Link>
+            )}
           </div>
         </div>
       </div>

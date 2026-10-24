@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import {
   Shield,
   Briefcase,
@@ -18,6 +18,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { BottomNav } from "@/components/guarda/BottomNav";
+import { useAuth } from "@/lib/supabase/useAuth";
 
 export default function GuardaLayout({
   children,
@@ -25,7 +26,34 @@ export default function GuardaLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { role, isAuthenticated, isLoading, fullName, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Authorization Guard for internal candidate routes
+  useEffect(() => {
+    if (isLoading) return;
+
+    const isLocalhost =
+      typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        process.env.NODE_ENV === "development");
+
+    const isPublicJobFeed = pathname === "/guarda/vacantes";
+
+    // Non-public candidate routes require active authentication
+    if (!isPublicJobFeed && !isAuthenticated && !isLocalhost) {
+      router.push(`/login?error=unauthorized_candidate&redirect=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
+    // Company accounts attempting to enter private candidate CV/Applications are redirected to ATS
+    if (!isPublicJobFeed && role === "company" && !isLocalhost) {
+      router.push("/empresa/dashboard");
+      return;
+    }
+  }, [isAuthenticated, role, isLoading, pathname, router]);
 
   const navItems = [
     {
@@ -50,6 +78,14 @@ export default function GuardaLayout({
     },
   ];
 
+  const displayName = fullName || "Carlos Moreno";
+  const initials = displayName
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#1E293B] flex">
       {/* DESKTOP SIDEBAR (240px FIXED) */}
@@ -65,7 +101,7 @@ export default function GuardaLayout({
                 Fuerza<span className="text-[#0F172A]">Verificada</span>
               </span>
               <span className="text-[10px] uppercase tracking-wider text-[#64748B] font-semibold mt-0.5">
-                Portal del Guarda
+                Portal Operativo
               </span>
             </div>
           </Link>
@@ -107,11 +143,11 @@ export default function GuardaLayout({
           <div className="p-2.5 rounded-xl bg-white border border-[#E2E8F0] shadow-sm flex items-center justify-between">
             <div className="flex items-center gap-2.5 overflow-hidden">
               <div className="w-8 h-8 rounded-xl bg-[#0F172A] text-white font-bold text-xs flex items-center justify-center shrink-0">
-                CM
+                {initials || "PO"}
               </div>
               <div className="overflow-hidden">
                 <div className="text-xs font-bold text-[#1E293B] truncate">
-                  Carlos Moreno
+                  {displayName}
                 </div>
                 <div className="text-[10px] text-[#065F46] font-semibold flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
@@ -119,13 +155,23 @@ export default function GuardaLayout({
                 </div>
               </div>
             </div>
-            <Link
-              href="/login"
-              className="p-1.5 text-[#64748B] hover:text-rose-600 transition-colors"
-              title="Cerrar sesión"
-            >
-              <LogOut className="w-3.5 h-3.5" strokeWidth={1.5} />
-            </Link>
+            {isAuthenticated ? (
+              <button
+                onClick={() => signOut()}
+                className="p-1.5 text-[#64748B] hover:text-rose-600 transition-colors"
+                title="Cerrar sesión"
+              >
+                <LogOut className="w-3.5 h-3.5" strokeWidth={1.5} />
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                className="p-1.5 text-[#64748B] hover:text-[#0F172A] transition-colors"
+                title="Iniciar sesión"
+              >
+                <LogOut className="w-3.5 h-3.5" strokeWidth={1.5} />
+              </Link>
+            )}
           </div>
         </div>
       </aside>
@@ -177,7 +223,7 @@ export default function GuardaLayout({
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-[#ECFDF5] border border-[#10B981]/30 text-[11px] font-semibold text-[#065F46]">
               <CheckCircle className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
-              <span>Garantía Cero Cobros al Guarda</span>
+              <span>Garantía Cero Cobros al Candidato</span>
             </div>
 
             <Link

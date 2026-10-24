@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Shield,
   Briefcase,
@@ -29,6 +29,7 @@ import { CityAutocompleteInput } from "@/components/ui/CityAutocompleteInput";
 import { calculateMatchScore } from "@/lib/utils/matchCalculator";
 import { JobPost, CourseSemaphore } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/lib/supabase/useAuth";
 
 const INITIAL_JOBS: (JobPost & { company_name: string; is_verified_company: boolean })[] = [
   {
@@ -186,6 +187,8 @@ const INITIAL_JOBS: (JobPost & { company_name: string; is_verified_company: bool
 function VacantesContent() {
   const supabase = createClient();
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const { role, isAuthenticated } = useAuth();
 
   const [jobs, setJobs] = useState(INITIAL_JOBS);
   const [selectedJobId, setSelectedJobId] = useState<string>("job-1");
@@ -205,6 +208,9 @@ function VacantesContent() {
 
     const roleParam = searchParams.get("role");
     if (roleParam) setSearchTerm(roleParam);
+
+    const applyParam = searchParams.get("apply");
+    if (applyParam) setSelectedJobId(applyParam);
   }, [searchParams]);
 
   // Candidate Profile State
@@ -243,6 +249,20 @@ function VacantesContent() {
   }, []);
 
   const handleApply = async (job: (typeof INITIAL_JOBS)[0]) => {
+    // 1. Bloqueo de Acciones sin Sesión: Intercepta y redirige a /login
+    if (!isAuthenticated) {
+      router.push(`/login?redirect=${encodeURIComponent("/guarda/vacantes")}`);
+      return;
+    }
+
+    // 2. Exclusividad para Rol Candidato / Personal Operativo
+    if (role === "company") {
+      alert(
+        "Tu cuenta actual es de Empresa de Seguridad. Las postulaciones a vacantes son exclusivas para el Personal Operativo."
+      );
+      return;
+    }
+
     const match = calculateMatchScore(job, candidateProfile);
 
     const updated = { ...appliedJobIds, [job.id]: true };
@@ -755,26 +775,32 @@ function VacantesContent() {
 
               {/* Application Action Button */}
               <div className="pt-2">
-                <button
-                  type="button"
-                  disabled={isSelectedApplied}
-                  onClick={() => handleApply(selectedJob)}
-                  className={`btn-primary w-full py-3.5 text-xs font-semibold ${
-                    isSelectedApplied ? "bg-slate-100 text-emerald-700 border border-emerald-300 hover:bg-slate-100" : ""
-                  }`}
-                >
-                  {isSelectedApplied ? (
-                    <>
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" strokeWidth={2} />
-                      Ya te has postulado a esta vacante
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="w-4 h-4 fill-white text-white" strokeWidth={1.5} />
-                      Postularme en 1 Clic con mi Hoja de Vida
-                    </>
-                  )}
-                </button>
+                {role === "company" ? (
+                  <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-center text-xs text-slate-500 font-medium">
+                    Postulaciones inhabilitadas para cuentas de Empresa de Seguridad.
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={isSelectedApplied}
+                    onClick={() => handleApply(selectedJob)}
+                    className={`btn-primary w-full py-3.5 text-xs font-semibold ${
+                      isSelectedApplied ? "bg-slate-100 text-emerald-700 border border-emerald-300 hover:bg-slate-100" : ""
+                    }`}
+                  >
+                    {isSelectedApplied ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" strokeWidth={2} />
+                        Ya te has postulado a esta vacante
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-4 h-4 fill-white text-white" strokeWidth={1.5} />
+                        Postularme en 1 Clic con mi Hoja de Vida
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -812,17 +838,23 @@ function VacantesContent() {
               {selectedJob.description}
             </p>
 
-            <button
-              type="button"
-              disabled={isSelectedApplied}
-              onClick={() => {
-                handleApply(selectedJob);
-                setMobileDetailOpen(false);
-              }}
-              className="btn-primary w-full py-3 text-xs"
-            >
-              {isSelectedApplied ? "Ya postulado" : "Postularme en 1 Clic"}
-            </button>
+            {role === "company" ? (
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center text-xs text-slate-500 font-medium">
+                Inhabilitado para cuentas de Empresa
+              </div>
+            ) : (
+              <button
+                type="button"
+                disabled={isSelectedApplied}
+                onClick={() => {
+                  handleApply(selectedJob);
+                  setMobileDetailOpen(false);
+                }}
+                className="btn-primary w-full py-3 text-xs"
+              >
+                {isSelectedApplied ? "Ya postulado" : "Postularme en 1 Clic"}
+              </button>
+            )}
           </div>
         </div>
       )}

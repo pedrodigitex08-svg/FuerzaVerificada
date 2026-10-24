@@ -2,10 +2,15 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Shield, Menu, X, Lock, CheckCircle } from "lucide-react";
+import { Shield, Menu, X, Lock, CheckCircle, LogOut, User as UserIcon, Building2 } from "lucide-react";
+import { useAuth } from "@/lib/supabase/useAuth";
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { role, isAuthenticated, fullName, signOut } = useAuth();
+
+  const isCompanyOrAdmin = role === "company" || role === "admin";
+  const isCandidate = role === "candidate";
 
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-[#E2E8F0] h-16 flex items-center">
@@ -26,26 +31,51 @@ export function Navbar() {
         </Link>
 
         {/* Central Navigation */}
-        <nav className="hidden lg:flex items-center gap-7 text-xs font-semibold text-[#64748B]">
+        <nav className="hidden lg:flex items-center gap-6 text-xs font-semibold text-[#64748B]">
           <Link
             href="/guarda/vacantes"
             className="hover:text-[#0F172A] transition-colors"
           >
             Explorar Vacantes
           </Link>
-          <Link
-            href="/empresa/relevos"
-            className="hover:text-[#0F172A] transition-colors"
-          >
-            Perfiles Verificados
-          </Link>
-          <Link
-            href="/empresa/estudios"
-            className="hover:text-[#0F172A] transition-colors flex items-center gap-1.5 text-[#1E293B]"
-          >
-            <Lock className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
-            <span>Poligrafía & Visita Domiciliaria</span>
-          </Link>
+
+          {/* Exclusive Links for Company / SuperAdmin */}
+          {isCompanyOrAdmin && (
+            <>
+              <Link
+                href="/empresa/relevos"
+                className="hover:text-[#0F172A] transition-colors"
+              >
+                Perfiles Verificados
+              </Link>
+              <Link
+                href="/empresa/estudios"
+                className="hover:text-[#0F172A] transition-colors flex items-center gap-1.5 text-[#1E293B]"
+              >
+                <Lock className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
+                <span>Poligrafía & Visita Domiciliaria</span>
+              </Link>
+            </>
+          )}
+
+          {/* Links for Candidate */}
+          {isCandidate && (
+            <>
+              <Link
+                href="/guarda/postulaciones"
+                className="hover:text-[#0F172A] transition-colors"
+              >
+                Mis Postulaciones
+              </Link>
+              <Link
+                href="/guarda/perfil"
+                className="hover:text-[#0F172A] transition-colors"
+              >
+                Mi Hoja de Vida
+              </Link>
+            </>
+          )}
+
           <Link
             href="/precios-empresas"
             className="hover:text-[#0F172A] transition-colors"
@@ -56,28 +86,72 @@ export function Navbar() {
 
         {/* Right CTA Buttons */}
         <div className="hidden sm:flex items-center gap-3">
-          <Link
-            href="/login"
-            className="text-xs font-semibold text-[#1E293B] hover:text-[#0F172A] px-3.5 py-2 rounded-xl transition-colors"
-          >
-            Iniciar Sesión
-          </Link>
-          <Link
-            href="/empresa/vacantes/nueva"
-            className="bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl px-4 py-2 text-xs font-semibold shadow-sm transition-all duration-200"
-          >
-            Publicar Vacante
-          </Link>
+          {isAuthenticated ? (
+            <div className="flex items-center gap-3">
+              {isCompanyOrAdmin ? (
+                <>
+                  <Link
+                    href={role === "admin" ? "/admin/estudios" : "/empresa/dashboard"}
+                    className="text-xs font-semibold text-[#1E293B] hover:text-[#0F172A] px-3 py-1.5 rounded-xl border border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors flex items-center gap-1.5"
+                  >
+                    <Building2 className="w-3.5 h-3.5 text-[#64748B]" strokeWidth={1.5} />
+                    <span>{role === "admin" ? "Panel Admin" : "Panel ATS"}</span>
+                  </Link>
+
+                  {/* Publicar Vacante strictly visible ONLY to company / admin */}
+                  <Link
+                    href="/empresa/vacantes/nueva"
+                    className="bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl px-4 py-2 text-xs font-semibold shadow-sm transition-all duration-200"
+                  >
+                    Publicar Vacante
+                  </Link>
+                </>
+              ) : (
+                <Link
+                  href="/guarda/vacantes"
+                  className="text-xs font-semibold text-[#1E293B] hover:text-[#0F172A] px-3.5 py-2 rounded-xl border border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors flex items-center gap-1.5"
+                >
+                  <UserIcon className="w-3.5 h-3.5 text-[#64748B]" strokeWidth={1.5} />
+                  <span>{fullName || "Mi Portal"}</span>
+                </Link>
+              )}
+
+              <button
+                onClick={() => signOut()}
+                className="text-xs text-[#64748B] hover:text-rose-600 p-2 rounded-xl transition-colors"
+                title="Cerrar sesión"
+              >
+                <LogOut className="w-4 h-4" strokeWidth={1.5} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/login"
+                className="text-xs font-semibold text-[#1E293B] hover:text-[#0F172A] px-3.5 py-2 rounded-xl transition-colors"
+              >
+                Iniciar Sesión
+              </Link>
+              <Link
+                href="/login"
+                className="bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl px-4 py-2 text-xs font-semibold shadow-sm transition-all duration-200"
+              >
+                Ingresar / Registrarse
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
         <div className="lg:hidden flex items-center gap-2">
-          <Link
-            href="/login"
-            className="text-xs font-semibold text-[#1E293B] px-2.5 py-1.5"
-          >
-            Entrar
-          </Link>
+          {!isAuthenticated && (
+            <Link
+              href="/login"
+              className="text-xs font-semibold text-[#1E293B] px-2.5 py-1.5"
+            >
+              Entrar
+            </Link>
+          )}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-1.5 rounded-xl border border-[#E2E8F0] text-[#64748B]"
@@ -102,21 +176,46 @@ export function Navbar() {
           >
             Explorar Vacantes
           </Link>
-          <Link
-            href="/empresa/relevos"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
-          >
-            Perfiles Verificados
-          </Link>
-          <Link
-            href="/empresa/estudios"
-            onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center gap-2 text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
-          >
-            <Lock className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
-            <span>Poligrafía & Visita Domiciliaria</span>
-          </Link>
+
+          {isCompanyOrAdmin && (
+            <>
+              <Link
+                href="/empresa/relevos"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
+              >
+                Perfiles Verificados
+              </Link>
+              <Link
+                href="/empresa/estudios"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
+              >
+                <Lock className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
+                <span>Poligrafía & Visita Domiciliaria</span>
+              </Link>
+            </>
+          )}
+
+          {isCandidate && (
+            <>
+              <Link
+                href="/guarda/postulaciones"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
+              >
+                Mis Postulaciones
+              </Link>
+              <Link
+                href="/guarda/perfil"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-xs font-semibold text-[#1E293B] p-2 rounded-lg hover:bg-[#F8FAFC]"
+              >
+                Mi Hoja de Vida
+              </Link>
+            </>
+          )}
+
           <Link
             href="/precios-empresas"
             onClick={() => setMobileMenuOpen(false)}
@@ -124,21 +223,41 @@ export function Navbar() {
           >
             Planes Empresas
           </Link>
+
           <div className="pt-2 border-t border-[#E2E8F0] flex flex-col gap-2">
-            <Link
-              href="/login"
-              onClick={() => setMobileMenuOpen(false)}
-              className="btn-secondary text-xs w-full justify-center"
-            >
-              Iniciar Sesión
-            </Link>
-            <Link
-              href="/empresa/vacantes/nueva"
-              onClick={() => setMobileMenuOpen(false)}
-              className="bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl py-2.5 text-xs font-semibold w-full text-center"
-            >
-              Publicar Vacante
-            </Link>
+            {isAuthenticated ? (
+              <>
+                {isCompanyOrAdmin && (
+                  <Link
+                    href="/empresa/vacantes/nueva"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl py-2.5 text-xs font-semibold w-full text-center"
+                  >
+                    Publicar Vacante
+                  </Link>
+                )}
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    signOut();
+                  }}
+                  className="text-xs text-rose-600 font-semibold p-2 rounded-lg hover:bg-rose-50 text-center flex items-center justify-center gap-1.5"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Cerrar Sesión ({fullName || "Usuario"})</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl py-2.5 text-xs font-semibold w-full text-center"
+                >
+                  Iniciar Sesión / Registro
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}

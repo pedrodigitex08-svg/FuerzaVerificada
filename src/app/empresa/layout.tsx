@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import {
   Shield,
@@ -23,6 +23,7 @@ import {
   Clock,
 } from "lucide-react";
 import { generatePackageRechargeLink } from "@/lib/utils/whatsappTemplates";
+import { useAuth } from "@/lib/supabase/useAuth";
 
 export default function EmpresaLayout({
   children,
@@ -30,12 +31,40 @@ export default function EmpresaLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { role, isAuthenticated, isLoading, signOut, fullName } = useAuth();
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [credits, setCredits] = useState(5);
   const [companyName, setCompanyName] = useState("Seguridad Atlas de Colombia");
   const [planName, setPlanName] = useState("Contratación Segura x5");
   const [isVerifiedCompany, setIsVerifiedCompany] = useState(true);
 
+  // 1. Route Authorization Guard
+  useEffect(() => {
+    if (isLoading) return;
+
+    const isLocalhost =
+      typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        process.env.NODE_ENV === "development");
+
+    if (!isAuthenticated && !isLocalhost) {
+      router.push(`/login?error=unauthorized_company&redirect=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
+    if (role === "candidate" && !isLocalhost) {
+      router.push("/guarda/vacantes");
+      return;
+    }
+
+    setIsAuthorized(true);
+  }, [isAuthenticated, role, isLoading, pathname, router]);
+
+  // 2. Company Metadata Sync
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedCredits = localStorage.getItem("fv_company_credits");
@@ -56,9 +85,11 @@ export default function EmpresaLayout({
           const parsed = JSON.parse(savedUser);
           if (parsed.full_name) setCompanyName(parsed.full_name);
         } catch {}
+      } else if (fullName) {
+        setCompanyName(fullName);
       }
     }
-  }, [pathname]);
+  }, [pathname, fullName]);
 
   const navItems = [
     {
@@ -93,6 +124,19 @@ export default function EmpresaLayout({
     packageType: "Recarga de Paquete B2B (Estudios + Poligrafía)",
   });
 
+  if (isLoading || isAuthorized === null) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 text-center">
+        <div className="space-y-3">
+          <div className="w-8 h-8 border-2 border-[#0F172A] border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs font-semibold text-[#64748B]">
+            Verificando autorización empresarial...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#1E293B] flex">
       {/* DESKTOP FIXED SIDEBAR (260px) */}
@@ -108,23 +152,53 @@ export default function EmpresaLayout({
                 Fuerza<span className="text-[#0F172A]">Verificada</span>
               </span>
               <span className="text-[10px] uppercase tracking-wider text-[#64748B] font-semibold mt-0.5">
-                Panel B2B Empresa
+                Panel B2B • Empresas
               </span>
             </div>
           </Link>
         </div>
 
-        {/* Navigation list */}
-        <div className="p-3 space-y-1.5 flex-1 overflow-y-auto">
-          <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[#64748B]">
-            Gestión Operativa
+        {/* Company Active Profile Badge */}
+        <div className="p-3 border-b border-[#E2E8F0] bg-[#F8FAFC]">
+          <div className="p-3 rounded-xl bg-white border border-[#E2E8F0] shadow-sm space-y-1.5">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-[#0F172A] text-white font-bold text-xs flex items-center justify-center shrink-0">
+                <Building2 className="w-3.5 h-3.5" />
+              </div>
+              <div className="overflow-hidden">
+                <h4 className="text-xs font-bold text-[#1E293B] truncate">
+                  {companyName}
+                </h4>
+                <p className="text-[10px] text-[#64748B] truncate">NIT 900.582.114-1</p>
+              </div>
+            </div>
+
+            <div className="pt-1.5 border-t border-[#E2E8F0] flex items-center justify-between text-[11px]">
+              <span className="text-[#64748B] font-medium">Estado:</span>
+              {isVerifiedCompany ? (
+                <span className="text-[#065F46] font-bold flex items-center gap-1">
+                  <CheckCircle className="w-3 h-3 text-[#10B981]" strokeWidth={2} />
+                  Verificada
+                </span>
+              ) : (
+                <span className="text-amber-700 font-bold flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-amber-600" />
+                  Pendiente NIT
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation items */}
+        <div className="p-3 space-y-1 flex-1 overflow-y-auto">
+          <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#64748B]">
+            Módulos Principales
           </div>
           {navItems.map((item) => {
             const isActive =
               pathname === item.href ||
-              (item.href === "/empresa/vacantes" &&
-                pathname.startsWith("/empresa/vacantes") &&
-                pathname !== "/empresa/vacantes/nueva");
+              (item.href !== "/empresa/dashboard" && pathname.startsWith(item.href));
             const Icon = item.icon;
 
             return (
@@ -147,36 +221,21 @@ export default function EmpresaLayout({
           })}
         </div>
 
-        {/* TARJETA EJECUTIVA DE CRÉDITOS B2B */}
+        {/* B2B Credits & WhatsApp Recharge Card */}
         <div className="p-3 border-t border-[#E2E8F0] bg-[#F8FAFC]">
-          <div className="rounded-xl bg-[#0F172A] text-white p-4 space-y-3 shadow-md border border-slate-800">
+          <div className="p-3 rounded-xl bg-white border border-[#E2E8F0] shadow-sm space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Paquete B2B
+              <span className="text-[11px] font-bold text-[#1E293B]">
+                Créditos de Poligrafía
               </span>
-              {isVerifiedCompany ? (
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#065F46] bg-[#ECFDF5] px-1.5 py-0.2 rounded border border-[#10B981]/30">
-                  <CheckCircle className="w-3 h-3 text-[#10B981]" strokeWidth={1.5} />
-                  Verificada
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-300 bg-amber-950/60 px-1.5 py-0.2 rounded border border-amber-500/40">
-                  <Clock className="w-3 h-3 text-amber-400" strokeWidth={1.5} />
-                  En Validación
-                </span>
-              )}
+              <span className="badge-emerald text-[10px] py-0.5 px-2">
+                {planName}
+              </span>
             </div>
 
-            <div>
-              <div className="text-xs font-bold text-white leading-tight">{planName}</div>
-              <div className="text-[10px] text-slate-400 mt-0.5 truncate">{companyName}</div>
-            </div>
-
-            <div className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 flex items-center justify-between">
+            <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-[#E2E8F0] flex items-center justify-between">
               <div>
-                <span className="text-[10px] text-slate-400 block leading-tight">
-                  Créditos Poligrafía + Visita:
-                </span>
+                <span className="text-[10px] text-[#64748B] block">Disponibilidad</span>
                 <span className="text-lg font-bold font-mono text-[#10B981] tabular-nums">
                   {credits} disponibles
                 </span>
@@ -197,13 +256,13 @@ export default function EmpresaLayout({
           {/* Quick exit */}
           <div className="mt-2 pt-2 border-t border-[#E2E8F0] flex items-center justify-between px-1 text-xs">
             <span className="text-[11px] text-[#64748B]">Sesión activa</span>
-            <Link
-              href="/login"
-              className="text-[#64748B] hover:text-rose-600 text-xs flex items-center gap-1"
+            <button
+              onClick={() => signOut()}
+              className="text-[#64748B] hover:text-rose-600 text-xs flex items-center gap-1 transition-colors"
             >
               <LogOut className="w-3 h-3" />
               Salir
-            </Link>
+            </button>
           </div>
         </div>
       </aside>

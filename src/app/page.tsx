@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Shield,
   CheckCircle,
@@ -17,14 +18,21 @@ import {
   ExternalLink,
   ChevronRight,
   Filter,
+  AlertCircle,
 } from "lucide-react";
 import { Navbar } from "@/components/public/Navbar";
 import { Footer } from "@/components/public/Footer";
 import { CityAutocompleteInput } from "@/components/ui/CityAutocompleteInput";
+import { useAuth } from "@/lib/supabase/useAuth";
 
 export default function HomePage() {
+  const router = useRouter();
+  const { role, isAuthenticated } = useAuth();
   const [roleSearch, setRoleSearch] = useState("");
   const [locationSearch, setLocationSearch] = useState("");
+  const [warningToast, setWarningToast] = useState<string | null>(null);
+
+  const isCompanyOrAdmin = role === "company" || role === "admin";
 
   const sampleJobs = [
     {
@@ -68,29 +76,57 @@ export default function HomePage() {
     },
   ];
 
+  // Intercept application for unauthenticated users or company accounts
+  const handleApplyClick = (jobId: string) => {
+    if (!isAuthenticated) {
+      router.push(`/login?redirect=${encodeURIComponent("/guarda/vacantes")}`);
+      return;
+    }
+
+    if (role === "company") {
+      setWarningToast(
+        "Tu sesión actual es de Empresa de Seguridad. Las postulaciones a vacantes son exclusivas para Personal Operativo."
+      );
+      setTimeout(() => setWarningToast(null), 4500);
+      return;
+    }
+
+    router.push(`/guarda/vacantes?apply=${jobId}`);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-white text-[#1E293B]">
+      {/* Toast Warning */}
+      {warningToast && (
+        <div className="fixed top-20 right-4 z-50 max-w-md bg-amber-50 border border-amber-200 text-amber-900 px-4 py-3 rounded-xl shadow-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="text-xs font-semibold leading-relaxed">
+            {warningToast}
+          </div>
+        </div>
+      )}
+
       {/* 1. NAVBAR STICKY */}
       <Navbar />
 
       {/* 2. HERO SECTION + BUSCADOR PRINCIPAL */}
       <section className="bg-white pt-12 pb-14 border-b border-[#E2E8F0]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          {/* Top Pill Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#ECFDF5] border border-[#10B981]/30 text-xs font-semibold text-[#065F46]">
-            <CheckCircle className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
-            <span>Plataforma exclusiva para Vigilancia, Escoltas y Seguridad Privada en Colombia</span>
+          {/* Top Subtle Executive Pill Badge */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 shadow-xs">
+            <Shield className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
+            <span>Bolsa de Empleo y Validación Especializada en Seguridad Privada</span>
           </div>
 
           {/* Main Title */}
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-[#1E293B] max-w-4xl mx-auto leading-[1.18]">
-            Contratación y empleo táctico con{" "}
+            Reclutamiento y empleo especializado con{" "}
             <span className="text-[#1E3A8A]">verificación real</span>.
           </h1>
 
           {/* Subtitle */}
           <p className="text-sm sm:text-base text-[#64748B] max-w-2xl mx-auto font-normal leading-relaxed">
-            Conectamos guardas y escoltas con empresas de seguridad líderes en Colombia, garantizando antecedentes blindados, visita domiciliaria y poligrafía integrada.
+            Conectamos a todo el talento operativo y profesional del sector seguridad con las empresas líderes en Colombia, integrando validación de antecedentes, visita domiciliaria y poligrafía en un solo lugar.
           </p>
 
           {/* HERO SEARCH BAR */}
@@ -161,13 +197,15 @@ export default function HomePage() {
               >
                 Operador Medios Tecnológicos
               </Link>
-              <Link
-                href="/empresa/relevos"
-                className="px-2.5 py-1 rounded-lg bg-[#ECFDF5] text-[#065F46] border border-[#10B981]/30 hover:bg-[#D1FAE5] font-semibold text-[11px] flex items-center gap-1.5 transition-colors"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
-                <span>Relevos Disponibles Hoy</span>
-              </Link>
+              {isCompanyOrAdmin && (
+                <Link
+                  href="/empresa/relevos"
+                  className="px-2.5 py-1 rounded-lg bg-[#ECFDF5] text-[#065F46] border border-[#10B981]/30 hover:bg-[#D1FAE5] font-semibold text-[11px] flex items-center gap-1.5 transition-colors"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
+                  <span>Relevos Disponibles Hoy</span>
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -249,19 +287,20 @@ export default function HomePage() {
                     {job.description}
                   </p>
 
-                  {/* Card Footer */}
+                  {/* Card Footer with Intercepted Application Button */}
                   <div className="pt-3 border-t border-[#E2E8F0] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-1.5 text-xs text-[#065F46] font-medium">
                       <Lock className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
-                      <span>Incluye Polígrafo sin costo al guarda</span>
+                      <span>Estudios y Poligrafía 100% asumidos por la empresa</span>
                     </div>
 
-                    <Link
-                      href="/guarda/vacantes"
-                      className="w-full sm:w-auto bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200 text-center"
+                    <button
+                      type="button"
+                      onClick={() => handleApplyClick(job.id)}
+                      className="w-full sm:w-auto bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200 text-center shadow-xs"
                     >
-                      Postularse en 1 clic
-                    </Link>
+                      Postularme en 1 clic
+                    </button>
                   </div>
                 </div>
               ))}
@@ -274,7 +313,7 @@ export default function HomePage() {
                   Credencial Táctica Verificada
                 </h2>
                 <p className="text-xs text-[#64748B]">
-                  Así visualizan los directores de operaciones y analistas de seguridad tu perfil
+                  Así visualizan los directores de operaciones y analistas de seguridad el perfil del candidato
                 </p>
               </div>
 
@@ -341,7 +380,7 @@ export default function HomePage() {
                 {/* Bloque Verificación Avanzada (Paquete Empresa) */}
                 <div className="space-y-2">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-[#64748B]">
-                    Verificación Avanzada (Paquete Empresa)
+                    Verificación Integral de Confiabilidad
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-2.5 text-center">
@@ -359,7 +398,7 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Two Action Buttons */}
+                {/* Action Buttons: Poligrafía button is strictly visible ONLY to company / admin */}
                 <div className="pt-2 flex gap-2.5">
                   <a
                     href="https://demo.fuerzaverificada.com/hv-carlos.pdf"
@@ -371,13 +410,23 @@ export default function HomePage() {
                     <span>Hoja de Vida PDF</span>
                   </a>
 
-                  <Link
-                    href="/empresa/vacantes/vac-001"
-                    className="flex-1 bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl py-2.5 px-3 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-sm text-center"
-                  >
-                    <Lock className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
-                    <span>Solicitar Polígrafo</span>
-                  </Link>
+                  {isCompanyOrAdmin ? (
+                    <Link
+                      href="/empresa/vacantes/vac-001"
+                      className="flex-1 bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl py-2.5 px-3 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-sm text-center"
+                    >
+                      <Lock className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
+                      <span>Solicitar Polígrafo</span>
+                    </Link>
+                  ) : (
+                    <Link
+                      href="/precios-empresas"
+                      className="flex-1 bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#E2E8F0] text-[#1E293B] rounded-xl py-2.5 px-3 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors text-center"
+                    >
+                      <Shield className="w-3.5 h-3.5 text-[#64748B]" strokeWidth={1.5} />
+                      <span>Ver Planes B2B</span>
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>
@@ -403,10 +452,10 @@ export default function HomePage() {
                 01
               </div>
               <h3 className="font-bold text-sm text-[#1E293B]">
-                Garantía Cero Cobros al Guarda
+                Garantía Cero Cobros al Personal Operativo
               </h3>
               <p className="text-xs text-[#64748B] leading-relaxed">
-                Postulación 100% gratuita. Los guardas ven el salario real, turno (2x2x2, 4x2) y ubicación antes de aplicar, sin intermediarios ni cobros ilícitos.
+                Postulación 100% gratuita. Todo el personal operativo y profesionales en seguridad privada ven el salario real, turno (2x2x2, 4x2) y ubicación antes de aplicar, sin intermediarios ni cobros ilícitos.
               </p>
             </div>
 
@@ -418,7 +467,7 @@ export default function HomePage() {
                 Semáforo del Curso & Radar de Relevos
               </h3>
               <p className="text-xs text-[#64748B] leading-relaxed">
-                Cálculo en vivo de vigencia ante SuperVigilancia y buscador de guardas disponibles para cubrir incapacidades de última hora hoy mismo.
+                Cálculo en vivo de vigencia ante SuperVigilancia y buscador de profesionales en seguridad disponibles para cubrir incapacidades y turnos urgentes de última hora.
               </p>
             </div>
 
@@ -430,7 +479,7 @@ export default function HomePage() {
                 Contratación Blindada Todo en Uno
               </h3>
               <p className="text-xs text-[#64748B] leading-relaxed">
-                El gran diferenciador B2B: publica vacantes y solicita Estudio de Seguridad + Visita Domiciliaria + Polígrafo en 1 clic desde el mismo ATS.
+                El gran diferenciador B2B: las empresas de seguridad publican vacantes y gestionan Estudio de Seguridad + Visita Domiciliaria + Poligrafía en 1 clic desde el mismo ATS.
               </p>
             </div>
           </div>
