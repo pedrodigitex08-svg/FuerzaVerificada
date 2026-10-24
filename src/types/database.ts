@@ -170,6 +170,32 @@ export interface SecurityStudyOrder {
   updated_at: string;
 }
 
+export interface AdminSecurityStudyOrderItem {
+  id: string;
+  candidate_id?: string;
+  candidate_name: string;
+  national_id: string;
+  candidate_phone: string;
+  candidate_address: string;
+  company_id?: string;
+  company_name: string;
+  company_phone: string;
+  job_title: string;
+  study_type?: string;
+  status: SecurityStudyStatus;
+  scheduled_date: string;
+  final_concept: string;
+  report_pdf_url: string | null;
+  include_polygraph: boolean;
+  include_home_visit: boolean;
+  include_background_study: boolean;
+  resume_pdf_url: string | null;
+  course_diploma_url: string | null;
+  created_at: string;
+}
+
+export type DemoSecurityOrder = AdminSecurityStudyOrderItem;
+
 export interface PartnerAcademy {
   id: string;
   name: string;

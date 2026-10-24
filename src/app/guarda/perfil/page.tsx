@@ -103,23 +103,6 @@ export default function PerfilGuardaPage() {
           if (candCourse?.completion_date) {
             setCourseDate(candCourse.completion_date);
           }
-        } else if (typeof window !== "undefined") {
-          const saved = localStorage.getItem("fv_candidate_profile");
-          if (saved) {
-            try {
-              const parsed = JSON.parse(saved);
-              if (parsed.full_name) setFullName(parsed.full_name);
-              if (parsed.national_id) setNationalId(parsed.national_id);
-              if (parsed.phone) setPhone(parsed.phone);
-              if (parsed.city) setCity(parsed.city);
-              if (parsed.locality) setLocality(parsed.locality);
-              if (parsed.primary_role) setPrimaryRole(parsed.primary_role);
-              if (parsed.years_experience !== undefined) setYearsExperience(parsed.years_experience);
-              if (parsed.has_military_booklet !== undefined) setHasMilitaryBooklet(parsed.has_military_booklet);
-              if (parsed.has_own_motorcycle !== undefined) setHasMotorcycle(parsed.has_own_motorcycle);
-              if (parsed.motorcycle_cc) setMotorcycleCc(parsed.motorcycle_cc);
-            } catch {}
-          }
         }
       } catch (err) {
         console.error("Error loading candidate profile:", err);
@@ -166,24 +149,6 @@ export default function PerfilGuardaPage() {
             },
             { onConflict: "user_id" }
           );
-      }
-
-      if (typeof window !== "undefined") {
-        localStorage.setItem(
-          "fv_candidate_profile",
-          JSON.stringify({
-            full_name: fullName,
-            national_id: nationalId,
-            phone,
-            city,
-            locality,
-            primary_role: primaryRole,
-            years_experience: yearsExperience,
-            has_military_booklet: hasMilitaryBooklet,
-            has_own_motorcycle: hasMotorcycle,
-            motorcycle_cc: motorcycleCc,
-          })
-        );
       }
 
       setSavedNotice(true);

@@ -81,30 +81,7 @@ export default function HomePage() {
         }
       } catch {}
 
-      if (typeof window !== "undefined") {
-        const local = localStorage.getItem("fv_company_jobs");
-        if (local) {
-          try {
-            const parsed = JSON.parse(local);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setFeaturedJobs(
-                parsed.slice(0, 3).map((j: any) => ({
-                  id: j.id,
-                  company: j.company_name || "Empresa de Seguridad",
-                  companyInitials: (j.company_name || "ES").slice(0, 2).toUpperCase(),
-                  title: j.title,
-                  role: j.role_required,
-                  location: `${j.city}${j.zone_neighborhood ? ` • ${j.zone_neighborhood}` : ""}`,
-                  salary: `$${Number(j.salary_monthly).toLocaleString("es-CO")} COP`,
-                  shift: j.shift,
-                  compatibility: "95%",
-                  description: j.description,
-                }))
-              );
-            }
-          } catch {}
-        }
-      }
+      setFeaturedJobs([]);
     }
 
     loadFeaturedJobs();

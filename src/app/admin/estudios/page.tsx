@@ -25,8 +25,7 @@ import {
   X,
   Eye,
 } from "lucide-react";
-import { DemoSecurityOrder, initializeSeedData } from "@/lib/utils/seedData";
-import { SecurityStudyStatus } from "@/types/database";
+import { SecurityStudyStatus, AdminSecurityStudyOrderItem as DemoSecurityOrder } from "@/types/database";
 import { AdminStudyDrawerModal } from "@/components/admin/AdminStudyDrawerModal";
 import { createClient } from "@/lib/supabase/client";
 import { openSecureDocument } from "@/lib/utils/storageSecurity";
@@ -74,14 +73,6 @@ export default function AdminEstudiosPage() {
         .select("*, profiles(*)")
         .order("updated_at", { ascending: false });
 
-      let localVerifiedMap: Record<string, boolean> = {};
-      if (typeof window !== "undefined") {
-        try {
-          const stored = localStorage.getItem("fv_verified_candidates");
-          if (stored) localVerifiedMap = JSON.parse(stored);
-        } catch {}
-      }
-
       if (!candError && candData && candData.length > 0) {
         const userIds = candData.map((c: any) => c.user_id).filter(Boolean);
 
@@ -122,13 +113,9 @@ export default function AdminEstudiosPage() {
             ["examen_medico", "medico"].includes(d.doc_type || d.document_type)
           );
 
-          const hasDbVerification = Boolean(
+          const isVerified = Boolean(
             latestCourse?.is_verified_by_admin || c.is_verified || (c as any).is_verified_by_admin
           );
-          const isVerified =
-            localVerifiedMap[c.user_id] !== undefined
-              ? localVerifiedMap[c.user_id]
-              : hasDbVerification;
 
           return {
             user_id: c.user_id,
@@ -166,41 +153,6 @@ export default function AdminEstudiosPage() {
       console.error("Error loading candidate verification in admin:", err);
     }
 
-    // Fallback: check localStorage for any locally registered candidate profile
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem("fv_candidate_profile");
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          const storedVer = localStorage.getItem("fv_verified_candidates");
-          const map = storedVer ? JSON.parse(storedVer) : {};
-          setCandidateList([
-            {
-              user_id: "local-user-1",
-              full_name: parsed.full_name || "Candidato Registrado",
-              national_id: parsed.national_id || "1020304050",
-              phone_whatsapp: parsed.phone_whatsapp || "3100000000",
-              city: parsed.city || "Bogotá D.C.",
-              locality: parsed.locality || "Chapinero",
-              primary_role: parsed.primary_role || "Vigilante Fijo",
-              years_experience: parsed.years_experience || 2,
-              is_verified_by_admin: map["local-user-1"] ?? false,
-              resume_url: parsed.resume_pdf_url || null,
-              diploma_url: parsed.diploma_pdf_url || null,
-              cedula_url: parsed.cedula_pdf_url || null,
-              judicial_url: null,
-              medical_url: null,
-              course_name: parsed.course_name || "Fundamentación Vigilancia",
-              academy_name: parsed.academy_name || "Academia Nacional de Seguridad",
-              credential_number: parsed.credencial_supervigilancia || "CR-99281",
-            },
-          ]);
-          setIsLoadingCandidates(false);
-          return;
-        }
-      } catch {}
-    }
-
     setCandidateList([]);
     setIsLoadingCandidates(false);
   };
@@ -213,15 +165,6 @@ export default function AdminEstudiosPage() {
         c.user_id === cand.user_id ? { ...c, is_verified_by_admin: nextStatus } : c
       )
     );
-
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem("fv_verified_candidates");
-        const map = stored ? JSON.parse(stored) : {};
-        map[cand.user_id] = nextStatus;
-        localStorage.setItem("fv_verified_candidates", JSON.stringify(map));
-      } catch {}
-    }
 
     try {
       const supabase = createClient();
@@ -303,8 +246,7 @@ export default function AdminEstudiosPage() {
       }
     } catch {}
 
-    const { orders: seededOrders } = initializeSeedData(false);
-    setOrders(seededOrders);
+    setOrders([]);
   };
 
   useEffect(() => {
@@ -312,13 +254,10 @@ export default function AdminEstudiosPage() {
     loadCandidatesFromSupabase();
   }, []);
 
-  // Save updated order to Supabase & localStorage
+  // Save updated order to Supabase
   const handleSaveOrder = async (updated: DemoSecurityOrder) => {
     const updatedList = orders.map((o) => (o.id === updated.id ? updated : o));
     setOrders(updatedList);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("fv_security_orders", JSON.stringify(updatedList));
-    }
 
     try {
       const supabase = createClient();

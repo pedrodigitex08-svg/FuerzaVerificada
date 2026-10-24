@@ -800,16 +800,6 @@ function LoginForm() {
                   role: "candidate",
                 })
               );
-              localStorage.setItem(
-                "fv_candidate_profile",
-                JSON.stringify({
-                  full_name: fullName.trim(),
-                  phone: phone.trim(),
-                  city: city || "Bogotá D.C.",
-                  primary_role: validPrimaryRole,
-                  available_immediately: true,
-                })
-              );
             }
           }
 

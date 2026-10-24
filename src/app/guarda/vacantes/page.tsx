@@ -68,7 +68,7 @@ function VacantesContent() {
     if (applyParam) setSelectedJobId(applyParam);
   }, [searchParams]);
 
-  // Load real vacancies from Supabase / localStorage
+  // Load real vacancies from Supabase
   useEffect(() => {
     async function fetchRealJobs() {
       try {
@@ -101,61 +101,34 @@ function VacantesContent() {
             setSelectedJobId(mapped[0].id);
           }
           return;
+        } else {
+          setJobs([]);
         }
-      } catch {}
-
-      // Fallback to local jobs created during session
-      if (typeof window !== "undefined") {
-        const local = localStorage.getItem("fv_company_jobs");
-        if (local) {
-          try {
-            const parsed = JSON.parse(local);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setJobs(parsed);
-              setSelectedJobId(parsed[0].id);
-            }
-          } catch {}
-        }
+      } catch {
+        setJobs([]);
       }
     }
 
     fetchRealJobs();
   }, [supabase]);
 
-  // Candidate Profile State
+  // Candidate Profile State - Clean initial state, populated from Supabase
   const [candidateProfile, setCandidateProfile] = useState({
-    city: "Bogotá D.C.",
-    primary_role: "Vigilante Fijo",
-    years_experience: 3,
-    has_military_booklet: true,
-    has_own_motorcycle: true,
-    motorcycle_cc: 150,
-    available_immediately: true,
-    course_semaphore: "VIGENTE" as CourseSemaphore,
-    daysRemaining: 184,
+    city: "",
+    primary_role: "",
+    years_experience: 0,
+    has_military_booklet: false,
+    has_own_motorcycle: false,
+    motorcycle_cc: 0,
+    available_immediately: false,
+    course_semaphore: "SIN_CURSO" as CourseSemaphore,
+    daysRemaining: 0,
   });
 
   // Mobile detail drawer toggle
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedProfile = localStorage.getItem("fv_candidate_profile");
-      if (savedProfile) {
-        try {
-          const parsed = JSON.parse(savedProfile);
-          setCandidateProfile((prev) => ({ ...prev, ...parsed }));
-        } catch {}
-      }
-
-      const savedApps = localStorage.getItem("fv_applied_jobs");
-      if (savedApps) {
-        try {
-          setAppliedJobIds(JSON.parse(savedApps));
-        } catch {}
-      }
-    }
-
     async function loadCandidateState() {
       try {
         const {
@@ -253,28 +226,6 @@ function VacantesContent() {
 
     const updated = { ...appliedJobIds, [job.id]: true };
     setAppliedJobIds(updated);
-
-    if (typeof window !== "undefined") {
-      localStorage.setItem("fv_applied_jobs", JSON.stringify(updated));
-
-      const existingAppsStr = localStorage.getItem("fv_applications_list") || "[]";
-      try {
-        const apps = JSON.parse(existingAppsStr);
-        apps.unshift({
-          id: `app-${Date.now()}`,
-          job_id: job.id,
-          job_title: job.title,
-          company_name: job.company_name,
-          shift: job.shift,
-          salary_monthly: job.salary_monthly,
-          interview_address: job.interview_address,
-          match_score: match.score,
-          status: "postulado",
-          created_at: new Date().toISOString(),
-        });
-        localStorage.setItem("fv_applications_list", JSON.stringify(apps));
-      } catch {}
-    }
 
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -481,12 +432,19 @@ function VacantesContent() {
             <div className="md:col-span-4">
               <ReliefToggle
                 initialValue={candidateProfile.available_immediately}
-                onToggle={(val) => {
+                onToggle={async (val) => {
                   setCandidateProfile((prev) => ({ ...prev, available_immediately: val }));
-                  if (typeof window !== "undefined") {
-                    const p = { ...candidateProfile, available_immediately: val };
-                    localStorage.setItem("fv_candidate_profile", JSON.stringify(p));
-                  }
+                  try {
+                    const {
+                      data: { user },
+                    } = await supabase.auth.getUser();
+                    if (user) {
+                      await supabase
+                        .from("candidate_profiles")
+                        .update({ available_immediately: val })
+                        .eq("user_id", user.id);
+                    }
+                  } catch {}
                 }}
               />
             </div>

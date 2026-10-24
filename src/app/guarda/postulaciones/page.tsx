@@ -121,21 +121,6 @@ export default function PostulacionesPage() {
           }
         }
 
-        // Local storage fallback for client test sessions
-        if (typeof window !== "undefined") {
-          const stored = localStorage.getItem("fv_applications_list");
-          if (stored) {
-            try {
-              const parsed = JSON.parse(stored);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                setApplications(parsed);
-                setIsLoading(false);
-                return;
-              }
-            } catch {}
-          }
-        }
-
         setApplications([]);
       } catch (err) {
         console.error("Error loading candidate applications:", err);

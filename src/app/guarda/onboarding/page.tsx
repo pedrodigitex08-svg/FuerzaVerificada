@@ -274,28 +274,6 @@ export default function OnboardingPage() {
         }
       }
 
-      if (typeof window !== "undefined") {
-        localStorage.setItem(
-          "fv_candidate_profile",
-          JSON.stringify({
-            full_name: fullName,
-            national_id: nationalId,
-            phone,
-            city,
-            locality,
-            primary_role: primaryRole,
-            years_experience: yearsExperience,
-            has_military_booklet: hasMilitaryBooklet,
-            has_own_motorcycle: hasMotorcycle,
-            motorcycle_cc: motorcycleCc,
-            available_immediately: true,
-            course_completion_date: courseCompletionDate,
-            course_academy: courseAcademy,
-            credencial_supervigilancia: credencialSupervigilancia,
-          })
-        );
-      }
-
       router.push("/guarda/vacantes");
     } catch {
       router.push("/guarda/vacantes");

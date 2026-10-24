@@ -22,8 +22,7 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
-import { DemoSecurityOrder } from "@/lib/utils/seedData";
-import { SecurityStudyStatus } from "@/types/database";
+import { SecurityStudyStatus, DemoSecurityOrder } from "@/types/database";
 import {
   generateCandidatePolygraphCitationLink,
   generateCompanyReportDeliveryLink,

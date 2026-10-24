@@ -24,8 +24,8 @@ import { PartnerAcademy } from "@/types/database";
 import { openSecureDocument } from "@/lib/utils/storageSecurity";
 
 export default function DocumentosPage() {
-  const [candidateName, setCandidateName] = useState("Aspirante");
-  const [candidateCity, setCandidateCity] = useState("Bogotá D.C.");
+  const [candidateName, setCandidateName] = useState("");
+  const [candidateCity, setCandidateCity] = useState("");
   const [courseCompletionDate, setCourseCompletionDate] = useState<string | null>(null);
   const [credencialSupervigilancia, setCredencialSupervigilancia] = useState("Sin registrar");
   const [courseAcademy, setCourseAcademy] = useState("Pendiente de registro");
@@ -123,18 +123,6 @@ export default function DocumentosPage() {
                 setIdCardUrl(d.file_url);
               }
             });
-          }
-        } else if (typeof window !== "undefined") {
-          const saved = localStorage.getItem("fv_candidate_profile");
-          if (saved) {
-            try {
-              const parsed = JSON.parse(saved);
-              if (parsed.full_name) setCandidateName(parsed.full_name);
-              if (parsed.city) setCandidateCity(parsed.city);
-              if (parsed.course_completion_date) setCourseCompletionDate(parsed.course_completion_date);
-              if (parsed.credencial_supervigilancia) setCredencialSupervigilancia(parsed.credencial_supervigilancia);
-              if (parsed.course_academy) setCourseAcademy(parsed.course_academy);
-            } catch {}
           }
         }
       } catch (err) {

@@ -22,7 +22,6 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { Company } from "@/types/database";
-import { INITIAL_DEMO_COMPANIES, initializeSeedData } from "@/lib/utils/seedData";
 import { createClient } from "@/lib/supabase/client";
 
 export default function AdminEmpresasPage() {
@@ -109,25 +108,19 @@ export default function AdminEmpresasPage() {
           }
         }
 
-        if (!error && currentCompanies.length > 0) {
-          setCompanies(currentCompanies);
-          return;
-        }
-      } catch {}
-
-      const { companies: seededCompanies } = initializeSeedData(false);
-      setCompanies(seededCompanies);
+        setCompanies(currentCompanies);
+        return;
+      } catch {
+        setCompanies([]);
+      }
     }
 
     loadCompanies();
   }, []);
 
-  // Save to localStorage helper
+  // Update companies state
   const syncCompanies = (updated: Company[]) => {
     setCompanies(updated);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("fv_companies", JSON.stringify(updated));
-    }
   };
 
   // Toggle Verification Switch
@@ -190,10 +183,6 @@ export default function AdminEmpresasPage() {
     });
 
     syncCompanies(updated);
-
-    if (typeof window !== "undefined") {
-      localStorage.setItem("fv_company_credits", nextCredits.toString());
-    }
 
     setNotification(
       `¡Se acreditaron +${creditAmount} créditos B2B a "${targetCompany.company_name}" bajo el plan ${selectedPlan.toUpperCase()}!`

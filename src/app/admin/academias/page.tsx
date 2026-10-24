@@ -20,7 +20,6 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { PartnerAcademy } from "@/types/database";
-import { INITIAL_DEMO_ACADEMIES, initializeSeedData } from "@/lib/utils/seedData";
 import { generateAcademyRenewalLink } from "@/lib/utils/whatsappTemplates";
 import { createClient } from "@/lib/supabase/client";
 
@@ -48,14 +47,13 @@ export default function AdminAcademiasPage() {
           .select("*")
           .order("name", { ascending: true });
 
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
           setAcademies(data as PartnerAcademy[]);
           return;
         }
       } catch {}
 
-      const { academies: seededAcademies } = initializeSeedData(false);
-      setAcademies(seededAcademies);
+      setAcademies([]);
     }
 
     loadAcademies();
@@ -63,9 +61,6 @@ export default function AdminAcademiasPage() {
 
   const syncAcademies = (updated: PartnerAcademy[]) => {
     setAcademies(updated);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("fv_partner_academies", JSON.stringify(updated));
-    }
   };
 
   const handleOpenCreate = () => {

@@ -138,28 +138,6 @@ export default function AdminLayout({
           setAcademiesCount(acadsCount);
         }
       } catch {}
-
-      if (typeof window !== "undefined") {
-        const storedOrders = localStorage.getItem("fv_security_orders");
-        if (storedOrders) {
-          try {
-            const parsed = JSON.parse(storedOrders);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setActiveStudiesCount((prev) => Math.max(prev, parsed.length));
-            }
-          } catch {}
-        }
-
-        const storedCompanies = localStorage.getItem("fv_companies");
-        if (storedCompanies) {
-          try {
-            const parsed = JSON.parse(storedCompanies);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setCompaniesCount((prev) => Math.max(prev, parsed.length));
-            }
-          } catch {}
-        }
-      }
     }
 
     loadAdminCounts();
