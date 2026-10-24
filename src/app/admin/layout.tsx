@@ -303,13 +303,24 @@ export default function AdminLayout({
                 </p>
               </div>
             </div>
-            <Link
-              href="/login"
+            <button
+              type="button"
+              onClick={async () => {
+                const supabase = createClient();
+                await Promise.race([
+                  supabase.auth.signOut().catch(() => {}),
+                  new Promise((res) => setTimeout(res, 800)),
+                ]);
+                localStorage.removeItem("fv_demo_role");
+                localStorage.removeItem("fv_demo_user");
+                sessionStorage.clear();
+                window.location.href = "/login";
+              }}
               title="Cerrar sesión"
               className="text-slate-500 hover:text-slate-300 p-1.5 rounded-lg hover:bg-slate-800 transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" strokeWidth={1.75} />
-            </Link>
+            </button>
           </div>
         </div>
       </aside>

@@ -99,13 +99,101 @@ function LoginForm() {
       setErrorType("generic");
       setErrorMsg("No fue posible completar la autenticación con Google. Por favor intenta de nuevo.");
     }
-  }, [searchParams]);
+
+    // 1. Detección de sesión activa para evitar pantallas congeladas
+    async function checkExistingUserSession() {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", session.user.id)
+            .maybeSingle();
+
+          const userRole = profile?.role || session.user.user_metadata?.role || "candidate";
+
+          if (userRole === "admin") {
+            window.location.href = "/admin/estudios";
+          } else if (userRole === "company") {
+            window.location.href = "/empresa/dashboard";
+          } else {
+            window.location.href = "/guarda/vacantes";
+          }
+        }
+      } catch {}
+    }
+
+    checkExistingUserSession();
+
+    // 2. Escucha reactiva si el usuario finaliza OAuth en otra pestaña o regresa autenticado
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session?.user) {
+        setLoading(true);
+        try {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", session.user.id)
+            .maybeSingle();
+
+          const userRole = profile?.role || session.user.user_metadata?.role || "candidate";
+
+          // Asegurar que el perfil exista (upsert automático)
+          if (!profile) {
+            const googleFullName =
+              session.user.user_metadata?.full_name ||
+              session.user.user_metadata?.name ||
+              session.user.email?.split("@")[0] ||
+              "Personal Operativo";
+
+            await supabase.from("profiles").upsert(
+              {
+                id: session.user.id,
+                role: userRole,
+                full_name: googleFullName,
+                email: session.user.email ?? "",
+                phone_whatsapp: session.user.phone ?? "",
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: "id" }
+            );
+          }
+
+          if (userRole === "admin") {
+            window.location.href = "/admin/estudios";
+          } else if (userRole === "company") {
+            window.location.href = "/empresa/dashboard";
+          } else {
+            window.location.href = "/guarda/vacantes";
+          }
+        } catch {
+          window.location.href = "/guarda/vacantes";
+        }
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [searchParams, supabase]);
 
   // Google OAuth Login exclusively for Candidates with dynamic intent
   const handleGoogleLogin = async (intent: "login" | "register" = mode === "register" ? "register" : "login") => {
     setErrorMsg(null);
     setErrorType(null);
     setLoading(true);
+
+    // Temporizador de seguridad: si la redirección se bloquea o demora, destraba el botón tras 6s
+    const failsafeTimer = setTimeout(() => {
+      setLoading(false);
+    }, 6000);
+
     try {
       const origin =
         typeof window !== "undefined" && window.location.origin
@@ -114,16 +202,31 @@ function LoginForm() {
 
       const redirectUrl = `${origin}/auth/callback?intent=${intent}`;
 
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: redirectUrl,
+          queryParams: {
+            prompt: "select_account",
+          },
         },
       });
-      if (error) throw error;
+
+      if (error) {
+        clearTimeout(failsafeTimer);
+        throw error;
+      }
+
+      // Si retorna la URL de Google OAuth, redirigir explícitamente
+      if (data?.url) {
+        clearTimeout(failsafeTimer);
+        window.location.href = data.url;
+      }
     } catch (err: any) {
+      clearTimeout(failsafeTimer);
+      console.error("Error al conectar con Google OAuth:", err);
       setErrorType("generic");
-      setErrorMsg(err.message || "Error al conectar con Google");
+      setErrorMsg(err.message || "Error al conectar con Google. Por favor intenta de nuevo.");
       setLoading(false);
     }
   };
@@ -489,10 +592,10 @@ function LoginForm() {
                   type="button"
                   onClick={() => handleGoogleLogin("login")}
                   disabled={loading}
-                  className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] active:bg-[#F1F5F9] text-[#1E293B] text-xs font-bold transition-all shadow-sm min-h-[46px]"
+                  className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] active:bg-[#F1F5F9] text-[#1E293B] text-xs font-bold transition-all shadow-sm min-h-[46px] disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <GoogleIcon />
-                  <span>Continuar con Google</span>
+                  <span>{loading ? "Conectando con Google..." : "Continuar con Google"}</span>
                 </button>
 
                 <div className="relative flex items-center justify-center py-0.5">
@@ -754,10 +857,10 @@ function LoginForm() {
                   type="button"
                   onClick={() => handleGoogleLogin("register")}
                   disabled={loading}
-                  className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] active:bg-[#F1F5F9] text-[#1E293B] text-xs font-bold transition-all shadow-sm min-h-[46px]"
+                  className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] active:bg-[#F1F5F9] text-[#1E293B] text-xs font-bold transition-all shadow-sm min-h-[46px] disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <GoogleIcon />
-                  <span>Registrarme con Google (1 Clic)</span>
+                  <span>{loading ? "Conectando con Google..." : "Registrarme con Google (1 Clic)"}</span>
                 </button>
 
                 <div className="relative flex items-center justify-center py-0.5">

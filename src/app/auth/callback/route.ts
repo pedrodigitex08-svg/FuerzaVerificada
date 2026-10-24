@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
-  const intent = requestUrl.searchParams.get("intent") || "login";
   const origin = requestUrl.origin;
 
   if (code) {
@@ -14,21 +13,14 @@ export async function GET(request: Request) {
     if (!error && data?.session?.user) {
       const user = data.session.user;
 
-      // 1. Verify if user already has an active profile in public.profiles
-      const { data: profile } = await supabase
+      // 1. Verify or ensure profile exists in public.profiles
+      let { data: profile } = await supabase
         .from("profiles")
         .select("id, role, full_name")
         .eq("id", user.id)
         .maybeSingle();
 
-      // If user came through "Iniciar Sesión" (intent=login) and has no registered profile
-      if (intent === "login" && !profile) {
-        // Sign out temporary OAuth session to prevent unauthorized access
-        await supabase.auth.signOut();
-        return NextResponse.redirect(`${origin}/login?error=not_registered`);
-      }
-
-      // If user came through "Registro" (intent=register) and profile doesn't exist yet, create it
+      // If user profile is missing (or failed to create during initial registration), auto-upsert
       if (!profile) {
         const googleFullName =
           user.user_metadata?.full_name ||
@@ -36,13 +28,25 @@ export async function GET(request: Request) {
           user.email?.split("@")[0] ||
           "Personal Operativo";
 
-        await supabase.from("profiles").insert({
-          id: user.id,
-          role: "candidate",
-          full_name: googleFullName,
-          email: user.email ?? "",
-          phone_whatsapp: user.phone ?? "",
-        });
+        const { data: upsertedProfile } = await supabase
+          .from("profiles")
+          .upsert(
+            {
+              id: user.id,
+              role: "candidate",
+              full_name: googleFullName,
+              email: user.email ?? "",
+              phone_whatsapp: user.phone ?? "",
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "id" }
+          )
+          .select("id, role, full_name")
+          .maybeSingle();
+
+        if (upsertedProfile) {
+          profile = upsertedProfile;
+        }
       }
 
       const activeRole = profile?.role || "candidate";
@@ -54,14 +58,14 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${origin}/empresa/dashboard`);
       }
 
-      // Candidate: Check if structured profile exists
+      // Candidate: Check if structured profile exists in candidate_profiles
       const { data: candidateProfile } = await supabase
         .from("candidate_profiles")
         .select("user_id, national_id, primary_role")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      // If no candidate profile or national_id is missing, redirect to onboarding wizard
+      // If candidate profile is incomplete, redirect to onboarding wizard
       if (!candidateProfile || !candidateProfile.national_id) {
         return NextResponse.redirect(`${origin}/guarda/onboarding`);
       }

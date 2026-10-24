@@ -257,7 +257,9 @@ export default function EmpresaLayout({
           <div className="mt-2 pt-2 border-t border-[#E2E8F0] flex items-center justify-between px-1 text-xs">
             <span className="text-[11px] text-[#64748B]">Sesión activa</span>
             <button
-              onClick={() => signOut()}
+              onClick={async () => {
+                await signOut();
+              }}
               className="text-[#64748B] hover:text-rose-600 text-xs flex items-center gap-1 transition-colors"
             >
               <LogOut className="w-3 h-3" />

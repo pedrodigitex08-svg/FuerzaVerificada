@@ -147,11 +147,34 @@ export function useAuth(): AuthState {
   const signOut = async () => {
     try {
       const supabase = createClient();
-      await supabase.auth.signOut();
-    } catch {}
+      // Try local and global signout with timeout so it never hangs
+      await Promise.race([
+        supabase.auth.signOut({ scope: "local" }).catch(() => {}),
+        new Promise((res) => setTimeout(res, 800)),
+      ]);
+      await Promise.race([
+        supabase.auth.signOut().catch(() => {}),
+        new Promise((res) => setTimeout(res, 800)),
+      ]);
+    } catch (err) {
+      console.error("Error signing out:", err);
+    }
+
     if (typeof window !== "undefined") {
+      // Clear all cached credentials and states
       localStorage.removeItem("fv_demo_role");
       localStorage.removeItem("fv_demo_user");
+      localStorage.removeItem("fv_company_verified");
+      localStorage.removeItem("fv_candidate_profile");
+      sessionStorage.clear();
+
+      setUser(null);
+      setRole(null);
+      setFullName("");
+      setEmail("");
+      setIsLoading(false);
+
+      // Force clean navigation and fresh context
       window.location.href = "/login";
     }
   };

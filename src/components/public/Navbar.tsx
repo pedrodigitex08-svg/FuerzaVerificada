@@ -117,7 +117,9 @@ export function Navbar() {
               )}
 
               <button
-                onClick={() => signOut()}
+                onClick={async () => {
+                  await signOut();
+                }}
                 className="text-xs text-[#64748B] hover:text-rose-600 p-2 rounded-xl transition-colors"
                 title="Cerrar sesión"
               >
@@ -231,9 +233,9 @@ export function Navbar() {
                   </Link>
                 )}
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setMobileMenuOpen(false);
-                    signOut();
+                    await signOut();
                   }}
                   className="text-xs text-rose-600 font-semibold p-2 rounded-lg hover:bg-rose-50 text-center flex items-center justify-center gap-1.5"
                 >

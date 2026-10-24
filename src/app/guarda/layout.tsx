@@ -157,7 +157,9 @@ export default function GuardaLayout({
             </div>
             {isAuthenticated ? (
               <button
-                onClick={() => signOut()}
+                onClick={async () => {
+                  await signOut();
+                }}
                 className="p-1.5 text-[#64748B] hover:text-rose-600 transition-colors"
                 title="Cerrar sesión"
               >
