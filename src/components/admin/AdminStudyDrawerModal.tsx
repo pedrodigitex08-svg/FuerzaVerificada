@@ -29,6 +29,7 @@ import {
   generateCompanyReportDeliveryLink,
 } from "@/lib/utils/whatsappTemplates";
 import { createClient } from "@/lib/supabase/client";
+import { openSecureDocument } from "@/lib/utils/storageSecurity";
 
 interface AdminStudyDrawerModalProps {
   order: DemoSecurityOrder | null;
@@ -231,31 +232,29 @@ export function AdminStudyDrawerModal({
             {/* Soportes y HV PDF */}
             <div className="pt-2 flex flex-wrap gap-2">
               {order.resume_pdf_url ? (
-                <a
-                  href={order.resume_pdf_url}
-                  target="_blank"
-                  rel="noreferrer"
+                <button
+                  type="button"
+                  onClick={() => openSecureDocument(order.resume_pdf_url)}
                   className="btn-secondary text-[11px] py-1.5 px-2.5 inline-flex items-center gap-1.5"
                 >
                   <FileText className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
-                  <span>Hoja de Vida (PDF)</span>
+                  <span>Hoja de Vida (PDF Firmado)</span>
                   <ExternalLink className="w-3 h-3 text-slate-400" strokeWidth={1.75} />
-                </a>
+                </button>
               ) : (
                 <span className="text-[11px] text-slate-400 py-1">Sin HV adjunta</span>
               )}
 
               {order.course_diploma_url ? (
-                <a
-                  href={order.course_diploma_url}
-                  target="_blank"
-                  rel="noreferrer"
+                <button
+                  type="button"
+                  onClick={() => openSecureDocument(order.course_diploma_url)}
                   className="btn-secondary text-[11px] py-1.5 px-2.5 inline-flex items-center gap-1.5"
                 >
                   <Shield className="w-3.5 h-3.5 text-amber-500" strokeWidth={1.75} />
                   <span>Diploma SuperVigilancia</span>
                   <ExternalLink className="w-3 h-3 text-slate-400" strokeWidth={1.75} />
-                </a>
+                </button>
               ) : null}
             </div>
           </div>
@@ -392,15 +391,14 @@ export function AdminStudyDrawerModal({
                     <span className="font-semibold text-slate-800 block truncate">
                       Informe cargado y disponible
                     </span>
-                    <a
-                      href={reportPdfUrl}
-                      target="_blank"
-                      rel="noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => openSecureDocument(reportPdfUrl)}
                       className="text-[11px] text-blue-600 hover:underline flex items-center gap-1 truncate"
                     >
-                      {reportPdfUrl}
+                      <span>Abrir con enlace firmado (1h)</span>
                       <ExternalLink className="w-2.5 h-2.5 shrink-0" />
-                    </a>
+                    </button>
                   </div>
                 </div>
 

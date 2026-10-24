@@ -201,22 +201,39 @@ export default function ATSVacantePage() {
     } catch {}
   };
 
-  // Confirm Security Study Order: Deduct 1 credit & set status to 'en_estudio_seguridad'
+  // Confirm Security Study Order: Atomic RPC transaction (with fallback) to deduct 1 credit & set status to 'en_estudio_seguridad'
   const handleConfirmStudyOrder = async () => {
     if (!selectedCandidateForStudy || credits <= 0) return;
 
-    const newCredits = credits - 1;
-    setCredits(newCredits);
+    let updatedCredits = credits - 1;
+    setCredits(updatedCredits);
 
     try {
       const supabase = createClient();
-      if (companyId) {
-        await supabase
-          .from("companies")
-          .update({ credits_security_studies: newCredits })
-          .eq("id", companyId);
+      if (companyId && selectedCandidateForStudy.candidate_user_id) {
+        // 1. Attempt Atomic PostgreSQL RPC Transaction first
+        const { data: rpcResult, error: rpcError } = await supabase.rpc(
+          "request_security_study_order",
+          {
+            p_company_id: companyId,
+            p_candidate_id: selectedCandidateForStudy.candidate_user_id,
+            p_application_id: selectedCandidateForStudy.id,
+            p_study_type: "combo_integral_poligrafo_visita",
+          }
+        );
 
-        if (selectedCandidateForStudy.candidate_user_id) {
+        if (!rpcError && rpcResult) {
+          if (typeof rpcResult.remaining_credits === "number") {
+            updatedCredits = rpcResult.remaining_credits;
+            setCredits(updatedCredits);
+          }
+        } else {
+          // 2. Fallback if RPC is not yet installed in Supabase
+          await supabase
+            .from("companies")
+            .update({ credits_security_studies: updatedCredits })
+            .eq("id", companyId);
+
           await supabase.from("security_study_orders").insert({
             company_id: companyId,
             candidate_id: selectedCandidateForStudy.candidate_user_id,
@@ -228,11 +245,16 @@ export default function ATSVacantePage() {
             report_pdf_url: null,
           });
         }
+      } else if (companyId) {
+        await supabase
+          .from("companies")
+          .update({ credits_security_studies: updatedCredits })
+          .eq("id", companyId);
       }
     } catch {}
 
     if (typeof window !== "undefined") {
-      localStorage.setItem("fv_company_credits", newCredits.toString());
+      localStorage.setItem("fv_company_credits", updatedCredits.toString());
 
       // Append to orders list in localStorage
       const existingOrdersStr = localStorage.getItem("fv_security_orders") || "[]";

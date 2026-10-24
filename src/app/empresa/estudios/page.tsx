@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { SecurityStudyStatus } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
+import { openSecureDocument } from "@/lib/utils/storageSecurity";
 
 interface SecurityOrder {
   id: string;
@@ -289,15 +290,14 @@ export default function EmpresaEstudiosPage() {
                 </div>
 
                 {order.report_pdf_url && (
-                  <a
-                    href={order.report_pdf_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={() => openSecureDocument(order.report_pdf_url)}
                     className="btn-secondary text-xs py-2 px-3.5 font-semibold text-amber-800 hover:text-amber-900 self-start sm:self-auto"
                   >
                     <Download className="w-3.5 h-3.5 text-emerald-600" strokeWidth={1.75} />
                     Descargar Informe Confidencial (PDF)
-                  </a>
+                  </button>
                 )}
               </div>
 

@@ -23,6 +23,7 @@ import { DemoSecurityOrder, initializeSeedData } from "@/lib/utils/seedData";
 import { SecurityStudyStatus } from "@/types/database";
 import { AdminStudyDrawerModal } from "@/components/admin/AdminStudyDrawerModal";
 import { createClient } from "@/lib/supabase/client";
+import { openSecureDocument } from "@/lib/utils/storageSecurity";
 
 export default function AdminEstudiosPage() {
   const [orders, setOrders] = useState<DemoSecurityOrder[]>([]);
@@ -416,16 +417,17 @@ export default function AdminEstudiosPage() {
                     {/* PDF Report */}
                     <td className="py-3 px-4 whitespace-nowrap">
                       {order.report_pdf_url ? (
-                        <a
-                          href={order.report_pdf_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openSecureDocument(order.report_pdf_url);
+                          }}
                           className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-800"
                         >
                           <Download className="w-3.5 h-3.5" />
                           <span>Descargar PDF</span>
-                        </a>
+                        </button>
                       ) : (
                         <span className="text-[11px] text-slate-400 font-normal">
                           Pendiente

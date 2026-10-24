@@ -19,6 +19,7 @@ import { CourseSemaphoreBanner } from "@/components/guarda/CourseSemaphoreBanner
 import { generateAcademyRenewalLink } from "@/lib/utils/whatsappTemplates";
 import { createClient } from "@/lib/supabase/client";
 import { PartnerAcademy } from "@/types/database";
+import { openSecureDocument } from "@/lib/utils/storageSecurity";
 
 export default function DocumentosPage() {
   const [candidateName, setCandidateName] = useState("Aspirante");
@@ -262,15 +263,14 @@ export default function DocumentosPage() {
               <p className="text-[11px] text-slate-500 mt-0.5">Formato tradicional descargable</p>
             </div>
             {resumeUrl ? (
-              <a
-                href={resumeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
+                onClick={() => openSecureDocument(resumeUrl)}
                 className="text-[11px] font-semibold text-emerald-700 hover:underline flex items-center gap-1"
               >
                 <span>Ver Hoja_de_Vida.pdf</span>
                 <ExternalLink className="w-3 h-3" />
-              </a>
+              </button>
             ) : (
               <span className="text-[10px] text-slate-400 font-mono">Sin archivo</span>
             )}
@@ -289,15 +289,14 @@ export default function DocumentosPage() {
               <p className="text-[11px] text-slate-500 mt-0.5">Certificado de Reentrenamiento</p>
             </div>
             {courseDiplomaUrl ? (
-              <a
-                href={courseDiplomaUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
+                onClick={() => openSecureDocument(courseDiplomaUrl)}
                 className="text-[11px] font-semibold text-emerald-700 hover:underline flex items-center gap-1"
               >
                 <span>Ver Diploma_Vigilancia.pdf</span>
                 <ExternalLink className="w-3 h-3" />
-              </a>
+              </button>
             ) : (
               <span className="text-[10px] text-slate-400 font-mono">Sin archivo</span>
             )}
@@ -316,15 +315,14 @@ export default function DocumentosPage() {
               <p className="text-[11px] text-slate-500 mt-0.5">Documento de identidad nacional</p>
             </div>
             {idCardUrl ? (
-              <a
-                href={idCardUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
+                onClick={() => openSecureDocument(idCardUrl)}
                 className="text-[11px] font-semibold text-emerald-700 hover:underline flex items-center gap-1"
               >
                 <span>Ver Documento_Identidad.pdf</span>
                 <ExternalLink className="w-3 h-3" />
-              </a>
+              </button>
             ) : (
               <span className="text-[10px] text-slate-400 font-mono">Sin archivo</span>
             )}

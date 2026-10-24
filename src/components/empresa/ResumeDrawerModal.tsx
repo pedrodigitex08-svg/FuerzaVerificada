@@ -17,6 +17,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { CandidateWithCourseStatusView, SecurityRoleType } from "@/types/database";
+import { openSecureDocument } from "@/lib/utils/storageSecurity";
 
 interface ResumeDrawerModalProps {
   isOpen: boolean;
@@ -154,15 +155,14 @@ export function ResumeDrawerModal({
                     </div>
                   </div>
                   {candidate.resume_pdf_url ? (
-                    <a
-                      href={candidate.resume_pdf_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => openSecureDocument(candidate.resume_pdf_url)}
                       className="btn-secondary text-xs py-1.5 px-3 font-semibold"
                     >
                       <Download className="w-3.5 h-3.5" strokeWidth={1.75} />
                       Ver PDF
-                    </a>
+                    </button>
                   ) : (
                     <span className="text-xs text-slate-400 italic">No adjuntado</span>
                   )}
