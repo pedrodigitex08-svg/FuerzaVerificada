@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   FileCheck,
@@ -17,15 +17,67 @@ import {
 } from "lucide-react";
 import { CourseSemaphoreBanner } from "@/components/guarda/CourseSemaphoreBanner";
 import { generateAcademyRenewalLink } from "@/lib/utils/whatsappTemplates";
+import { createClient } from "@/lib/supabase/client";
 
 export default function DocumentosPage() {
+  const [candidateName, setCandidateName] = useState("Aspirante");
   const [courseCompletionDate, setCourseCompletionDate] = useState("2026-04-15");
-  const [credencialSupervigilancia, setCredencialSupervigilancia] = useState("SV-89421");
+  const [credencialSupervigilancia, setCredencialSupervigilancia] = useState("SV-PENDIENTE");
+  const [hasResume, setHasResume] = useState(false);
+  const [hasCourseDiploma, setHasCourseDiploma] = useState(false);
+  const [hasIdCard, setHasIdCard] = useState(false);
+
+  useEffect(() => {
+    async function loadData() {
+      const supabase = createClient();
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("id", user.id)
+            .maybeSingle();
+
+          if (profile?.full_name) {
+            setCandidateName(profile.full_name);
+          } else if (user.user_metadata?.full_name) {
+            setCandidateName(user.user_metadata.full_name);
+          }
+
+          const { data: candProfile } = await supabase
+            .from("candidate_profiles")
+            .select("*")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (candProfile) {
+            if (candProfile.resume_pdf_url) setHasResume(true);
+          }
+        } else if (typeof window !== "undefined") {
+          const saved = localStorage.getItem("fv_candidate_profile");
+          if (saved) {
+            try {
+              const parsed = JSON.parse(saved);
+              if (parsed.full_name) setCandidateName(parsed.full_name);
+            } catch {}
+          }
+        }
+      } catch (err) {
+        console.error("Error loading candidate info:", err);
+      }
+    }
+
+    loadData();
+  }, []);
 
   const renewalLink = generateAcademyRenewalLink({
     academyPhone: "573158901234",
     academyName: "Academia Nacional de Seguridad",
-    candidateName: "Carlos Eduardo Moreno",
+    candidateName: candidateName,
     city: "Bogotá D.C.",
     referralCode: "FUERZA2026",
     discountText: "15% Descuento Convenio FuerzaVerificada",
@@ -53,7 +105,7 @@ export default function DocumentosPage() {
       {/* SEMÁFORO DEL CURSO BANNER */}
       <CourseSemaphoreBanner
         completionDate={courseCompletionDate}
-        candidateName="Carlos Eduardo Moreno"
+        candidateName={candidateName}
         courseName="Reentrenamiento en Vigilancia"
       />
 
@@ -101,7 +153,7 @@ export default function DocumentosPage() {
               Academia Emisora
             </span>
             <span className="font-semibold text-slate-800 text-xs mt-0.5 block truncate">
-              Academia Nacional de Seguridad
+              Academia Autorizada SuperVigilancia
             </span>
           </div>
         </div>
@@ -133,39 +185,51 @@ export default function DocumentosPage() {
           <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50 flex flex-col justify-between space-y-3">
             <div className="flex items-start justify-between">
               <FileText className="w-6 h-6 text-slate-700" strokeWidth={1.5} />
-              <span className="badge-emerald text-[10px]">Cargado</span>
+              <span className={hasResume ? "badge-emerald text-[10px]" : "badge-amber text-[10px]"}>
+                {hasResume ? "Cargado" : "Pendiente"}
+              </span>
             </div>
             <div>
               <h4 className="text-xs font-bold text-slate-900">Hoja de Vida en PDF</h4>
               <p className="text-[11px] text-slate-500 mt-0.5">Formato tradicional descargable</p>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono">HV_CarlosMoreno.pdf</span>
+            <span className="text-[10px] text-slate-400 font-mono">
+              {hasResume ? "Hoja_de_Vida.pdf" : "Sin archivo"}
+            </span>
           </div>
 
           {/* Doc 2 */}
           <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50 flex flex-col justify-between space-y-3">
             <div className="flex items-start justify-between">
               <FileCheck className="w-6 h-6 text-emerald-600" strokeWidth={1.5} />
-              <span className="badge-emerald text-[10px]">Cargado</span>
+              <span className={hasCourseDiploma ? "badge-emerald text-[10px]" : "badge-amber text-[10px]"}>
+                {hasCourseDiploma ? "Cargado" : "Pendiente"}
+              </span>
             </div>
             <div>
               <h4 className="text-xs font-bold text-slate-900">Diploma del Curso</h4>
               <p className="text-[11px] text-slate-500 mt-0.5">Certificado de Reentrenamiento</p>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono">Diploma_Vigilancia.pdf</span>
+            <span className="text-[10px] text-slate-400 font-mono">
+              {hasCourseDiploma ? "Diploma_Vigilancia.pdf" : "Sin archivo"}
+            </span>
           </div>
 
           {/* Doc 3 */}
           <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50 flex flex-col justify-between space-y-3">
             <div className="flex items-start justify-between">
               <CreditCard className="w-6 h-6 text-slate-700" strokeWidth={1.5} />
-              <span className="badge-emerald text-[10px]">Cargado</span>
+              <span className={hasIdCard ? "badge-emerald text-[10px]" : "badge-amber text-[10px]"}>
+                {hasIdCard ? "Cargado" : "Pendiente"}
+              </span>
             </div>
             <div>
               <h4 className="text-xs font-bold text-slate-900">Cédula de Ciudadanía</h4>
               <p className="text-[11px] text-slate-500 mt-0.5">Documento de identidad nacional</p>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono">Cedula_1020304050.jpg</span>
+            <span className="text-[10px] text-slate-400 font-mono">
+              {hasIdCard ? "Documento_Identidad.pdf" : "Sin archivo"}
+            </span>
           </div>
         </div>
       </div>

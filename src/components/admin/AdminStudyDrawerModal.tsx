@@ -101,10 +101,7 @@ export function AdminStudyDrawerModal({
         .upload(filePath, file, { upsert: true });
 
       if (error) {
-        // Fallback for demo resilience
-        const fallbackUrl = `https://demo.fuerzaverificada.com/informes/${fileName}`;
-        setReportPdfUrl(fallbackUrl);
-        setUploadSuccess(true);
+        console.error("Error al cargar informe:", error.message);
       } else if (data) {
         const { data: publicData } = supabase.storage
           .from("documents")
@@ -112,9 +109,8 @@ export function AdminStudyDrawerModal({
         setReportPdfUrl(publicData.publicUrl);
         setUploadSuccess(true);
       }
-    } catch {
-      setReportPdfUrl(`https://demo.fuerzaverificada.com/informes/informe-${order.id}.pdf`);
-      setUploadSuccess(true);
+    } catch (err) {
+      console.error("Error subiendo PDF:", err);
     } finally {
       setUploading(false);
       setTimeout(() => setUploadSuccess(false), 3000);
@@ -234,27 +230,33 @@ export function AdminStudyDrawerModal({
 
             {/* Soportes y HV PDF */}
             <div className="pt-2 flex flex-wrap gap-2">
-              <a
-                href={order.resume_pdf_url || "https://demo.fuerzaverificada.com/hv-carlos.pdf"}
-                target="_blank"
-                rel="noreferrer"
-                className="btn-secondary text-[11px] py-1.5 px-2.5 inline-flex items-center gap-1.5"
-              >
-                <FileText className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
-                <span>Hoja de Vida (PDF Tradicional)</span>
-                <ExternalLink className="w-3 h-3 text-slate-400" strokeWidth={1.75} />
-              </a>
+              {order.resume_pdf_url ? (
+                <a
+                  href={order.resume_pdf_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-secondary text-[11px] py-1.5 px-2.5 inline-flex items-center gap-1.5"
+                >
+                  <FileText className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
+                  <span>Hoja de Vida (PDF)</span>
+                  <ExternalLink className="w-3 h-3 text-slate-400" strokeWidth={1.75} />
+                </a>
+              ) : (
+                <span className="text-[11px] text-slate-400 py-1">Sin HV adjunta</span>
+              )}
 
-              <a
-                href={order.course_diploma_url || "https://demo.fuerzaverificada.com/diploma-carlos.pdf"}
-                target="_blank"
-                rel="noreferrer"
-                className="btn-secondary text-[11px] py-1.5 px-2.5 inline-flex items-center gap-1.5"
-              >
-                <Shield className="w-3.5 h-3.5 text-amber-500" strokeWidth={1.75} />
-                <span>Diploma Curso SuperVigilancia</span>
-                <ExternalLink className="w-3 h-3 text-slate-400" strokeWidth={1.75} />
-              </a>
+              {order.course_diploma_url ? (
+                <a
+                  href={order.course_diploma_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-secondary text-[11px] py-1.5 px-2.5 inline-flex items-center gap-1.5"
+                >
+                  <Shield className="w-3.5 h-3.5 text-amber-500" strokeWidth={1.75} />
+                  <span>Diploma SuperVigilancia</span>
+                  <ExternalLink className="w-3 h-3 text-slate-400" strokeWidth={1.75} />
+                </a>
+              ) : null}
             </div>
           </div>
 

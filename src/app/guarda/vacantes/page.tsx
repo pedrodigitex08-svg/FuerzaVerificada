@@ -31,158 +31,12 @@ import { JobPost, CourseSemaphore } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/supabase/useAuth";
 
-const INITIAL_JOBS: (JobPost & { company_name: string; is_verified_company: boolean })[] = [
-  {
-    id: "job-1",
-    company_id: "comp-1",
-    company_name: "Seguridad Andina Ltda.",
-    is_verified_company: true,
-    title: "Vigilante Fijo - Centro Empresarial Calle 100",
-    role_required: "Vigilante Fijo",
-    city: "Bogotá D.C.",
-    zone_neighborhood: "Chicó / Calle 100",
-    shift: "2x2x2 (2 Día, 2 Noche, 2 Descanso)",
-    salary_monthly: 1950000,
-    includes_surcharges: true,
-    requires_active_course: true,
-    requires_motorcycle: false,
-    min_motorcycle_cc: null,
-    requires_military_booklet: true,
-    min_experience_years: 1,
-    is_strict_filter: false,
-    is_urgent_relief: true,
-    description:
-      "Requerimos vigilante con excelente presentación para control de accesos peatonales y recepción corporativa. Indispensable curso de vigilancia al día y situación militar definida.",
-    interview_address: "Cra 15 # 98-42, Oficina 301, Bogotá",
-    is_active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "job-2",
-    company_id: "comp-2",
-    company_name: "G4S Colombia Seguridad",
-    is_verified_company: true,
-    title: "Supervisor Motorizado - Zona Industrial",
-    role_required: "Supervisor Motorizado",
-    city: "Bogotá D.C.",
-    zone_neighborhood: "Fontibón / Álamos",
-    shift: "4x2 Rotativo",
-    salary_monthly: 2450000,
-    includes_surcharges: true,
-    requires_active_course: true,
-    requires_motorcycle: true,
-    min_motorcycle_cc: 150,
-    requires_military_booklet: true,
-    min_experience_years: 2,
-    is_strict_filter: true,
-    is_urgent_relief: false,
-    description:
-      "Rondas perimetrales y supervisión de 8 puestos fijos industriales. Se requiere motocicleta propia modelo 2021 en adelante con cilindraje mínimo de 150cc y documentación al día.",
-    interview_address: "Calle 26 # 69D-91, Torre B, Fontibón",
-    is_active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "job-3",
-    company_id: "comp-3",
-    company_name: "Vigilancia San Jorge",
-    is_verified_company: false,
-    title: "Escolta VIP para Esquema Ejecutivo",
-    role_required: "Escolta VIP",
-    city: "Bogotá D.C.",
-    zone_neighborhood: "Usaquén / Rosales",
-    shift: "6x1 Diurno",
-    salary_monthly: 3200000,
-    includes_surcharges: true,
-    requires_active_course: true,
-    requires_motorcycle: false,
-    min_motorcycle_cc: null,
-    requires_military_booklet: true,
-    min_experience_years: 3,
-    is_strict_filter: false,
-    is_urgent_relief: true,
-    description:
-      "Protección a directivo corporativo y acompañamiento en desplazamientos urbanos. Se evalúa porte de armas, manejo defensivo y aprobación de poligrafía preempleo.",
-    interview_address: "Av. Carrera 7 # 127-48, Bogotá",
-    is_active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "job-4",
-    company_id: "comp-4",
-    company_name: "Seguridad Omega",
-    is_verified_company: true,
-    title: "Operador de Medios Tecnológicos (CCTV)",
-    role_required: "Operador Medios Tecnológicos",
-    city: "Bogotá D.C.",
-    zone_neighborhood: "Salitre / Teusaquillo",
-    shift: "2x2x2",
-    salary_monthly: 2100000,
-    includes_surcharges: true,
-    requires_active_course: true,
-    requires_motorcycle: false,
-    min_motorcycle_cc: null,
-    requires_military_booklet: false,
-    min_experience_years: 1,
-    is_strict_filter: false,
-    is_urgent_relief: false,
-    description:
-      "Monitoreo de cámaras de seguridad y alarmas en central operativa. Manejo de sistemas Milestone y reporte de novedades en tiempo real.",
-    interview_address: "Av. El Dorado # 68C-61, Bogotá",
-    is_active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "job-5",
-    company_id: "comp-5",
-    company_name: "Seguridad Antioquia Ltda.",
-    is_verified_company: true,
-    title: "Vigilante Fijo - Sector Comercial El Poblado",
-    role_required: "Vigilante Fijo",
-    city: "Medellín",
-    zone_neighborhood: "El Poblado / Provenza",
-    shift: "2x2x2",
-    salary_monthly: 2150000,
-    includes_surcharges: true,
-    requires_active_course: true,
-    requires_motorcycle: false,
-    min_motorcycle_cc: null,
-    requires_military_booklet: false,
-    min_experience_years: 1,
-    is_strict_filter: false,
-    is_urgent_relief: true,
-    description:
-      "Control de accesos y vigilancia perimetral en centro empresarial y comercial. Contratación inmediata con prestaciones de ley y recargos.",
-    interview_address: "Cra. 43A # 1-50, Medellín",
-    is_active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "job-6",
-    company_id: "comp-6",
-    company_name: "Vigilancia del Valle S.A.",
-    is_verified_company: true,
-    title: "Supervisor Motorizado - Corredor Industrial",
-    role_required: "Supervisor Motorizado",
-    city: "Cali",
-    zone_neighborhood: "Yumbo / Acopi",
-    shift: "4x2",
-    salary_monthly: 2650000,
-    includes_surcharges: true,
-    requires_active_course: true,
-    requires_motorcycle: true,
-    min_motorcycle_cc: 150,
-    requires_military_booklet: true,
-    min_experience_years: 2,
-    is_strict_filter: false,
-    is_urgent_relief: false,
-    description:
-      "Ronda y supervisión de puestos de vigilancia en zona industrial. Indispensable moto propia con papeles al día (SOAT y Tecnomecánica).",
-    interview_address: "Calle 15 Norte # 6N-34, Cali",
-    is_active: true,
-    created_at: new Date().toISOString(),
-  },
-];
+export type JobPostWithCompany = JobPost & {
+  company_name: string;
+  is_verified_company: boolean;
+};
+
+const INITIAL_JOBS: JobPostWithCompany[] = [];
 
 function VacantesContent() {
   const supabase = createClient();
@@ -190,8 +44,8 @@ function VacantesContent() {
   const router = useRouter();
   const { role, isAuthenticated } = useAuth();
 
-  const [jobs, setJobs] = useState(INITIAL_JOBS);
-  const [selectedJobId, setSelectedJobId] = useState<string>("job-1");
+  const [jobs, setJobs] = useState<JobPostWithCompany[]>(INITIAL_JOBS);
+  const [selectedJobId, setSelectedJobId] = useState<string>("");
   const [appliedJobIds, setAppliedJobIds] = useState<Record<string, boolean>>({});
   const [successToast, setSuccessToast] = useState<string | null>(null);
 
@@ -212,6 +66,48 @@ function VacantesContent() {
     const applyParam = searchParams.get("apply");
     if (applyParam) setSelectedJobId(applyParam);
   }, [searchParams]);
+
+  // Load real vacancies from Supabase / localStorage
+  useEffect(() => {
+    async function fetchRealJobs() {
+      try {
+        const { data, error } = await supabase
+          .from("jobs")
+          .select("*, companies(company_name, is_verified_company)")
+          .eq("is_active", true)
+          .order("created_at", { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          const mapped: JobPostWithCompany[] = data.map((j: any) => ({
+            ...j,
+            company_name: j.companies?.company_name || "Empresa de Seguridad",
+            is_verified_company: j.companies?.is_verified_company ?? true,
+          }));
+          setJobs(mapped);
+          if (mapped.length > 0) {
+            setSelectedJobId(mapped[0].id);
+          }
+          return;
+        }
+      } catch {}
+
+      // Fallback to local jobs created during session
+      if (typeof window !== "undefined") {
+        const local = localStorage.getItem("fv_company_jobs");
+        if (local) {
+          try {
+            const parsed = JSON.parse(local);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setJobs(parsed);
+              setSelectedJobId(parsed[0].id);
+            }
+          } catch {}
+        }
+      }
+    }
+
+    fetchRealJobs();
+  }, [supabase]);
 
   // Candidate Profile State
   const [candidateProfile, setCandidateProfile] = useState({
@@ -248,7 +144,7 @@ function VacantesContent() {
     }
   }, []);
 
-  const handleApply = async (job: (typeof INITIAL_JOBS)[0]) => {
+  const handleApply = async (job: JobPostWithCompany) => {
     // 1. Bloqueo de Acciones sin Sesión: Intercepta y redirige a /login
     if (!isAuthenticated) {
       router.push(`/login?redirect=${encodeURIComponent("/guarda/vacantes")}`);
@@ -621,7 +517,7 @@ function VacantesContent() {
         </div>
 
         {/* RIGHT COLUMN: RICH DETAIL VIEW (7 cols - Sticky on Desktop) */}
-        {selectedJob && (
+        {selectedJob ? (
           <div className="hidden lg:block lg:col-span-7 sticky top-24">
             <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-card space-y-6">
               {/* Header */}
@@ -803,6 +699,13 @@ function VacantesContent() {
                 )}
               </div>
             </div>
+          </div>
+        ) : (
+          <div className="hidden lg:flex lg:col-span-7 flex-col items-center justify-center p-12 bg-white border border-slate-200/90 rounded-2xl shadow-subtle text-center text-slate-400 space-y-2 min-h-[360px]">
+            <Briefcase className="w-8 h-8 text-slate-300 mx-auto" strokeWidth={1.5} />
+            <p className="text-xs text-slate-500 font-medium">
+              No hay vacantes activas para previsualizar en este momento.
+            </p>
           </div>
         )}
       </div>

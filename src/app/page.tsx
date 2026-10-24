@@ -19,11 +19,14 @@ import {
   ChevronRight,
   Filter,
   AlertCircle,
+  Briefcase,
 } from "lucide-react";
+import { useEffect } from "react";
 import { Navbar } from "@/components/public/Navbar";
 import { Footer } from "@/components/public/Footer";
 import { CityAutocompleteInput } from "@/components/ui/CityAutocompleteInput";
 import { useAuth } from "@/lib/supabase/useAuth";
+import { createClient } from "@/lib/supabase/client";
 
 export default function HomePage() {
   const router = useRouter();
@@ -31,50 +34,67 @@ export default function HomePage() {
   const [roleSearch, setRoleSearch] = useState("");
   const [locationSearch, setLocationSearch] = useState("");
   const [warningToast, setWarningToast] = useState<string | null>(null);
+  const [featuredJobs, setFeaturedJobs] = useState<any[]>([]);
 
   const isCompanyOrAdmin = role === "company" || role === "admin";
 
-  const sampleJobs = [
-    {
-      id: "vac-001",
-      company: "Seguridad Atlas de Colombia",
-      companyInitials: "SA",
-      title: "Vigilante Fijo - Centro Empresarial Calle 100",
-      role: "Vigilante Fijo",
-      location: "Bogotá D.C. • Chicó Norte",
-      salary: "$2.150.000 COP",
-      shift: "Turno 2x2x2",
-      compatibility: "98%",
-      description:
-        "Custodia de instalaciones corporativas AAA, control de accesos peatonales y vehiculares mediante lectores biométricos y libro de minuta digital.",
-    },
-    {
-      id: "vac-002",
-      company: "G4S Seguridad Integral",
-      companyInitials: "G4S",
-      title: "Supervisor Motorizado Nocturno",
-      role: "Supervisor Motorizado",
-      location: "Bogotá D.C. • Suba / Usaquén",
-      salary: "$2.580.000 COP",
-      shift: "Turno 4x2",
-      compatibility: "95%",
-      description:
-        "Supervisión y control de puestos operativos nocturnos en el sector norte. Indispensable moto propia de 150cc o superior y libreta militar de primera clase.",
-    },
-    {
-      id: "vac-003",
-      company: "Omnitempus Seguridad VIP",
-      companyInitials: "OV",
-      title: "Escolta VIP Diplomático / Corporativo",
-      role: "Escolta VIP",
-      location: "Bogotá / Chía • Zona Sabana",
-      salary: "$3.450.000 COP",
-      shift: "Turno Flexible",
-      compatibility: "92%",
-      description:
-        "Protección a dignatarios y ejecutivos multinacionales. Requiere curso de escolta actualizado, permiso de porte y experiencia demostrable mínima de 4 años.",
-    },
-  ];
+  useEffect(() => {
+    async function loadFeaturedJobs() {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("jobs")
+          .select("*, companies(company_name, is_verified_company)")
+          .eq("is_active", true)
+          .order("created_at", { ascending: false })
+          .limit(3);
+
+        if (!error && data && data.length > 0) {
+          const mapped = data.map((j: any) => ({
+            id: j.id,
+            company: j.companies?.company_name || "Empresa de Seguridad",
+            companyInitials: (j.companies?.company_name || "ES").slice(0, 2).toUpperCase(),
+            title: j.title,
+            role: j.role_required,
+            location: `${j.city}${j.zone_neighborhood ? ` • ${j.zone_neighborhood}` : ""}`,
+            salary: `$${Number(j.salary_monthly).toLocaleString("es-CO")} COP`,
+            shift: j.shift,
+            compatibility: "95%",
+            description: j.description,
+          }));
+          setFeaturedJobs(mapped);
+          return;
+        }
+      } catch {}
+
+      if (typeof window !== "undefined") {
+        const local = localStorage.getItem("fv_company_jobs");
+        if (local) {
+          try {
+            const parsed = JSON.parse(local);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setFeaturedJobs(
+                parsed.slice(0, 3).map((j: any) => ({
+                  id: j.id,
+                  company: j.company_name || "Empresa de Seguridad",
+                  companyInitials: (j.company_name || "ES").slice(0, 2).toUpperCase(),
+                  title: j.title,
+                  role: j.role_required,
+                  location: `${j.city}${j.zone_neighborhood ? ` • ${j.zone_neighborhood}` : ""}`,
+                  salary: `$${Number(j.salary_monthly).toLocaleString("es-CO")} COP`,
+                  shift: j.shift,
+                  compatibility: "95%",
+                  description: j.description,
+                }))
+              );
+            }
+          } catch {}
+        }
+      }
+    }
+
+    loadFeaturedJobs();
+  }, []);
 
   // Intercept application for unauthenticated users or company accounts
   const handleApplyClick = (jobId: string) => {
@@ -230,80 +250,103 @@ export default function HomePage() {
                   href="/guarda/vacantes"
                   className="text-xs font-semibold text-[#1E3A8A] hover:underline flex items-center gap-1"
                 >
-                  <span>Ver todas (24)</span>
+                  <span>Ver todas ({featuredJobs.length})</span>
                   <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.5} />
                 </Link>
               </div>
 
               {/* Job Cards Feed */}
-              {sampleJobs.map((job) => (
-                <div
-                  key={job.id}
-                  className="bg-white border border-slate-200 rounded-xl p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md space-y-4"
-                >
-                  {/* Card Header */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-[#F3F4F6] border border-[#E2E8F0] flex items-center justify-center font-bold text-[#1E293B] text-xs">
-                        {job.companyInitials}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-xs text-[#1E293B]">
-                            {job.company}
-                          </span>
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#065F46] bg-[#ECFDF5] border border-[#10B981]/30 px-1.5 py-0.2 rounded">
-                            <CheckCircle className="w-3 h-3 text-[#10B981]" strokeWidth={1.5} />
-                            Empresa Verificada
-                          </span>
-                        </div>
-                        <h3 className="text-sm font-bold text-[#1E293B] mt-0.5">
-                          {job.title}
-                        </h3>
-                      </div>
-                    </div>
-
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-lg bg-[#ECFDF5] text-[#065F46] border border-[#10B981]/30 tabular-nums">
-                      {job.compatibility} Compatible
-                    </span>
+              {featuredJobs.length === 0 ? (
+                <div className="bg-white border border-slate-200 rounded-xl p-10 text-center shadow-xs space-y-3">
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 mx-auto">
+                    <Briefcase className="w-5 h-5" strokeWidth={1.5} />
                   </div>
-
-                  {/* 3 Tags Row */}
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    <span className="bg-[#F3F4F6] text-[#1E293B] rounded-lg px-3 py-1 text-xs font-medium flex items-center gap-1.5">
-                      <Shield className="w-3.5 h-3.5 text-[#64748B]" strokeWidth={1.5} />
-                      {job.role}
-                    </span>
-                    <span className="bg-[#F3F4F6] text-[#1E293B] rounded-lg px-3 py-1 text-xs font-medium flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-[#64748B]" strokeWidth={1.5} />
-                      {job.location}
-                    </span>
-                    <span className="bg-[#F3F4F6] text-[#1E293B] rounded-lg px-3 py-1 text-xs font-bold tabular-nums">
-                      {job.salary} • {job.shift}
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-[#64748B] leading-relaxed line-clamp-2">
-                    {job.description}
+                  <h3 className="text-sm font-bold text-[#1E293B]">
+                    Aún no hay vacantes publicadas
+                  </h3>
+                  <p className="text-xs text-[#64748B] max-w-md mx-auto leading-relaxed">
+                    Las ofertas laborales de las empresas de seguridad autorizadas aparecerán aquí en tiempo real tan pronto sean publicadas.
                   </p>
-
-                  {/* Card Footer with Intercepted Application Button */}
-                  <div className="pt-3 border-t border-[#E2E8F0] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-1.5 text-xs text-[#065F46] font-medium">
-                      <Lock className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
-                      <span>Estudios y Poligrafía 100% asumidos por la empresa</span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => handleApplyClick(job.id)}
-                      className="w-full sm:w-auto bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200 text-center shadow-xs"
+                  <div className="pt-1">
+                    <Link
+                      href="/guarda/vacantes"
+                      className="inline-flex items-center gap-1.5 text-xs text-[#1E3A8A] font-semibold hover:underline"
                     >
-                      Postularme en 1 clic
-                    </button>
+                      <span>Ir al buscador general de vacantes</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </Link>
                   </div>
                 </div>
-              ))}
+              ) : (
+                featuredJobs.map((job) => (
+                  <div
+                    key={job.id}
+                    className="bg-white border border-slate-200 rounded-xl p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md space-y-4"
+                  >
+                    {/* Card Header */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-[#F3F4F6] border border-[#E2E8F0] flex items-center justify-center font-bold text-[#1E293B] text-xs">
+                          {job.companyInitials}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-semibold text-xs text-[#1E293B]">
+                              {job.company}
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#065F46] bg-[#ECFDF5] border border-[#10B981]/30 px-1.5 py-0.2 rounded">
+                              <CheckCircle className="w-3 h-3 text-[#10B981]" strokeWidth={1.5} />
+                              Empresa Verificada
+                            </span>
+                          </div>
+                          <h3 className="text-sm font-bold text-[#1E293B] mt-0.5">
+                            {job.title}
+                          </h3>
+                        </div>
+                      </div>
+
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-lg bg-[#ECFDF5] text-[#065F46] border border-[#10B981]/30 tabular-nums">
+                        {job.compatibility} Compatible
+                      </span>
+                    </div>
+
+                    {/* 3 Tags Row */}
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      <span className="bg-[#F3F4F6] text-[#1E293B] rounded-lg px-3 py-1 text-xs font-medium flex items-center gap-1.5">
+                        <Shield className="w-3.5 h-3.5 text-[#64748B]" strokeWidth={1.5} />
+                        {job.role}
+                      </span>
+                      <span className="bg-[#F3F4F6] text-[#1E293B] rounded-lg px-3 py-1 text-xs font-medium flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-[#64748B]" strokeWidth={1.5} />
+                        {job.location}
+                      </span>
+                      <span className="bg-[#F3F4F6] text-[#1E293B] rounded-lg px-3 py-1 text-xs font-bold tabular-nums">
+                        {job.salary} • {job.shift}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-[#64748B] leading-relaxed line-clamp-2">
+                      {job.description}
+                    </p>
+
+                    {/* Card Footer with Intercepted Application Button */}
+                    <div className="pt-3 border-t border-[#E2E8F0] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-1.5 text-xs text-[#065F46] font-medium">
+                        <Lock className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
+                        <span>Estudios y Poligrafía 100% asumidos por la empresa</span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleApplyClick(job.id)}
+                        className="w-full sm:w-auto bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200 text-center shadow-xs"
+                      >
+                        Postularme en 1 clic
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
 
             {/* COLUMNA DERECHA (lg:col-span-5) - CANDIDATE CREDENTIAL CARD */}
@@ -322,12 +365,12 @@ export default function HomePage() {
                 {/* Header with Photo & Verification */}
                 <div className="flex items-start gap-4">
                   <div className="w-16 h-16 rounded-xl bg-[#F3F4F6] border border-[#E2E8F0] flex items-center justify-center font-bold text-base text-[#1E293B] shrink-0">
-                    CM
+                    FV
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
                       <h3 className="font-bold text-sm text-[#1E293B] truncate">
-                        Carlos Eduardo Moreno R.
+                        Aspirante Verificado (Ejemplo)
                       </h3>
                       <CheckCircle className="w-4 h-4 text-[#10B981] shrink-0" strokeWidth={1.5} />
                     </div>
@@ -335,7 +378,7 @@ export default function HomePage() {
                       Vigilante Fijo & Escolta VIP
                     </p>
                     <p className="text-[11px] text-[#64748B] mt-0.5">
-                      6 años de experiencia • Bogotá D.C. (Localidad Kennedy)
+                      6 años de experiencia • Bogotá D.C.
                     </p>
                   </div>
                 </div>

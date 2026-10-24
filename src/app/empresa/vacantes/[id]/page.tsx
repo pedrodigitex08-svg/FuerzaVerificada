@@ -20,11 +20,13 @@ import {
   AlertTriangle,
   XCircle,
   ExternalLink,
+  Users,
 } from "lucide-react";
 import { ResumeDrawerModal } from "@/components/empresa/ResumeDrawerModal";
 import { OrderSecurityStudyModal } from "@/components/empresa/OrderSecurityStudyModal";
 import { ApplicationStatus, SecurityRoleType } from "@/types/database";
 import { generateInterviewCitationLink } from "@/lib/utils/whatsappTemplates";
+import { createClient } from "@/lib/supabase/client";
 
 interface ATSCandidate {
   id: string;
@@ -47,117 +49,124 @@ interface ATSCandidate {
   work_history?: { company: string; role: string; dates: string }[];
 }
 
-const INITIAL_CANDIDATES: ATSCandidate[] = [
-  {
-    id: "cand-1",
-    full_name: "Carlos Eduardo Moreno R.",
-    national_id: "1020304050",
-    phone_whatsapp: "3109876543",
-    city: "Bogotá D.C.",
-    locality: "Suba",
-    primary_role: "Vigilante Fijo",
-    years_experience: 4,
-    has_military_booklet: true,
-    has_own_motorcycle: true,
-    motorcycle_cc: 150,
-    available_immediately: true,
-    resume_pdf_url: "https://demo.fuerzaverificada.com/hv-carlos.pdf",
-    course_semaphore: "VIGENTE",
-    days_remaining: 184,
-    match_score: 95,
-    status: "preseleccionado",
-    work_history: [
-      { company: "Seguridad Atlas", role: "Vigilante Fijo Corporativo", dates: "2023 - 2025" },
-      { company: "G4S Colombia", role: "Vigilante Control Accesos", dates: "2021 - 2023" },
-    ],
-  },
-  {
-    id: "cand-2",
-    full_name: "Mauricio Restrepo Valencia",
-    national_id: "80123992",
-    phone_whatsapp: "3154443322",
-    city: "Bogotá D.C.",
-    locality: "Engativá",
-    primary_role: "Vigilante Fijo",
-    years_experience: 3,
-    has_military_booklet: true,
-    has_own_motorcycle: false,
-    motorcycle_cc: null,
-    available_immediately: true,
-    resume_pdf_url: "https://demo.fuerzaverificada.com/hv-mauricio.pdf",
-    course_semaphore: "VIGENTE",
-    days_remaining: 120,
-    match_score: 90,
-    status: "postulado",
-  },
-  {
-    id: "cand-3",
-    full_name: "Jhon Alexander Castro",
-    national_id: "1032890123",
-    phone_whatsapp: "3201122334",
-    city: "Bogotá D.C.",
-    locality: "Kennedy",
-    primary_role: "Vigilante Fijo",
-    years_experience: 2,
-    has_military_booklet: true,
-    has_own_motorcycle: false,
-    motorcycle_cc: null,
-    available_immediately: false,
-    resume_pdf_url: "https://demo.fuerzaverificada.com/hv-jhon.pdf",
-    course_semaphore: "PROXIMO_A_VENCER",
-    days_remaining: 18,
-    match_score: 82,
-    status: "postulado",
-  },
-  {
-    id: "cand-4",
-    full_name: "Néstor Fabián Pinzón",
-    national_id: "79882341",
-    phone_whatsapp: "3118899001",
-    city: "Bogotá D.C.",
-    locality: "Bosa",
-    primary_role: "Supervisor Motorizado",
-    years_experience: 5,
-    has_military_booklet: true,
-    has_own_motorcycle: true,
-    motorcycle_cc: 180,
-    available_immediately: true,
-    resume_pdf_url: "https://demo.fuerzaverificada.com/hv-nestor.pdf",
-    course_semaphore: "VIGENTE",
-    days_remaining: 240,
-    match_score: 75,
-    status: "postulado",
-  },
-];
-
 export default function ATSVacantePage() {
   const params = useParams();
   const vacancyId = params?.id as string;
 
-  const [candidates, setCandidates] = useState<ATSCandidate[]>(INITIAL_CANDIDATES);
+  const [candidates, setCandidates] = useState<ATSCandidate[]>([]);
+  const [vacancyTitle, setVacancyTitle] = useState<string>("Vacante de Seguridad");
+  const [vacancyShift, setVacancyShift] = useState<string>("Turno rotativo");
+  const [vacancyAddress, setVacancyAddress] = useState<string>("Colombia");
   const [selectedCandidateForDrawer, setSelectedCandidateForDrawer] = useState<ATSCandidate | null>(null);
   const [selectedCandidateForStudy, setSelectedCandidateForStudy] = useState<ATSCandidate | null>(null);
   const [credits, setCredits] = useState(5);
   const [filterStatus, setFilterStatus] = useState<string>("todos");
   const [searchTerm, setSearchTerm] = useState("");
   const [notificationToast, setNotificationToast] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedCredits = localStorage.getItem("fv_company_credits");
       if (savedCredits !== null) setCredits(parseInt(savedCredits, 10));
     }
-  }, []);
 
-  const vacancyTitle = "Vigilante Fijo - Centro Empresarial Calle 100";
-  const vacancyShift = "2x2x2";
-  const vacancyAddress = "Cra 15 # 98-42, Oficina 301, Bogotá";
+    async function loadVacancyAndCandidates() {
+      setIsLoading(true);
+      const supabase = createClient();
+
+      // 1. Load Vacancy Details
+      try {
+        const { data: jobData } = await supabase
+          .from("jobs")
+          .select("*")
+          .eq("id", vacancyId)
+          .maybeSingle();
+
+        if (jobData) {
+          setVacancyTitle(jobData.title);
+          setVacancyShift(jobData.shift || "Turno rotativo");
+          setVacancyAddress(jobData.zone_neighborhood || jobData.city || "Colombia");
+        } else if (typeof window !== "undefined") {
+          const localJobs = localStorage.getItem("fv_company_jobs");
+          if (localJobs) {
+            try {
+              const parsed = JSON.parse(localJobs);
+              const found = parsed.find((j: any) => j.id === vacancyId);
+              if (found) {
+                setVacancyTitle(found.title);
+                setVacancyShift(found.shift || "Turno rotativo");
+                setVacancyAddress(found.zone_neighborhood || found.city || "Colombia");
+              }
+            } catch {}
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching job details:", err);
+      }
+
+      // 2. Load Applications / Candidates for this job
+      try {
+        const { data: appsData, error: appsError } = await supabase
+          .from("applications")
+          .select("*, profiles(*), candidate_profiles(*)")
+          .eq("job_id", vacancyId);
+
+        if (!appsError && appsData && appsData.length > 0) {
+          const loaded: ATSCandidate[] = appsData.map((a: any) => {
+            const prof = a.profiles || {};
+            const candProf = a.candidate_profiles || {};
+            return {
+              id: a.id,
+              full_name: prof.full_name || "Aspirante",
+              national_id: prof.phone_whatsapp || "Sin cédula",
+              phone_whatsapp: prof.phone_whatsapp || "573000000000",
+              city: candProf.city || "Bogotá D.C.",
+              locality: candProf.locality || "",
+              primary_role: candProf.primary_role || "Vigilante Fijo",
+              years_experience: candProf.years_experience || 0,
+              has_military_booklet: !!candProf.has_military_booklet,
+              has_own_motorcycle: !!candProf.has_own_motorcycle,
+              motorcycle_cc: candProf.motorcycle_cc || null,
+              available_immediately: !!candProf.available_immediately,
+              resume_pdf_url: candProf.resume_pdf_url || "",
+              course_semaphore: "VIGENTE",
+              days_remaining: 180,
+              match_score: a.compatibility_score || 85,
+              status: a.status || "postulado",
+            };
+          });
+          setCandidates(loaded);
+        } else {
+          setCandidates([]);
+        }
+      } catch (err) {
+        console.error("Error fetching applications:", err);
+        setCandidates([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    if (vacancyId) {
+      loadVacancyAndCandidates();
+    }
+  }, [vacancyId]);
 
   // Handle status update
-  const handleStatusChange = (candId: string, newStatus: ApplicationStatus) => {
+  const handleStatusChange = async (candId: string, newStatus: ApplicationStatus) => {
     setCandidates((prev) =>
       prev.map((c) => (c.id === candId ? { ...c, status: newStatus } : c))
     );
+
+    // Persist status change to Supabase if exists
+    try {
+      const supabase = createClient();
+      await supabase
+        .from("applications")
+        .update({ status: newStatus })
+        .eq("id", candId);
+    } catch {}
   };
 
   // Confirm Security Study Order: Deduct 1 credit & set status to 'en_estudio_seguridad'
@@ -308,142 +317,158 @@ export default function ATSVacantePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredCandidates.map((cand) => {
-                const whatsappCitationLink = generateInterviewCitationLink({
-                  phone: cand.phone_whatsapp,
-                  candidateName: cand.full_name,
-                  companyName: "Seguridad Andina Ltda.",
-                  jobTitle: vacancyTitle,
-                  shift: vacancyShift,
-                  interviewAddress: vacancyAddress,
-                  interviewDateText: "Mañana a las 8:30 AM",
-                });
+              {filteredCandidates.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-slate-400">
+                    <Users className="w-10 h-10 mx-auto mb-3 text-slate-300" strokeWidth={1.5} />
+                    <p className="text-sm font-semibold text-slate-700">
+                      {searchTerm || filterStatus !== "todos"
+                        ? "No se encontraron aspirantes con esos filtros"
+                        : "Aún no hay aspirantes postulados a esta vacante"}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
+                      Los aspirantes aparecerán automáticamente aquí clasificados por compatibilidad (% Match) y estado del curso de seguridad.
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                filteredCandidates.map((cand) => {
+                  const whatsappCitationLink = generateInterviewCitationLink({
+                    phone: cand.phone_whatsapp,
+                    candidateName: cand.full_name,
+                    companyName: "Seguridad Privada",
+                    jobTitle: vacancyTitle,
+                    shift: vacancyShift,
+                    interviewAddress: vacancyAddress,
+                    interviewDateText: "Mañana a las 8:30 AM",
+                  });
 
-                return (
-                  <tr key={cand.id} className="hover:bg-slate-50/70 transition-colors">
-                    {/* Candidate Identity */}
-                    <td className="py-3.5 px-5">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedCandidateForDrawer(cand)}
-                        className="font-bold text-slate-900 hover:text-amber-600 transition-colors text-left block"
-                      >
-                        {cand.full_name}
-                      </button>
-                      <span className="text-[11px] text-slate-400 font-mono">
-                        C.C. {cand.national_id} • {cand.city}
-                      </span>
-                    </td>
-
-                    {/* Role & Exp */}
-                    <td className="py-3.5 px-3">
-                      <span className="font-semibold text-slate-800 block">
-                        {cand.primary_role}
-                      </span>
-                      <span className="text-[11px] text-slate-500 font-mono tabular-nums">
-                        {cand.years_experience} años exp.
-                      </span>
-                    </td>
-
-                    {/* Course Semaphore Technical Badge */}
-                    <td className="py-3.5 px-3">
-                      {cand.course_semaphore === "VIGENTE" ? (
-                        <span className="badge-emerald text-[11px]">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                          Vigente ({cand.days_remaining}d)
+                  return (
+                    <tr key={cand.id} className="hover:bg-slate-50/70 transition-colors">
+                      {/* Candidate Identity */}
+                      <td className="py-3.5 px-5">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCandidateForDrawer(cand)}
+                          className="font-bold text-slate-900 hover:text-amber-600 transition-colors text-left block"
+                        >
+                          {cand.full_name}
+                        </button>
+                        <span className="text-[11px] text-slate-400 font-mono">
+                          C.C. {cand.national_id} • {cand.city}
                         </span>
-                      ) : cand.course_semaphore === "PROXIMO_A_VENCER" ? (
-                        <span className="badge-amber text-[11px]">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                          Por Vencer ({cand.days_remaining}d)
+                      </td>
+
+                      {/* Role & Exp */}
+                      <td className="py-3.5 px-3">
+                        <span className="font-semibold text-slate-800 block">
+                          {cand.primary_role}
                         </span>
-                      ) : (
-                        <span className="badge-rose text-[11px]">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                          Vencido
+                        <span className="text-[11px] text-slate-500 font-mono tabular-nums">
+                          {cand.years_experience} años exp.
                         </span>
-                      )}
-                    </td>
+                      </td>
 
-                    {/* Match Score */}
-                    <td className="py-3.5 px-3">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold font-mono tabular-nums ${
-                          cand.match_score >= 85
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            : "bg-amber-50 text-amber-800 border border-amber-200"
-                        }`}
-                      >
-                        {cand.match_score}% Match
-                      </span>
-                    </td>
+                      {/* Course Semaphore Technical Badge */}
+                      <td className="py-3.5 px-3">
+                        {cand.course_semaphore === "VIGENTE" ? (
+                          <span className="badge-emerald text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            Vigente ({cand.days_remaining}d)
+                          </span>
+                        ) : cand.course_semaphore === "PROXIMO_A_VENCER" ? (
+                          <span className="badge-amber text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                            Por Vencer ({cand.days_remaining}d)
+                          </span>
+                        ) : (
+                          <span className="badge-rose text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                            Vencido
+                          </span>
+                        )}
+                      </td>
 
-                    {/* Status Dropdown */}
-                    <td className="py-3.5 px-3">
-                      <select
-                        value={cand.status}
-                        onChange={(e) =>
-                          handleStatusChange(cand.id, e.target.value as ApplicationStatus)
-                        }
-                        className={`rounded-lg px-2 py-1 text-xs font-semibold border ${
-                          cand.status === "en_estudio_seguridad"
-                            ? "bg-amber-50 border-amber-300 text-amber-900"
-                            : cand.status === "citado_entrevista"
-                            ? "bg-slate-900 border-slate-900 text-white"
-                            : cand.status === "preseleccionado"
-                            ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                            : "bg-slate-50 border-slate-200 text-slate-700"
-                        }`}
-                      >
-                        <option value="postulado">Postulado</option>
-                        <option value="preseleccionado">Preseleccionado</option>
-                        <option value="citado_entrevista">Citado Entrevista</option>
-                        <option value="en_estudio_seguridad">En Estudio / Polígrafo</option>
-                        <option value="contratado">Contratado</option>
-                        <option value="descartado">Descartado</option>
-                      </select>
-                    </td>
+                      {/* Match Score */}
+                      <td className="py-3.5 px-3">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold font-mono tabular-nums ${
+                            cand.match_score >= 85
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : "bg-amber-50 text-amber-800 border border-amber-200"
+                          }`}
+                        >
+                          {cand.match_score}% Match
+                        </span>
+                      </td>
 
-                    {/* Actions */}
-                    <td className="py-3.5 px-5 text-right space-x-1.5 whitespace-nowrap">
-                      {/* Action 1: View Resume Drawer */}
-                      <button
-                        type="button"
-                        onClick={() => setSelectedCandidateForDrawer(cand)}
-                        title="Ver Hoja de Vida y Soportes"
-                        className="btn-secondary text-xs py-1.5 px-2.5 inline-flex font-semibold"
-                      >
-                        <FileText className="w-3.5 h-3.5 text-slate-600" strokeWidth={1.75} />
-                        Ver HV
-                      </button>
+                      {/* Status Dropdown */}
+                      <td className="py-3.5 px-3">
+                        <select
+                          value={cand.status}
+                          onChange={(e) =>
+                            handleStatusChange(cand.id, e.target.value as ApplicationStatus)
+                          }
+                          className={`rounded-lg px-2 py-1 text-xs font-semibold border ${
+                            cand.status === "en_estudio_seguridad"
+                              ? "bg-amber-50 border-amber-300 text-amber-900"
+                              : cand.status === "citado_entrevista"
+                              ? "bg-slate-900 border-slate-900 text-white"
+                              : cand.status === "preseleccionado"
+                              ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                              : "bg-slate-50 border-slate-200 text-slate-700"
+                          }`}
+                        >
+                          <option value="postulado">Postulado</option>
+                          <option value="preseleccionado">Preseleccionado</option>
+                          <option value="citado_entrevista">Citado Entrevista</option>
+                          <option value="en_estudio_seguridad">En Estudio / Polígrafo</option>
+                          <option value="contratado">Contratado</option>
+                          <option value="descartado">Descartado</option>
+                        </select>
+                      </td>
 
-                      {/* Action 2: WhatsApp Citation (1 Clic) */}
-                      <a
-                        href={whatsappCitationLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => handleStatusChange(cand.id, "citado_entrevista")}
-                        title="Citar a entrevista por WhatsApp (1 Clic)"
-                        className="btn-secondary text-xs py-1.5 px-2.5 inline-flex font-semibold text-emerald-700 hover:text-emerald-800"
-                      >
-                        <MessageCircle className="w-3.5 h-3.5 text-emerald-600" strokeWidth={1.75} />
-                        Citar
-                      </a>
+                      {/* Actions */}
+                      <td className="py-3.5 px-5 text-right space-x-1.5 whitespace-nowrap">
+                        {/* Action 1: View Resume Drawer */}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCandidateForDrawer(cand)}
+                          title="Ver Hoja de Vida y Soportes"
+                          className="btn-secondary text-xs py-1.5 px-2.5 inline-flex font-semibold"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-slate-600" strokeWidth={1.75} />
+                          Ver HV
+                        </button>
 
-                      {/* Action 3: B2B STAR BUTTON (Order Polygraph/Study) */}
-                      <button
-                        type="button"
-                        onClick={() => setSelectedCandidateForStudy(cand)}
-                        title="Solicitar Estudio + Visita + Polígrafo"
-                        className="bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl text-xs py-1.5 px-3 inline-flex items-center gap-1.5 font-bold shadow-sm transition-all duration-200"
-                      >
-                        <ShieldCheck className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
-                        <span>Solicitar Polígrafo</span>
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
+                        {/* Action 2: WhatsApp Citation (1 Clic) */}
+                        <a
+                          href={whatsappCitationLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => handleStatusChange(cand.id, "citado_entrevista")}
+                          title="Citar a entrevista por WhatsApp (1 Clic)"
+                          className="btn-secondary text-xs py-1.5 px-2.5 inline-flex font-semibold text-emerald-700 hover:text-emerald-800"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5 text-emerald-600" strokeWidth={1.75} />
+                          Citar
+                        </a>
+
+                        {/* Action 3: B2B STAR BUTTON (Order Polygraph/Study) */}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCandidateForStudy(cand)}
+                          title="Solicitar Estudio + Visita + Polígrafo"
+                          className="bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl text-xs py-1.5 px-3 inline-flex items-center gap-1.5 font-bold shadow-sm transition-all duration-200"
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
+                          <span>Solicitar Polígrafo</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

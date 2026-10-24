@@ -35,8 +35,8 @@ export default function AdminLayout({
   const router = useRouter();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeStudiesCount, setActiveStudiesCount] = useState(5);
-  const [companiesCount, setCompaniesCount] = useState(5);
+  const [activeStudiesCount, setActiveStudiesCount] = useState(0);
+  const [companiesCount, setCompaniesCount] = useState(0);
 
   // Authentication & Route Protection States
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
@@ -110,24 +110,49 @@ export default function AdminLayout({
 
     verifyAdminAuthorization();
 
-    // Sync metric counts from storage
-    if (typeof window !== "undefined") {
-      const storedOrders = localStorage.getItem("fv_security_orders");
-      if (storedOrders) {
-        try {
-          const parsed = JSON.parse(storedOrders);
-          setActiveStudiesCount(parsed.length);
-        } catch {}
-      }
+    // Sync metric counts from Supabase and local storage
+    async function loadAdminCounts() {
+      try {
+        const supabase = createClient();
+        const { count: studiesCount } = await supabase
+          .from("security_study_orders")
+          .select("*", { count: "exact", head: true });
+        if (studiesCount !== null && studiesCount !== undefined) {
+          setActiveStudiesCount(studiesCount);
+        }
 
-      const storedCompanies = localStorage.getItem("fv_companies");
-      if (storedCompanies) {
-        try {
-          const parsed = JSON.parse(storedCompanies);
-          setCompaniesCount(parsed.length);
-        } catch {}
+        const { count: compsCount } = await supabase
+          .from("companies")
+          .select("*", { count: "exact", head: true });
+        if (compsCount !== null && compsCount !== undefined) {
+          setCompaniesCount(compsCount);
+        }
+      } catch {}
+
+      if (typeof window !== "undefined") {
+        const storedOrders = localStorage.getItem("fv_security_orders");
+        if (storedOrders) {
+          try {
+            const parsed = JSON.parse(storedOrders);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setActiveStudiesCount(parsed.length);
+            }
+          } catch {}
+        }
+
+        const storedCompanies = localStorage.getItem("fv_companies");
+        if (storedCompanies) {
+          try {
+            const parsed = JSON.parse(storedCompanies);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setCompaniesCount(parsed.length);
+            }
+          } catch {}
+        }
       }
     }
+
+    loadAdminCounts();
 
     return () => {
       isMounted = false;

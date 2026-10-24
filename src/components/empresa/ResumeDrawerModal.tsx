@@ -153,15 +153,19 @@ export function ResumeDrawerModal({
                       </span>
                     </div>
                   </div>
-                  <a
-                    href={candidate.resume_pdf_url || "https://demo.fuerzaverificada.com/hv-ejemplo.pdf"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-secondary text-xs py-1.5 px-3 font-semibold"
-                  >
-                    <Download className="w-3.5 h-3.5" strokeWidth={1.75} />
-                    Ver PDF
-                  </a>
+                  {candidate.resume_pdf_url ? (
+                    <a
+                      href={candidate.resume_pdf_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-secondary text-xs py-1.5 px-3 font-semibold"
+                    >
+                      <Download className="w-3.5 h-3.5" strokeWidth={1.75} />
+                      Ver PDF
+                    </a>
+                  ) : (
+                    <span className="text-xs text-slate-400 italic">No adjuntado</span>
+                  )}
                 </div>
 
                 {/* 2. Course Diploma */}
@@ -179,15 +183,9 @@ export function ResumeDrawerModal({
                       </span>
                     </div>
                   </div>
-                  <a
-                    href="https://demo.fuerzaverificada.com/diploma-ejemplo.pdf"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-secondary text-xs py-1.5 px-3 font-semibold"
-                  >
-                    <Download className="w-3.5 h-3.5" strokeWidth={1.75} />
-                    Ver Diploma
-                  </a>
+                  <span className="badge-emerald text-[11px] font-mono">
+                    Registrado
+                  </span>
                 </div>
 
                 {/* 3. Cédula */}
@@ -219,26 +217,21 @@ export function ResumeDrawerModal({
               </h4>
 
               <div className="space-y-2 text-xs">
-                {(candidate.work_history || [
-                  {
-                    company: "Seguridad Atlas Ltda.",
-                    role: "Vigilante Fijo en Centro Empresarial",
-                    dates: "2023 - 2025",
-                  },
-                  {
-                    company: "G4S Colombia",
-                    role: "Vigilante Móvil Puesto Bancario",
-                    dates: "2021 - 2023",
-                  },
-                ]).map((wh, i) => (
-                  <div key={i} className="p-3 rounded-lg border border-slate-200 bg-white">
-                    <div className="flex items-center justify-between">
-                      <strong className="text-slate-900 font-semibold">{wh.company}</strong>
-                      <span className="text-[11px] text-slate-500 font-mono">{wh.dates}</span>
+                {candidate.work_history && candidate.work_history.length > 0 ? (
+                  candidate.work_history.map((wh, i) => (
+                    <div key={i} className="p-3 rounded-lg border border-slate-200 bg-white">
+                      <div className="flex items-center justify-between">
+                        <strong className="text-slate-900 font-semibold">{wh.company}</strong>
+                        <span className="text-[11px] text-slate-500 font-mono">{wh.dates}</span>
+                      </div>
+                      <p className="text-slate-600 mt-0.5">{wh.role}</p>
                     </div>
-                    <p className="text-slate-600 mt-0.5">{wh.role}</p>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-xs text-slate-400 italic py-2">
+                    Sin registros adicionales de empresas anteriores.
+                  </p>
+                )}
               </div>
             </div>
 

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { CourseSemaphoreBanner } from "@/components/guarda/CourseSemaphoreBanner";
 import { SecurityRoleType } from "@/types/database";
+import { createClient } from "@/lib/supabase/client";
 
 const SECURITY_ROLES: SecurityRoleType[] = [
   "Vigilante Fijo",
@@ -32,57 +33,143 @@ const SECURITY_ROLES: SecurityRoleType[] = [
 ];
 
 export default function PerfilGuardaPage() {
-  const [nationalId, setNationalId] = useState("1020304050");
-  const [fullName, setFullName] = useState("Carlos Eduardo Moreno R.");
-  const [phone, setPhone] = useState("3109876543");
+  const [nationalId, setNationalId] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
   const [city, setCity] = useState("Bogotá D.C.");
-  const [locality, setLocality] = useState("Suba");
+  const [locality, setLocality] = useState("");
   const [primaryRole, setPrimaryRole] = useState<SecurityRoleType>("Vigilante Fijo");
-  const [yearsExperience, setYearsExperience] = useState(3);
-  const [hasMilitaryBooklet, setHasMilitaryBooklet] = useState(true);
-  const [hasMotorcycle, setHasMotorcycle] = useState(true);
-  const [motorcycleCc, setMotorcycleCc] = useState(150);
+  const [yearsExperience, setYearsExperience] = useState(0);
+  const [hasMilitaryBooklet, setHasMilitaryBooklet] = useState(false);
+  const [hasMotorcycle, setHasMotorcycle] = useState(false);
+  const [motorcycleCc, setMotorcycleCc] = useState<number | null>(null);
+  const [resumeUrl, setResumeUrl] = useState<string | null>(null);
+  const [courseDate, setCourseDate] = useState<string | null>(null);
   const [savedNotice, setSavedNotice] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("fv_candidate_profile");
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (parsed.full_name) setFullName(parsed.full_name);
-          if (parsed.national_id) setNationalId(parsed.national_id);
-          if (parsed.city) setCity(parsed.city);
-          if (parsed.locality) setLocality(parsed.locality);
-          if (parsed.primary_role) setPrimaryRole(parsed.primary_role);
-          if (parsed.years_experience !== undefined) setYearsExperience(parsed.years_experience);
-          if (parsed.has_military_booklet !== undefined) setHasMilitaryBooklet(parsed.has_military_booklet);
-          if (parsed.has_own_motorcycle !== undefined) setHasMotorcycle(parsed.has_own_motorcycle);
-          if (parsed.motorcycle_cc) setMotorcycleCc(parsed.motorcycle_cc);
-        } catch {}
+    async function loadCandidateProfile() {
+      setIsLoading(true);
+      const supabase = createClient();
+
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
+            .maybeSingle();
+
+          const { data: candProfile } = await supabase
+            .from("candidate_profiles")
+            .select("*")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (profile) {
+            if (profile.full_name) setFullName(profile.full_name);
+            if (profile.phone_whatsapp) setPhone(profile.phone_whatsapp);
+          } else if (user.user_metadata?.full_name) {
+            setFullName(user.user_metadata.full_name);
+          }
+
+          if (candProfile) {
+            if (candProfile.city) setCity(candProfile.city);
+            if (candProfile.locality) setLocality(candProfile.locality);
+            if (candProfile.primary_role) setPrimaryRole(candProfile.primary_role);
+            if (candProfile.years_experience !== undefined) setYearsExperience(candProfile.years_experience);
+            if (candProfile.has_military_booklet !== undefined) setHasMilitaryBooklet(candProfile.has_military_booklet);
+            if (candProfile.has_own_motorcycle !== undefined) setHasMotorcycle(candProfile.has_own_motorcycle);
+            if (candProfile.motorcycle_cc) setMotorcycleCc(candProfile.motorcycle_cc);
+            if (candProfile.resume_pdf_url) setResumeUrl(candProfile.resume_pdf_url);
+          }
+        } else if (typeof window !== "undefined") {
+          const saved = localStorage.getItem("fv_candidate_profile");
+          if (saved) {
+            try {
+              const parsed = JSON.parse(saved);
+              if (parsed.full_name) setFullName(parsed.full_name);
+              if (parsed.national_id) setNationalId(parsed.national_id);
+              if (parsed.phone) setPhone(parsed.phone);
+              if (parsed.city) setCity(parsed.city);
+              if (parsed.locality) setLocality(parsed.locality);
+              if (parsed.primary_role) setPrimaryRole(parsed.primary_role);
+              if (parsed.years_experience !== undefined) setYearsExperience(parsed.years_experience);
+              if (parsed.has_military_booklet !== undefined) setHasMilitaryBooklet(parsed.has_military_booklet);
+              if (parsed.has_own_motorcycle !== undefined) setHasMotorcycle(parsed.has_own_motorcycle);
+              if (parsed.motorcycle_cc) setMotorcycleCc(parsed.motorcycle_cc);
+            } catch {}
+          }
+        }
+      } catch (err) {
+        console.error("Error loading candidate profile:", err);
+      } finally {
+        setIsLoading(false);
       }
     }
+
+    loadCandidateProfile();
   }, []);
 
-  const handleSave = () => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(
-        "fv_candidate_profile",
-        JSON.stringify({
-          full_name: fullName,
-          national_id: nationalId,
-          city,
-          locality,
-          primary_role: primaryRole,
-          years_experience: yearsExperience,
-          has_military_booklet: hasMilitaryBooklet,
-          has_own_motorcycle: hasMotorcycle,
-          motorcycle_cc: motorcycleCc,
-        })
-      );
+  const handleSave = async () => {
+    const supabase = createClient();
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        await supabase
+          .from("profiles")
+          .update({
+            full_name: fullName,
+            phone_whatsapp: phone,
+          })
+          .eq("id", user.id);
+
+        await supabase
+          .from("candidate_profiles")
+          .upsert({
+            user_id: user.id,
+            city,
+            locality,
+            primary_role: primaryRole,
+            years_experience: yearsExperience,
+            has_military_booklet: hasMilitaryBooklet,
+            has_own_motorcycle: hasMotorcycle,
+            motorcycle_cc: hasMotorcycle ? motorcycleCc : null,
+          });
+      }
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          "fv_candidate_profile",
+          JSON.stringify({
+            full_name: fullName,
+            national_id: nationalId,
+            phone,
+            city,
+            locality,
+            primary_role: primaryRole,
+            years_experience: yearsExperience,
+            has_military_booklet: hasMilitaryBooklet,
+            has_own_motorcycle: hasMotorcycle,
+            motorcycle_cc: motorcycleCc,
+          })
+        );
+      }
+
+      setSavedNotice(true);
+      setTimeout(() => setSavedNotice(false), 3000);
+    } catch (err) {
+      console.error("Error saving profile:", err);
     }
-    setSavedNotice(true);
-    setTimeout(() => setSavedNotice(false), 3000);
   };
 
   return (
@@ -107,7 +194,7 @@ export default function PerfilGuardaPage() {
           <button
             type="button"
             onClick={handleSave}
-            className="btn-primary text-xs py-2 px-4 font-semibold"
+            className="btn-primary text-xs py-2 px-4 font-semibold inline-flex items-center gap-1.5"
           >
             <Save className="w-3.5 h-3.5" strokeWidth={1.75} />
             Guardar Cambios
@@ -117,10 +204,8 @@ export default function PerfilGuardaPage() {
 
       {/* 2-COLUMN WORKSPACE */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
         {/* LEFT COLUMN: EDITABLE DETAILS (7 cols) */}
         <div className="lg:col-span-7 space-y-6">
-          
           {/* Section 1: Contact */}
           <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-subtle space-y-4">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -134,6 +219,7 @@ export default function PerfilGuardaPage() {
                 </label>
                 <input
                   type="text"
+                  placeholder="Ingrese sus nombres y apellidos"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-slate-400"
@@ -147,6 +233,7 @@ export default function PerfilGuardaPage() {
                   </label>
                   <input
                     type="text"
+                    placeholder="Número de cédula"
                     value={nationalId}
                     onChange={(e) => setNationalId(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-slate-400"
@@ -158,6 +245,7 @@ export default function PerfilGuardaPage() {
                   </label>
                   <input
                     type="tel"
+                    placeholder="Ej. 3001234567"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-slate-400"
@@ -179,6 +267,9 @@ export default function PerfilGuardaPage() {
                     <option value="Medellín">Medellín</option>
                     <option value="Cali">Cali</option>
                     <option value="Barranquilla">Barranquilla</option>
+                    <option value="Bucaramanga">Bucaramanga</option>
+                    <option value="Cartagena">Cartagena</option>
+                    <option value="Pereira">Pereira</option>
                   </select>
                 </div>
                 <div>
@@ -187,6 +278,7 @@ export default function PerfilGuardaPage() {
                   </label>
                   <input
                     type="text"
+                    placeholder="Ej. Suba, Kennedy, Chapinero..."
                     value={locality}
                     onChange={(e) => setLocality(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-slate-400"
@@ -225,6 +317,20 @@ export default function PerfilGuardaPage() {
                 </div>
               </div>
 
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Años de Experiencia en Seguridad
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="40"
+                  value={yearsExperience}
+                  onChange={(e) => setYearsExperience(parseInt(e.target.value, 10) || 0)}
+                  className="w-full sm:w-40 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-slate-400"
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
                 <div className="p-3 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-between">
                   <span className="text-xs font-medium text-slate-700">Libreta Militar</span>
@@ -261,29 +367,25 @@ export default function PerfilGuardaPage() {
               Archivos y Documentos Almacenados
             </h3>
 
-            <div className="space-y-2.5 text-xs">
-              <div className="p-3 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <FileText className="w-4 h-4 text-slate-600" strokeWidth={1.75} />
-                  <div>
-                    <strong className="text-slate-900 block">Hoja_de_Vida_CarlosMoreno.pdf</strong>
-                    <span className="text-[10px] text-slate-400">Documento activo en postulaciones</span>
+            {resumeUrl ? (
+              <div className="space-y-2.5 text-xs">
+                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <FileText className="w-4 h-4 text-slate-600" strokeWidth={1.75} />
+                    <div>
+                      <strong className="text-slate-900 block">Hoja de Vida Adjunta (PDF)</strong>
+                      <span className="text-[10px] text-slate-400">Documento activo en postulaciones</span>
+                    </div>
                   </div>
+                  <span className="badge-emerald text-[10px]">Cargado</span>
                 </div>
-                <span className="badge-emerald text-[10px]">Cargado</span>
               </div>
-
-              <div className="p-3 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <FileCheck className="w-4 h-4 text-emerald-600" strokeWidth={1.75} />
-                  <div>
-                    <strong className="text-slate-900 block">Diploma_Curso_Vigilancia.pdf</strong>
-                    <span className="text-[10px] text-slate-400">Certificación Academia Nacional</span>
-                  </div>
-                </div>
-                <span className="badge-emerald text-[10px]">Cargado</span>
+            ) : (
+              <div className="p-4 rounded-xl border border-dashed border-slate-200 text-center text-slate-400 text-xs">
+                <FileText className="w-6 h-6 mx-auto mb-1 text-slate-300" />
+                <p>Aún no has adjuntado tu Hoja de Vida en PDF.</p>
               </div>
-            </div>
+            )}
 
             <div className="pt-2">
               <Link
@@ -294,20 +396,18 @@ export default function PerfilGuardaPage() {
               </Link>
             </div>
           </div>
-
         </div>
 
         {/* RIGHT COLUMN: LIVE CREDENTIAL & COURSE WIDGET (5 cols - Sticky) */}
         <div className="lg:col-span-5 sticky top-24 space-y-6">
-          
           {/* SEMAPHORE CARD */}
           <div className="space-y-2">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
               Estado de Credencial SuperVigilancia
             </span>
             <CourseSemaphoreBanner
-              completionDate="2026-04-15"
-              candidateName={fullName}
+              completionDate={courseDate || new Date().toISOString().split("T")[0]}
+              candidateName={fullName || "Aspirante"}
               city={city}
             />
           </div>
@@ -329,24 +429,26 @@ export default function PerfilGuardaPage() {
 
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-amber-400 text-base">
-                {fullName.charAt(0)}
+                {fullName ? fullName.charAt(0).toUpperCase() : <User className="w-6 h-6 text-slate-400" />}
               </div>
               <div>
-                <h4 className="text-sm font-bold text-white">{fullName}</h4>
+                <h4 className="text-sm font-bold text-white">
+                  {fullName || "Nombre del Aspirante"}
+                </h4>
                 <div className="text-xs text-amber-400 font-mono mt-0.5">{primaryRole}</div>
-                <div className="text-[11px] text-slate-400">C.C. {nationalId} • {city}</div>
+                <div className="text-[11px] text-slate-400">
+                  {nationalId ? `C.C. ${nationalId}` : "Sin Cédula"} • {city}
+                </div>
               </div>
             </div>
 
             <div className="pt-2 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
               <span>Años de exp: <strong className="text-white">{yearsExperience}</strong></span>
               <span>Libreta: <strong className="text-white">{hasMilitaryBooklet ? "Sí" : "No"}</strong></span>
-              <span>Moto: <strong className="text-white">{hasMotorcycle ? `${motorcycleCc}cc` : "No"}</strong></span>
+              <span>Moto: <strong className="text-white">{hasMotorcycle ? `${motorcycleCc || 150}cc` : "No"}</strong></span>
             </div>
           </div>
-
         </div>
-
       </div>
     </div>
   );

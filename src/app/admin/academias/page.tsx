@@ -230,7 +230,7 @@ export default function AdminAcademiasPage() {
             </span>
           </div>
           <div className="mt-2 text-2xl font-bold text-slate-900 tabular-nums">
-            348
+            0
           </div>
           <p className="mt-1 text-[11px] text-slate-400">Desde el Semáforo este mes</p>
         </div>

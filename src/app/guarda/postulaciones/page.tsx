@@ -18,6 +18,7 @@ import {
   Building2,
 } from "lucide-react";
 import { ApplicationStatus } from "@/types/database";
+import { createClient } from "@/lib/supabase/client";
 
 interface SavedApp {
   id: string;
@@ -31,45 +32,6 @@ interface SavedApp {
   status: ApplicationStatus;
   created_at: string;
 }
-
-const DEFAULT_APPLICATIONS: SavedApp[] = [
-  {
-    id: "app-1",
-    job_id: "job-1",
-    job_title: "Vigilante Fijo - Centro Empresarial Calle 100",
-    company_name: "Seguridad Andina Ltda.",
-    shift: "2x2x2",
-    salary_monthly: 1950000,
-    interview_address: "Cra 15 # 98-42, Oficina 301, Bogotá",
-    match_score: 95,
-    status: "citado_entrevista",
-    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "app-2",
-    job_id: "job-2",
-    job_title: "Supervisor Motorizado - Zona Industrial",
-    company_name: "G4S Colombia Seguridad",
-    shift: "4x2 Rotativo",
-    salary_monthly: 2450000,
-    interview_address: "Calle 26 # 69D-91, Torre B, Fontibón",
-    match_score: 90,
-    status: "en_estudio_seguridad",
-    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "app-3",
-    job_id: "job-3",
-    job_title: "Escolta VIP para Esquema Ejecutivo",
-    company_name: "Vigilancia San Jorge",
-    shift: "6x1 Diurno",
-    salary_monthly: 3200000,
-    interview_address: "Av. Carrera 7 # 127-48, Bogotá",
-    match_score: 85,
-    status: "preseleccionado",
-    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
 
 const STATUS_STEPS: { key: ApplicationStatus; label: string; description: string }[] = [
   {
@@ -100,20 +62,71 @@ const STATUS_STEPS: { key: ApplicationStatus; label: string; description: string
 ];
 
 export default function PostulacionesPage() {
-  const [applications, setApplications] = useState<SavedApp[]>(DEFAULT_APPLICATIONS);
+  const [applications, setApplications] = useState<SavedApp[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("fv_applications_list");
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setApplications(parsed);
+    async function loadApplications() {
+      setIsLoading(true);
+      const supabase = createClient();
+
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          const { data, error } = await supabase
+            .from("applications")
+            .select("*, jobs(*, companies(*))")
+            .eq("candidate_id", user.id)
+            .order("created_at", { ascending: false });
+
+          if (!error && data && data.length > 0) {
+            setApplications(
+              data.map((app: any) => ({
+                id: app.id,
+                job_id: app.job_id,
+                job_title: app.jobs?.title || "Vacante de Seguridad",
+                company_name: app.jobs?.companies?.commercial_name || "Empresa de Seguridad",
+                shift: app.jobs?.shift || "Turno rotativo",
+                salary_monthly: app.jobs?.salary_monthly || 0,
+                interview_address: app.jobs?.zone_neighborhood || app.jobs?.city || "Oficina principal",
+                match_score: app.compatibility_score || 90,
+                status: app.status as ApplicationStatus,
+                created_at: app.created_at,
+              }))
+            );
+            setIsLoading(false);
+            return;
           }
-        } catch {}
+        }
+
+        // Local storage fallback for client test sessions
+        if (typeof window !== "undefined") {
+          const stored = localStorage.getItem("fv_applications_list");
+          if (stored) {
+            try {
+              const parsed = JSON.parse(stored);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                setApplications(parsed);
+                setIsLoading(false);
+                return;
+              }
+            } catch {}
+          }
+        }
+
+        setApplications([]);
+      } catch (err) {
+        console.error("Error loading candidate applications:", err);
+        setApplications([]);
+      } finally {
+        setIsLoading(false);
       }
     }
+
+    loadApplications();
   }, []);
 
   const getStatusIndex = (st: ApplicationStatus) => {
@@ -182,7 +195,7 @@ export default function PostulacionesPage() {
                         Salario mensual
                       </span>
                       <span className="text-sm font-bold font-mono text-slate-900 tabular-nums">
-                        ${app.salary_monthly.toLocaleString("es-CO")} COP
+                        ${app.salary_monthly ? app.salary_monthly.toLocaleString("es-CO") : "0"} COP
                       </span>
                     </div>
                     <span className="text-xs font-mono font-bold text-slate-900 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg tabular-nums">

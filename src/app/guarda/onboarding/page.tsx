@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Shield,
@@ -45,34 +45,51 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
 
   // STEP 1 STATE
-  const [fullName, setFullName] = useState("Carlos Eduardo Moreno");
-  const [nationalId, setNationalId] = useState("1020304050");
-  const [phone, setPhone] = useState("3109876543");
+  const [fullName, setFullName] = useState("");
+  const [nationalId, setNationalId] = useState("");
+  const [phone, setPhone] = useState("");
   const [city, setCity] = useState("Bogotá D.C.");
-  const [locality, setLocality] = useState("Suba");
+  const [locality, setLocality] = useState("");
   const [primaryRole, setPrimaryRole] = useState<SecurityRoleType>("Vigilante Fijo");
-  const [yearsExperience, setYearsExperience] = useState(3);
-  const [hasMilitaryBooklet, setHasMilitaryBooklet] = useState(true);
-  const [hasMotorcycle, setHasMotorcycle] = useState(true);
-  const [motorcycleCc, setMotorcycleCc] = useState(150);
+  const [yearsExperience, setYearsExperience] = useState(0);
+  const [hasMilitaryBooklet, setHasMilitaryBooklet] = useState(false);
+  const [hasMotorcycle, setHasMotorcycle] = useState(false);
+  const [motorcycleCc, setMotorcycleCc] = useState<number | null>(null);
 
   // STEP 2 STATE
-  const [courseCompletionDate, setCourseCompletionDate] = useState("2026-04-15");
-  const [courseAcademy, setCourseAcademy] = useState("Academia Nacional de Seguridad");
-  const [credencialSupervigilancia, setCredencialSupervigilancia] = useState("SV-89421");
+  const [courseCompletionDate, setCourseCompletionDate] = useState("");
+  const [courseAcademy, setCourseAcademy] = useState("");
+  const [credencialSupervigilancia, setCredencialSupervigilancia] = useState("");
 
   // STEP 3 STATE
-  const [experiences, setExperiences] = useState<WorkExperienceItem[]>([
-    {
-      company: "Seguridad Atlas Ltda.",
-      role: "Vigilante Fijo en Centro Empresarial",
-      startDate: "2023",
-      endDate: "2025",
-      current: false,
-    },
-  ]);
+  const [experiences, setExperiences] = useState<WorkExperienceItem[]>([]);
   const [newCompany, setNewCompany] = useState("");
   const [newRole, setNewRole] = useState("");
+
+  useEffect(() => {
+    async function loadInitialUserData() {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name, phone_whatsapp")
+            .eq("id", user.id)
+            .maybeSingle();
+
+          if (profile?.full_name) setFullName(profile.full_name);
+          else if (user.user_metadata?.full_name) setFullName(user.user_metadata.full_name);
+
+          if (profile?.phone_whatsapp) setPhone(profile.phone_whatsapp);
+        }
+      } catch {}
+    }
+
+    loadInitialUserData();
+  }, []);
   const [newDates, setNewDates] = useState("");
 
   // Files
@@ -117,7 +134,7 @@ export default function OnboardingPage() {
         has_own_motorcycle: hasMotorcycle,
         motorcycle_cc: hasMotorcycle ? motorcycleCc : null,
         available_immediately: true,
-        resume_pdf_url: "https://demo.fuerzaverificada.com/hv-carlos.pdf",
+        resume_pdf_url: null,
         work_experience_json: experiences as any,
       });
 

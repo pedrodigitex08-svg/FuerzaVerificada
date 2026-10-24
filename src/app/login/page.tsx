@@ -139,10 +139,10 @@ function LoginForm() {
           email: `${role}@fuerzaverificada.com`,
           full_name:
             role === "candidate"
-              ? "Carlos Eduardo Moreno"
+              ? "Personal Operativo"
               : role === "company"
-              ? "Seguridad Atlas de Colombia"
-              : "Dr. Ricardo Beltrán",
+              ? "Empresa de Seguridad"
+              : "Administrador de Plataforma",
           role,
         })
       );
@@ -785,7 +785,7 @@ function LoginForm() {
                         required
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        placeholder="Ej: Carlos Eduardo Moreno R."
+                        placeholder="Nombres y apellidos completos"
                         className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-9 pr-3 py-2.5 text-xs text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[44px]"
                       />
                     </div>
