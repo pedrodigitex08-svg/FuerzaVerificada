@@ -17,6 +17,7 @@ import {
   Eye,
   EyeOff,
   Check,
+  KeyRound,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { UserRole } from "@/types/database";
@@ -75,6 +76,13 @@ function LoginForm() {
   >(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
+  // Password Recovery States
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSuccess, setForgotSuccess] = useState(false);
+  const [forgotError, setForgotError] = useState<string | null>(null);
+
   const supabase = createClient();
 
   useEffect(() => {
@@ -98,6 +106,11 @@ function LoginForm() {
     } else if (errorParam === "auth_callback_failed") {
       setErrorType("generic");
       setErrorMsg("No fue posible completar la autenticación con Google. Por favor intenta de nuevo.");
+    }
+
+    const successParam = searchParams.get("success");
+    if (successParam === "password_updated") {
+      setSuccessMsg("Tu contraseña ha sido actualizada exitosamente. Ya puedes iniciar sesión con tu nueva clave.");
     }
 
     // 1. Detección de sesión activa para evitar pantallas congeladas
@@ -285,6 +298,37 @@ function LoginForm() {
     else router.push("/admin/estudios");
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotError(null);
+    setForgotSuccess(false);
+    setForgotLoading(true);
+
+    try {
+      const origin =
+        typeof window !== "undefined" && window.location.origin
+          ? window.location.origin
+          : process.env.NEXT_PUBLIC_SITE_URL || "";
+
+      const redirectTo = `${origin}/auth/callback?next=/actualizar-password`;
+
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+        redirectTo,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setForgotSuccess(true);
+    } catch (err: any) {
+      console.error("Error al solicitar enlace de restablecimiento:", err);
+      setForgotError(err.message || "No fue posible enviar el enlace de recuperación. Intenta nuevamente.");
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -467,9 +511,94 @@ function LoginForm() {
       {/* 2. MAIN CARD */}
       <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 sm:p-8 shadow-md space-y-5">
         {/* ========================================================================= */}
-        {/* CASO 1: PANTALLA PRINCIPAL DE INGRESO (INICIAR SESIÓN)                    */}
+        {/* CASO 0: RECUPERACIÓN DE CONTRASEÑA                                        */}
         {/* ========================================================================= */}
-        {mode === "login" && (
+        {showForgotPassword ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2.5 pb-2 border-b border-[#E2E8F0]">
+              <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-[#0F172A]">
+                <KeyRound className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-[#1E293B]">¿Olvidaste tu contraseña?</h2>
+                <p className="text-[11px] text-[#64748B]">Restablece tu acceso con tu correo registrado</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-[#64748B] leading-relaxed">
+              Ingresa el correo electrónico asociado a tu cuenta. Te enviaremos un enlace seguro para crear una nueva contraseña.
+            </p>
+
+            {forgotSuccess ? (
+              <div className="p-3.5 rounded-xl bg-[#ECFDF5] border border-[#10B981]/30 text-xs text-[#065F46] space-y-3">
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" strokeWidth={2} />
+                  <span className="font-medium leading-relaxed">
+                    Si el correo está registrado, recibirás un enlace para restablecer tu contraseña en unos segundos. Revisa también tu carpeta de Spam.
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                {forgotError && (
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                    <span className="leading-relaxed">{forgotError}</span>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#1E293B] mb-1">
+                    Correo Electrónico *
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-[#64748B] absolute left-3 top-3.5" strokeWidth={1.5} />
+                    <input
+                      type="email"
+                      required
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      placeholder="usuario@correo.com"
+                      className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-9 pr-3 py-2.5 text-xs text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[44px]"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={forgotLoading}
+                  className="w-full font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-xs transition-all shadow-sm min-h-[48px] bg-[#0F172A] hover:bg-[#1E3A8A] text-white disabled:opacity-75 disabled:cursor-not-allowed"
+                >
+                  {forgotLoading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      Enviando enlace...
+                    </span>
+                  ) : (
+                    <>
+                      <span>Enviar enlace de recuperación</span>
+                      <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
+
+            <div className="pt-2 text-center border-t border-[#E2E8F0]">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForgotPassword(false);
+                  setForgotSuccess(false);
+                  setForgotError(null);
+                }}
+                className="text-xs font-semibold text-[#64748B] hover:text-[#0F172A] transition-colors"
+              >
+                ← Regresar a Iniciar Sesión
+              </button>
+            </div>
+          </div>
+        ) : mode === "login" ? (
           <>
             {/* DOS BOTONES GRANDES Y ELEGANTES PARA ELEGIR EL ROL */}
             <div className="space-y-2.5">
@@ -661,9 +790,23 @@ function LoginForm() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#1E293B] mb-1">
-                      Contraseña *
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-semibold text-[#1E293B]">
+                        Contraseña *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForgotEmail(email);
+                          setShowForgotPassword(true);
+                          setForgotSuccess(false);
+                          setForgotError(null);
+                        }}
+                        className="text-[11px] font-semibold text-[#0F172A] hover:text-[#1E3A8A] hover:underline transition-colors"
+                      >
+                        ¿Olvidaste tu contraseña?
+                      </button>
+                    </div>
                     <div className="relative">
                       <Lock className="w-4 h-4 text-[#64748B] absolute left-3 top-3.5" strokeWidth={1.5} />
                       <input
@@ -735,9 +878,23 @@ function LoginForm() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#1E293B] mb-1">
-                      Contraseña *
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-semibold text-[#1E293B]">
+                        Contraseña *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForgotEmail(email);
+                          setShowForgotPassword(true);
+                          setForgotSuccess(false);
+                          setForgotError(null);
+                        }}
+                        className="text-[11px] font-semibold text-[#0F172A] hover:text-[#1E3A8A] hover:underline transition-colors"
+                      >
+                        ¿Olvidaste tu contraseña?
+                      </button>
+                    </div>
                     <div className="relative">
                       <Lock className="w-4 h-4 text-[#64748B] absolute left-3 top-3.5" strokeWidth={1.5} />
                       <input
@@ -801,7 +958,7 @@ function LoginForm() {
               </p>
             </div>
           </>
-        )}
+        ) : null}
 
         {/* ========================================================================= */}
         {/* CASO 2: PANTALLA / MODAL DE REGISTRO SEPARADO                             */}

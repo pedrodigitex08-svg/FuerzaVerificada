@@ -5,6 +5,7 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const intent = requestUrl.searchParams.get("intent");
+  const next = requestUrl.searchParams.get("next");
   const origin = requestUrl.origin;
 
   if (code) {
@@ -13,6 +14,11 @@ export async function GET(request: Request) {
 
     if (!error && data?.session?.user) {
       const user = data.session.user;
+
+      // Si se especificó una ruta de destino directa (ej: /actualizar-password), redirigir de inmediato
+      if (next && next.startsWith("/")) {
+        return NextResponse.redirect(`${origin}${next}`);
+      }
 
       // 1. Verify canonical profile in public.profiles
       let { data: profile } = await supabase
