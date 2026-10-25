@@ -105,21 +105,21 @@ export default function EmpresaVacantesListPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200/80">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-xl font-semibold text-slate-900 tracking-tight">
             Mis Vacantes Publicadas & Bandejas ATS
           </h1>
-          <p className="text-xs text-slate-500 font-normal">
+          <p className="text-xs text-slate-600 font-normal">
             Administre ofertas laborales, revise postulados calificados y solicite poligrafía en 1 clic.
           </p>
         </div>
 
         <Link
           href="/empresa/vacantes/nueva"
-          className="btn-primary text-xs py-2 px-3.5 font-semibold"
+          className="btn-primary text-xs h-9 px-3.5 font-medium"
         >
-          <PlusCircle className="w-3.5 h-3.5 text-amber-400" strokeWidth={2} />
+          <PlusCircle className="w-3.5 h-3.5 text-slate-300" strokeWidth={1.75} />
           Publicar Nueva Vacante
         </Link>
       </div>
@@ -132,34 +132,34 @@ export default function EmpresaVacantesListPage() {
           placeholder="Buscar vacante por cargo o título..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-slate-400 shadow-subtle"
+          className="w-full h-10 bg-white border border-slate-200/90 rounded-md pl-10 pr-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors"
         />
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-subtle overflow-hidden">
+      <div className="bg-white border border-slate-200/90 rounded-lg shadow-[0_1px_2px_rgba(15,23,42,0.04)] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/50 text-slate-400 uppercase text-[10px] tracking-wider font-semibold">
-                <th className="py-3 px-5 font-semibold">Puesto / Vacante</th>
-                <th className="py-3 px-3 font-semibold">Esquema</th>
-                <th className="py-3 px-3 font-semibold">Salario</th>
-                <th className="py-3 px-3 font-semibold">Postulados</th>
-                <th className="py-3 px-3 font-semibold">Compatibilidad</th>
-                <th className="py-3 px-3 font-semibold">Estado</th>
-                <th className="py-3 px-5 text-right font-semibold">Gestión ATS</th>
+              <tr className="border-b border-slate-200/80 bg-slate-50/70 text-slate-500 uppercase text-[10px] tracking-wider font-semibold">
+                <th className="py-3 px-5 font-medium">Puesto / Vacante</th>
+                <th className="py-3 px-3 font-medium">Esquema</th>
+                <th className="py-3 px-3 font-medium">Salario</th>
+                <th className="py-3 px-3 font-medium">Postulados</th>
+                <th className="py-3 px-3 font-medium">Compatibilidad</th>
+                <th className="py-3 px-3 font-medium">Estado</th>
+                <th className="py-3 px-5 text-right font-medium">Gestión ATS</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-slate-400">
-                    <Briefcase className="w-10 h-10 mx-auto mb-3 text-slate-300" strokeWidth={1.5} />
+                    <Briefcase className="w-9 h-9 mx-auto mb-3 text-slate-300" strokeWidth={1.5} />
                     <p className="text-sm font-semibold text-slate-700">
                       {searchTerm ? "No se encontraron vacantes con ese criterio" : "Aún no tienes vacantes publicadas"}
                     </p>
-                    <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
+                    <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
                       {searchTerm
                         ? "Intenta con otro término de búsqueda o limpia el filtro."
                         : "Crea tu primera oferta laboral corporativa para recibir aspirantes con verificación."}
@@ -168,9 +168,9 @@ export default function EmpresaVacantesListPage() {
                       <div className="mt-4">
                         <Link
                           href="/empresa/vacantes/nueva"
-                          className="btn-primary text-xs py-2 px-4 inline-flex"
+                          className="btn-primary text-xs h-9 px-4 inline-flex"
                         >
-                          <PlusCircle className="w-3.5 h-3.5 text-amber-400 mr-1.5" />
+                          <PlusCircle className="w-3.5 h-3.5 text-slate-300 mr-1.5" />
                           Publicar mi primera vacante
                         </Link>
                       </div>
@@ -179,30 +179,30 @@ export default function EmpresaVacantesListPage() {
                 </tr>
               ) : (
                 filtered.map((vac) => (
-                  <tr key={vac.id} className="hover:bg-slate-50/80 transition-colors">
+                  <tr key={vac.id} className="hover:bg-slate-50/70 transition-colors">
                     <td className="py-4 px-5">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900">{vac.title}</span>
+                        <span className="font-semibold text-slate-900">{vac.title}</span>
                         {vac.is_urgent && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">
-                            <Zap className="w-2.5 h-2.5 fill-amber-500" />
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-800 bg-amber-50/80 px-1.5 py-0.5 rounded-md border border-amber-200/70">
+                            <Zap className="w-2.5 h-2.5 fill-amber-500 text-amber-600" />
                             Relevo Urgente
                           </span>
                         )}
                       </div>
-                      <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                      <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5 tabular-nums">
                         <MapPin className="w-3 h-3 text-slate-400" />
                         {vac.zone} • Publicada el {vac.date}
                       </div>
                     </td>
-                    <td className="py-4 px-3 font-mono text-slate-700 font-medium">
+                    <td className="py-4 px-3 font-mono text-slate-700 text-xs tabular-nums">
                       {vac.shift}
                     </td>
-                    <td className="py-4 px-3 font-mono font-bold text-slate-900 tabular-nums">
+                    <td className="py-4 px-3 font-mono font-semibold text-slate-900 tabular-nums">
                       ${vac.salary ? vac.salary.toLocaleString("es-CO") : "0"} COP
                     </td>
                     <td className="py-4 px-3">
-                      <span className="font-semibold text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
+                      <span className="font-medium text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md tabular-nums">
                         {vac.applicants_count} postulados
                       </span>
                     </td>
@@ -220,7 +220,7 @@ export default function EmpresaVacantesListPage() {
                     <td className="py-4 px-5 text-right">
                       <Link
                         href={`/empresa/vacantes/${vac.id}`}
-                        className="btn-primary text-xs py-1.5 px-3 font-semibold inline-flex"
+                        className="btn-primary text-xs h-8 px-3 font-medium inline-flex tabular-nums"
                       >
                         Bandeja ATS ({vac.applicants_count})
                         <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />

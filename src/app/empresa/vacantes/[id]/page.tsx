@@ -257,7 +257,7 @@ export default function ATSVacantePage() {
   return (
     <div className="space-y-6">
       {/* Top Breadcrumb & Vacancy Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200/80">
         <div>
           <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
             <Link href="/empresa/vacantes" className="hover:text-slate-900 flex items-center gap-1">
@@ -265,13 +265,13 @@ export default function ATSVacantePage() {
               Mis Vacantes
             </Link>
             <span>/</span>
-            <span className="text-slate-900 font-semibold">Bandeja ATS</span>
+            <span className="text-slate-900 font-medium">Bandeja ATS</span>
           </div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-xl font-semibold text-slate-900 tracking-tight">
             {vacancyTitle}
           </h1>
           <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
-            <span>Turno: <strong className="text-slate-700 font-mono">{vacancyShift}</strong></span>
+            <span>Turno: <strong className="text-slate-700 font-mono tabular-nums">{vacancyShift}</strong></span>
             <span>•</span>
             <span className="flex items-center gap-1 text-slate-500">
               <MapPin className="w-3 h-3" />
@@ -281,13 +281,13 @@ export default function ATSVacantePage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-slate-900 text-white flex items-center gap-2.5 shadow-subtle">
-            <Shield className="w-4 h-4 text-amber-400" strokeWidth={2} />
+          <div className="p-2.5 rounded-lg bg-slate-900 text-white flex items-center gap-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.08)]">
+            <Shield className="w-4 h-4 text-emerald-400" strokeWidth={1.75} />
             <div className="text-xs">
               <span className="text-[10px] text-slate-400 block uppercase leading-none">
                 Créditos Poligrafía
               </span>
-              <strong className="text-amber-400 font-mono text-sm tabular-nums">
+              <strong className="text-emerald-400 font-mono text-sm tabular-nums">
                 {credits} disponibles
               </strong>
             </div>
@@ -296,7 +296,7 @@ export default function ATSVacantePage() {
       </div>
 
       {notificationToast && (
-        <div className="p-3.5 rounded-xl bg-slate-900 text-white text-xs font-semibold flex items-center gap-2 shadow-elevated border border-slate-700">
+        <div className="p-3.5 rounded-md bg-slate-900 text-white text-xs font-medium flex items-center gap-2 shadow-[0_2px_6px_rgba(15,23,42,0.08)] border border-slate-700">
           <CheckCircle2 className="w-4 h-4 text-emerald-400" strokeWidth={2} />
           <span>{notificationToast}</span>
         </div>
@@ -311,7 +311,7 @@ export default function ATSVacantePage() {
             placeholder="Buscar por nombre o cédula..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-slate-400 shadow-subtle"
+            className="w-full h-10 bg-white border border-slate-200/90 rounded-md pl-10 pr-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors"
           />
         </div>
 
@@ -327,10 +327,10 @@ export default function ATSVacantePage() {
               key={st.key}
               type="button"
               onClick={() => setFilterStatus(st.key)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap border transition-all ${
+              className={`h-9 px-3 rounded-md text-xs font-medium whitespace-nowrap border transition-all ${
                 filterStatus === st.key
-                  ? "bg-slate-900 text-white border-slate-900 font-semibold shadow-subtle"
-                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                  ? "bg-slate-900 text-white border-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.06)]"
+                  : "bg-white text-slate-600 border-slate-200/90 hover:bg-slate-50"
               }`}
             >
               {st.label}
@@ -340,30 +340,30 @@ export default function ATSVacantePage() {
       </div>
 
       {/* HIGH-DENSITY LINEAR/STRIPE ATS CANDIDATE TABLE */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-subtle overflow-hidden">
+      <div className="bg-white border border-slate-200/90 rounded-lg shadow-[0_1px_2px_rgba(15,23,42,0.04)] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/50 text-slate-400 uppercase text-[10px] tracking-wider font-semibold">
-                <th className="py-3 px-5 font-semibold">Aspirante & Cédula</th>
-                <th className="py-3 px-3 font-semibold">Cargo & Experiencia</th>
-                <th className="py-3 px-3 font-semibold">Credencial SuperVigilancia</th>
-                <th className="py-3 px-3 font-semibold">Match %</th>
-                <th className="py-3 px-3 font-semibold">Estado del Proceso</th>
-                <th className="py-3 px-5 text-right font-semibold">Acciones Operativas</th>
+              <tr className="border-b border-slate-200/80 bg-slate-50/70 text-slate-500 uppercase text-[10px] tracking-wider font-semibold">
+                <th className="py-3 px-5 font-medium">Aspirante & Cédula</th>
+                <th className="py-3 px-3 font-medium">Cargo & Experiencia</th>
+                <th className="py-3 px-3 font-medium">Credencial SuperVigilancia</th>
+                <th className="py-3 px-3 font-medium">Match %</th>
+                <th className="py-3 px-3 font-medium">Estado del Proceso</th>
+                <th className="py-3 px-5 text-right font-medium">Acciones Operativas</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredCandidates.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-slate-400">
-                    <Users className="w-10 h-10 mx-auto mb-3 text-slate-300" strokeWidth={1.5} />
+                    <Users className="w-9 h-9 mx-auto mb-3 text-slate-300" strokeWidth={1.5} />
                     <p className="text-sm font-semibold text-slate-700">
                       {searchTerm || filterStatus !== "todos"
                         ? "No se encontraron aspirantes con esos filtros"
                         : "Aún no hay aspirantes postulados a esta vacante"}
                     </p>
-                    <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
+                    <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
                       Los aspirantes aparecerán automáticamente aquí clasificados por compatibilidad (% Match) y estado del curso de seguridad.
                     </p>
                   </td>
@@ -387,18 +387,18 @@ export default function ATSVacantePage() {
                         <button
                           type="button"
                           onClick={() => setSelectedCandidateForDrawer(cand)}
-                          className="font-bold text-slate-900 hover:text-amber-600 transition-colors text-left block"
+                          className="font-semibold text-slate-900 hover:text-slate-700 transition-colors text-left block"
                         >
                           {cand.full_name}
                         </button>
-                        <span className="text-[11px] text-slate-400 font-mono">
+                        <span className="text-[11px] text-slate-500 font-mono tabular-nums">
                           C.C. {cand.national_id} • {cand.city}
                         </span>
                       </td>
 
                       {/* Role & Exp */}
                       <td className="py-3.5 px-3">
-                        <span className="font-semibold text-slate-800 block">
+                        <span className="font-medium text-slate-800 block">
                           {cand.primary_role}
                         </span>
                         <span className="text-[11px] text-slate-500 font-mono tabular-nums">
@@ -409,12 +409,12 @@ export default function ATSVacantePage() {
                       {/* Course Semaphore Technical Badge */}
                       <td className="py-3.5 px-3">
                         {cand.course_semaphore === "VIGENTE" ? (
-                          <span className="badge-emerald text-[11px]">
+                          <span className="badge-emerald text-[11px] tabular-nums">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                             Vigente ({cand.days_remaining}d)
                           </span>
                         ) : cand.course_semaphore === "PROXIMO_A_VENCER" ? (
-                          <span className="badge-amber text-[11px]">
+                          <span className="badge-amber text-[11px] tabular-nums">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                             Por Vencer ({cand.days_remaining}d)
                           </span>
@@ -429,10 +429,10 @@ export default function ATSVacantePage() {
                       {/* Match Score */}
                       <td className="py-3.5 px-3">
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold font-mono tabular-nums ${
+                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold font-mono tabular-nums ${
                             cand.match_score >= 85
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : "bg-amber-50 text-amber-800 border border-amber-200"
+                              ? "bg-emerald-50/80 text-emerald-700 border border-emerald-200/60"
+                              : "bg-amber-50/80 text-amber-800 border border-amber-200/70"
                           }`}
                         >
                           {cand.match_score}% Match
@@ -446,14 +446,14 @@ export default function ATSVacantePage() {
                           onChange={(e) =>
                             handleStatusChange(cand.id, e.target.value as ApplicationStatus)
                           }
-                          className={`rounded-lg px-2 py-1 text-xs font-semibold border ${
+                          className={`rounded-md px-2.5 py-1 text-xs font-medium border ${
                             cand.status === "en_estudio_seguridad"
-                              ? "bg-amber-50 border-amber-300 text-amber-900"
+                              ? "bg-amber-50/80 border-amber-200/80 text-amber-900"
                               : cand.status === "citado_entrevista"
                               ? "bg-slate-900 border-slate-900 text-white"
                               : cand.status === "preseleccionado"
-                              ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                              : "bg-slate-50 border-slate-200 text-slate-700"
+                              ? "bg-emerald-50/80 border-emerald-200/60 text-emerald-800"
+                              : "bg-slate-50 border-slate-200/90 text-slate-700"
                           }`}
                         >
                           <option value="postulado">Postulado</option>
@@ -472,7 +472,7 @@ export default function ATSVacantePage() {
                           type="button"
                           onClick={() => setSelectedCandidateForDrawer(cand)}
                           title="Ver Hoja de Vida y Soportes"
-                          className="btn-secondary text-xs py-1.5 px-2.5 inline-flex font-semibold"
+                          className="btn-secondary text-xs h-8 px-2.5 inline-flex font-medium"
                         >
                           <FileText className="w-3.5 h-3.5 text-slate-600" strokeWidth={1.75} />
                           Ver HV
@@ -485,7 +485,7 @@ export default function ATSVacantePage() {
                           rel="noopener noreferrer"
                           onClick={() => handleStatusChange(cand.id, "citado_entrevista")}
                           title="Citar a entrevista por WhatsApp (1 Clic)"
-                          className="btn-secondary text-xs py-1.5 px-2.5 inline-flex font-semibold text-emerald-700 hover:text-emerald-800"
+                          className="btn-secondary text-xs h-8 px-2.5 inline-flex font-medium text-emerald-700 hover:text-emerald-800"
                         >
                           <MessageCircle className="w-3.5 h-3.5 text-emerald-600" strokeWidth={1.75} />
                           Citar
@@ -496,9 +496,9 @@ export default function ATSVacantePage() {
                           type="button"
                           onClick={() => setSelectedCandidateForStudy(cand)}
                           title="Solicitar Estudio + Visita + Polígrafo"
-                          className="bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl text-xs py-1.5 px-3 inline-flex items-center gap-1.5 font-bold shadow-sm transition-all duration-200"
+                          className="h-8 bg-slate-900 hover:bg-slate-800 text-white rounded-md text-xs px-3 inline-flex items-center gap-1.5 font-medium shadow-[0_1px_2px_rgba(15,23,42,0.08)] transition-all duration-200"
                         >
-                          <ShieldCheck className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" strokeWidth={1.5} />
                           <span>Solicitar Polígrafo</span>
                         </button>
                       </td>

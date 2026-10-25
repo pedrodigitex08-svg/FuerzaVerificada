@@ -8,8 +8,8 @@
   }
 
   body {
-    background-color: #FFFFFF;
-    color: #1E293B;
+    background-color: #F8FAFC;
+    color: #0F172A;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -22,54 +22,55 @@
 }
 
 @layer components {
-  /* Precision B2B Card per Official Render */
+  /* Precision B2B Card - Executive GovTech Standard */
   .b2b-card {
-    @apply bg-white border border-[#E2E8F0] rounded-xl transition-all duration-200;
-    box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.03);
+    @apply bg-white border border-slate-200/90 rounded-lg transition-colors duration-150;
+    box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
   }
 
   .b2b-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+    @apply border-slate-300/90;
+    box-shadow: 0 2px 4px 0 rgba(15, 23, 42, 0.05);
   }
 
   .b2b-card-dark {
-    @apply bg-[#0F172A] border border-slate-800 rounded-xl text-white;
-    box-shadow: 0 12px 32px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+    @apply bg-[#0F172A] border border-slate-800 rounded-lg text-white;
+    box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.08);
   }
 
-  /* Precision Buttons */
-  .btn-primary {
-    @apply bg-[#0F172A] text-white hover:bg-[#1E3A8A] active:bg-[#0F172A] font-medium rounded-xl px-4 py-2.5 transition-all duration-200 flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed;
+  /* Precision Executive Buttons (rounded-md) */
+  .btn-primary,
+  .btn-navy {
+    @apply bg-[#0F172A] text-white hover:bg-slate-800 active:bg-slate-950 font-medium rounded-md px-3.5 py-2 text-xs sm:text-sm transition-colors duration-150 flex items-center justify-center gap-2 shadow-[0_1px_2px_rgba(15,23,42,0.05)] disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
-    @apply bg-white text-[#1E293B] hover:bg-[#F8FAFC] active:bg-[#F1F5F9] border border-[#E2E8F0] font-medium rounded-xl px-4 py-2.5 transition-all duration-200 flex items-center justify-center gap-2 shadow-sm;
+    @apply bg-white text-slate-800 hover:bg-slate-50 active:bg-slate-100 border border-slate-200/90 font-medium rounded-md px-3.5 py-2 text-xs sm:text-sm transition-colors duration-150 flex items-center justify-center gap-2 shadow-[0_1px_2px_rgba(15,23,42,0.03)];
   }
 
   .btn-emerald {
-    @apply bg-[#10B981] text-white hover:bg-[#059669] active:bg-[#047857] font-medium rounded-xl px-4 py-2.5 transition-all duration-200 flex items-center justify-center gap-2 shadow-sm;
+    @apply bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 font-medium rounded-md px-3.5 py-2 text-xs sm:text-sm transition-colors duration-150 flex items-center justify-center gap-2 shadow-[0_1px_2px_rgba(15,23,42,0.05)];
   }
 
   .btn-amber {
-    @apply bg-amber-500 text-slate-950 hover:bg-amber-400 active:bg-amber-600 font-semibold rounded-xl px-4 py-2.5 transition-all duration-200 flex items-center justify-center gap-2 shadow-sm;
+    @apply bg-amber-500 text-slate-950 hover:bg-amber-400 active:bg-amber-600 font-semibold rounded-md px-3.5 py-2 text-xs sm:text-sm transition-colors duration-150 flex items-center justify-center gap-2 shadow-[0_1px_2px_rgba(15,23,42,0.05)];
   }
 
-  /* Subtle technical badges */
+  /* Subtle technical badges (rounded-md) */
   .badge-neutral {
-    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-[#F3F4F6] text-[#1E293B] border border-[#E2E8F0];
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-100/80 text-slate-700 border border-slate-200/90;
   }
 
   .badge-emerald {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#ECFDF5] text-[#065F46] border border-[#10B981]/30;
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-emerald-50/80 text-emerald-700 border border-emerald-200/60;
   }
 
   .badge-amber {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200/80;
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-amber-50/80 text-amber-800 border border-amber-200/70;
   }
 
   .badge-rose {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/80;
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-rose-50/80 text-rose-700 border border-rose-200/70;
   }
 }
 

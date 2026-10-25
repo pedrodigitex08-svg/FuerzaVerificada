@@ -25,34 +25,34 @@ export function ReliefToggle({
       onClick={handleToggle}
       role="button"
       tabIndex={0}
-      className={`cursor-pointer select-none rounded-xl p-4 border transition-all duration-200 flex items-center justify-between gap-3 shadow-sm ${
+      className={`cursor-pointer select-none rounded-lg p-4 border transition-colors duration-200 flex items-center justify-between gap-3 shadow-subtle ${
         isActive
-          ? "bg-[#ECFDF5] border-[#10B981]/40 ring-1 ring-[#10B981]/20"
-          : "bg-white border-[#E2E8F0] hover:border-slate-300"
+          ? "bg-emerald-50/70 border-emerald-200/80"
+          : "bg-white border-slate-200/90 hover:border-slate-300"
       }`}
     >
       <div className="flex items-center gap-3">
         <div
-          className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+          className={`w-9 h-9 rounded-md flex items-center justify-center shrink-0 transition-colors ${
             isActive
-              ? "bg-[#10B981] text-white"
-              : "bg-[#F3F4F6] text-[#64748B]"
+              ? "bg-emerald-600 text-white"
+              : "bg-slate-100 text-slate-500"
           }`}
         >
-          <Zap className="w-5 h-5" strokeWidth={1.5} />
+          <Zap className="w-4 h-4" strokeWidth={1.75} />
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <h4 className="text-xs font-bold text-[#1E293B] tracking-tight">
+            <h4 className="text-xs font-semibold text-slate-900 tracking-tight">
               {isActive
                 ? "Disponible para Relevos de Emergencia Hoy"
                 : "No disponible para turnos inmediatos"}
             </h4>
             {isActive && (
-              <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             )}
           </div>
-          <p className="text-[11px] text-[#64748B] mt-0.5 leading-snug">
+          <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
             {isActive
               ? "Apareces en el radar prioritario de empresas para cubrir novedades o incapacidades hoy."
               : "Activa este interruptor para que las empresas te contacten en 1 clic."}
@@ -62,12 +62,12 @@ export function ReliefToggle({
 
       {/* Switch Component */}
       <div
-        className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 shrink-0 flex items-center ${
-          isActive ? "bg-[#10B981] justify-end" : "bg-slate-200 justify-start"
+        className={`w-10 h-5 rounded-full p-0.5 transition-colors duration-200 shrink-0 flex items-center ${
+          isActive ? "bg-emerald-600 justify-end" : "bg-slate-200 justify-start"
         }`}
       >
-        <div className="w-5 h-5 rounded-full bg-white shadow-sm flex items-center justify-center">
-          {isActive ? <Check className="w-3 h-3 text-[#10B981] stroke-[2.5]" /> : null}
+        <div className="w-4 h-4 rounded-full bg-white shadow-xs flex items-center justify-center">
+          {isActive ? <Check className="w-2.5 h-2.5 text-emerald-600 stroke-[2.5]" /> : null}
         </div>
       </div>
     </div>

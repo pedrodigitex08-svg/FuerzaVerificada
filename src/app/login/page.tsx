@@ -861,14 +861,14 @@ function LoginForm() {
       {/* 1. BRAND HEADER */}
       <div className="text-center space-y-2">
         <Link href="/" className="inline-flex items-center gap-2.5 group">
-          <div className="w-10 h-10 rounded-xl bg-[#0F172A] flex items-center justify-center text-white shadow-sm group-hover:bg-[#1E3A8A] transition-colors">
-            <Shield className="w-5 h-5 text-white" strokeWidth={1.5} />
+          <div className="w-9 h-9 rounded-md bg-slate-900 flex items-center justify-center text-white shadow-[0_1px_2px_rgba(15,23,42,0.08)] group-hover:bg-slate-800 transition-colors">
+            <Shield className="w-4 h-4 text-white" strokeWidth={1.75} />
           </div>
           <div className="text-left">
-            <span className="text-lg font-bold tracking-tight text-[#1E293B] block leading-none">
-              Fuerza<span className="text-[#0F172A]">Verificada</span>
+            <span className="text-base font-semibold tracking-tight text-slate-900 block leading-none">
+              Fuerza<span className="text-slate-700 font-bold">Verificada</span>
             </span>
-            <span className="text-[10px] uppercase tracking-wider text-[#64748B] font-semibold">
+            <span className="text-[10px] uppercase tracking-wider text-slate-500 font-medium block mt-0.5">
               Red Nacional de Seguridad
             </span>
           </div>
@@ -876,23 +876,23 @@ function LoginForm() {
 
         {registrationCompleted ? (
           <div className="pt-1">
-            <h1 className="text-base sm:text-lg font-bold text-[#1E293B] tracking-tight">
+            <h1 className="text-base sm:text-lg font-semibold text-slate-900 tracking-tight">
               Activa tu Cuenta Profesional
             </h1>
-            <p className="text-xs text-[#64748B] mt-0.5">
+            <p className="text-xs text-slate-600 mt-0.5">
               Hemos enviado un enlace de confirmación a tu correo
             </p>
           </div>
         ) : mode === "login" ? (
-          <p className="text-xs text-[#64748B] max-w-sm mx-auto leading-relaxed">
+          <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
             La red de empleo y validación especializada para el sector de seguridad privada
           </p>
         ) : (
           <div className="pt-1">
-            <h1 className="text-base sm:text-lg font-bold text-[#1E293B] tracking-tight">
+            <h1 className="text-base sm:text-lg font-semibold text-slate-900 tracking-tight">
               ¿Cómo deseas unirte a FuerzaVerificada?
             </h1>
-            <p className="text-xs text-[#64748B] mt-0.5">
+            <p className="text-xs text-slate-600 mt-0.5">
               Selecciona una opción para configurar tu cuenta profesional
             </p>
           </div>
@@ -900,24 +900,24 @@ function LoginForm() {
       </div>
 
       {/* 2. MAIN CARD */}
-      <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 sm:p-8 shadow-md space-y-5">
+      <div className="bg-white border border-slate-200/90 rounded-lg p-6 sm:p-7 shadow-[0_1px_3px_rgba(15,23,42,0.05)] space-y-5">
         {/* ========================================================================= */}
         {/* CASO: CONFIRMACIÓN EXCLUSIVA DE CUENTA CREADA                            */}
         {/* ========================================================================= */}
         {registrationCompleted ? (
           <div className="space-y-5 text-center py-2 animate-in fade-in zoom-in-95 duration-200">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-[#ECFDF5] border border-[#10B981]/30 flex items-center justify-center text-[#10B981] shadow-xs">
-              <CheckCircle className="w-8 h-8" strokeWidth={1.75} />
+            <div className="w-12 h-12 mx-auto rounded-lg bg-emerald-50/80 border border-emerald-200/70 flex items-center justify-center text-emerald-700">
+              <CheckCircle className="w-6 h-6" strokeWidth={1.75} />
             </div>
 
             <div className="space-y-2">
-              <h2 className="text-base sm:text-lg font-bold text-[#1E293B]">
+              <h2 className="text-base sm:text-lg font-semibold tracking-tight text-slate-900">
                 ¡Cuenta creada exitosamente!
               </h2>
-              <div className="p-4 rounded-xl bg-[#ECFDF5] border border-[#10B981]/30 text-xs text-[#065F46] leading-relaxed text-left space-y-2">
+              <div className="p-4 rounded-md bg-emerald-50/70 border border-emerald-200/70 text-xs text-emerald-800 leading-relaxed text-left space-y-2">
                 <p>
                   Hemos enviado un enlace de activación a{" "}
-                  <strong className="font-bold text-[#065F46] font-mono underline">
+                  <strong className="font-semibold text-emerald-900 font-mono underline">
                     {pendingConfirmEmail || email}
                   </strong>
                   .
@@ -926,7 +926,7 @@ function LoginForm() {
                   Por favor abre tu correo (revisa también Spam) y haz clic en el enlace para activar tu cuenta y continuar.
                 </p>
                 {successMsg && successMsg.includes("reenviado") && (
-                  <p className="font-bold text-emerald-800 pt-1.5 border-t border-emerald-200/80">
+                  <p className="font-semibold text-emerald-900 pt-1.5 border-t border-emerald-200/80">
                     ✓ {successMsg}
                   </p>
                 )}
@@ -934,7 +934,7 @@ function LoginForm() {
             </div>
 
             {errorMsg && (
-              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 text-left flex items-start gap-2">
+              <div className="p-3 rounded-md bg-rose-50/80 border border-rose-200/80 text-xs text-rose-700 text-left flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" strokeWidth={1.5} />
                 <span>{errorMsg}</span>
               </div>
@@ -945,7 +945,7 @@ function LoginForm() {
               type="button"
               onClick={handleResendConfirmation}
               disabled={resendLoading}
-              className="w-full py-2.5 px-4 rounded-xl bg-[#F8FAFC] hover:bg-slate-100 border border-[#E2E8F0] text-[#1E293B] font-semibold text-xs transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full h-10 px-4 rounded-md bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-700 font-medium text-xs transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {resendLoading ? (
                 <>
@@ -958,7 +958,7 @@ function LoginForm() {
             </button>
 
             {/* 3. Botón principal oscuro: Ir a Iniciar Sesión -> */}
-            <div className="pt-2 border-t border-[#E2E8F0]">
+            <div className="pt-2 border-t border-slate-200/80">
               <button
                 type="button"
                 onClick={() => {
@@ -971,7 +971,7 @@ function LoginForm() {
                   setPassword("");
                   setMode("login");
                 }}
-                className="w-full bg-[#0F172A] hover:bg-[#1E3A8A] text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-xs transition-all shadow-sm min-h-[48px]"
+                className="w-full h-10 bg-slate-900 hover:bg-slate-800 text-white font-medium px-4 rounded-md flex items-center justify-center gap-2 text-xs transition-all shadow-[0_1px_2px_rgba(15,23,42,0.08)]"
               >
                 <span>Ir a Iniciar Sesión</span>
                 <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
@@ -980,24 +980,24 @@ function LoginForm() {
           </div>
         ) : showForgotPassword ? (
           <div className="space-y-4">
-            <div className="flex items-center gap-2.5 pb-2 border-b border-[#E2E8F0]">
-              <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-[#0F172A]">
+            <div className="flex items-center gap-2.5 pb-2 border-b border-slate-200/80">
+              <div className="w-8 h-8 rounded-md bg-slate-100 border border-slate-200/90 flex items-center justify-center text-slate-900">
                 <KeyRound className="w-4 h-4" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-[#1E293B]">¿Olvidaste tu contraseña?</h2>
-                <p className="text-[11px] text-[#64748B]">Restablece tu acceso con tu correo registrado</p>
+                <h2 className="text-sm font-semibold tracking-tight text-slate-900">¿Olvidaste tu contraseña?</h2>
+                <p className="text-[11px] text-slate-500">Restablece tu acceso con tu correo registrado</p>
               </div>
             </div>
 
-            <p className="text-xs text-[#64748B] leading-relaxed">
+            <p className="text-xs text-slate-600 leading-relaxed">
               Ingresa el correo electrónico asociado a tu cuenta. Te enviaremos un enlace seguro para crear una nueva contraseña.
             </p>
 
             {forgotSuccess ? (
-              <div className="p-3.5 rounded-xl bg-[#ECFDF5] border border-[#10B981]/30 text-xs text-[#065F46] space-y-3">
+              <div className="p-3.5 rounded-md bg-emerald-50/80 border border-emerald-200/70 text-xs text-emerald-800 space-y-3">
                 <div className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" strokeWidth={2} />
+                  <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" strokeWidth={2} />
                   <span className="font-medium leading-relaxed">
                     Si el correo está registrado, recibirás un enlace para restablecer tu contraseña en unos segundos. Revisa también tu carpeta de Spam.
                   </span>
@@ -1006,25 +1006,25 @@ function LoginForm() {
             ) : (
               <form onSubmit={handleForgotPassword} className="space-y-4">
                 {forgotError && (
-                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start gap-2">
+                  <div className="p-3 rounded-md bg-rose-50/80 border border-rose-200/80 text-xs text-rose-800 flex items-start gap-2">
                     <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                     <span className="leading-relaxed">{forgotError}</span>
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#1E293B] mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">
                     Correo Electrónico *
                   </label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-[#64748B] absolute left-3 top-3.5" strokeWidth={1.5} />
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" strokeWidth={1.5} />
                     <input
                       type="email"
                       required
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
                       placeholder="usuario@correo.com"
-                      className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-9 pr-3 py-2.5 text-xs text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[44px]"
+                      className="w-full h-10 bg-white border border-slate-200/90 rounded-md pl-9 pr-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
                     />
                   </div>
                 </div>
@@ -1032,7 +1032,7 @@ function LoginForm() {
                 <button
                   type="submit"
                   disabled={forgotLoading}
-                  className="w-full font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-xs transition-all shadow-sm min-h-[48px] bg-[#0F172A] hover:bg-[#1E3A8A] text-white disabled:opacity-75 disabled:cursor-not-allowed"
+                  className="w-full h-10 font-medium px-4 rounded-md flex items-center justify-center gap-2 text-xs transition-all shadow-[0_1px_2px_rgba(15,23,42,0.08)] bg-slate-900 hover:bg-slate-800 text-white disabled:opacity-75 disabled:cursor-not-allowed"
                 >
                   {forgotLoading ? (
                     <span className="flex items-center gap-2">
@@ -1049,7 +1049,7 @@ function LoginForm() {
               </form>
             )}
 
-            <div className="pt-2 text-center border-t border-[#E2E8F0]">
+            <div className="pt-2 text-center border-t border-slate-200/80">
               <button
                 type="button"
                 onClick={() => {
@@ -1057,7 +1057,7 @@ function LoginForm() {
                   setForgotSuccess(false);
                   setForgotError(null);
                 }}
-                className="text-xs font-semibold text-[#64748B] hover:text-[#0F172A] transition-colors"
+                className="text-xs font-medium text-slate-600 hover:text-slate-900 transition-colors"
               >
                 ← Regresar a Iniciar Sesión
               </button>
@@ -1066,13 +1066,13 @@ function LoginForm() {
         ) : mode === "login" ? (
           <>
             {/* INFORMATIVE BADGE: DETECCIÓN AUTOMÁTICA DE ROL */}
-            <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-start gap-2.5 text-xs text-[#64748B]">
-              <Shield className="w-4 h-4 text-[#0F172A] shrink-0 mt-0.5" strokeWidth={1.5} />
+            <div className="p-3.5 rounded-md bg-slate-50/80 border border-slate-200/90 flex items-start gap-2.5 text-xs text-slate-600">
+              <Shield className="w-4 h-4 text-slate-900 shrink-0 mt-0.5" strokeWidth={1.5} />
               <div className="leading-relaxed">
-                <strong className="text-[#1E293B] block font-bold">
+                <strong className="text-slate-900 block font-semibold">
                   Acceso Único con Detección Automática de Rol
                 </strong>
-                <span className="text-[11px] text-[#64748B]">
+                <span className="text-[11px] text-slate-600">
                   Personal Operativo, Empresas de Seguridad y Administradores. El sistema te dirigirá automáticamente al panel correspondiente según tu cuenta registrada.
                 </span>
               </div>
@@ -1080,7 +1080,7 @@ function LoginForm() {
 
             {/* FEEDBACK ALERTS */}
             {errorMsg && (
-              <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 space-y-2">
+              <div className="p-3.5 rounded-md bg-rose-50/80 border border-rose-200/80 text-xs text-rose-800 space-y-2">
                 <div className="flex items-start gap-2.5">
                   <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" strokeWidth={1.75} />
                   <div className="flex-1 leading-relaxed">
@@ -1094,7 +1094,7 @@ function LoginForm() {
                             setErrorMsg(null);
                             setErrorType(null);
                           }}
-                          className="font-bold text-[#0F172A] underline hover:text-[#1E3A8A] transition-colors inline"
+                          className="font-semibold text-slate-900 underline hover:text-slate-700 transition-colors inline"
                         >
                           aquí
                         </button>
@@ -1109,7 +1109,7 @@ function LoginForm() {
                             setErrorMsg(null);
                             setErrorType(null);
                           }}
-                          className="font-bold text-[#0F172A] underline hover:text-[#1E3A8A] transition-colors inline"
+                          className="font-semibold text-slate-900 underline hover:text-slate-700 transition-colors inline"
                         >
                           aquí.
                         </button>
@@ -1124,7 +1124,7 @@ function LoginForm() {
                     type="button"
                     onClick={handleResendConfirmation}
                     disabled={resendLoading}
-                    className="w-full py-2 px-3 rounded-lg bg-white border border-rose-300 text-[#0F172A] font-bold text-[11px] hover:bg-slate-50 transition-colors"
+                    className="w-full h-9 px-3 rounded-md bg-white border border-rose-300 text-slate-900 font-medium text-[11px] hover:bg-slate-50 transition-colors"
                   >
                     {resendLoading ? "Reenviando correo..." : "Reenviar correo de confirmación"}
                   </button>
@@ -1133,8 +1133,8 @@ function LoginForm() {
             )}
 
             {successMsg && (
-              <div className="p-3 rounded-xl bg-[#ECFDF5] border border-[#10B981]/30 text-xs text-[#065F46] flex items-start gap-2">
-                <CheckCircle className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" strokeWidth={1.5} />
+              <div className="p-3 rounded-md bg-emerald-50/80 border border-emerald-200/70 text-xs text-emerald-800 flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" strokeWidth={1.5} />
                 <span>{successMsg}</span>
               </div>
             )}
@@ -1146,40 +1146,40 @@ function LoginForm() {
                 type="button"
                 onClick={() => handleGoogleLogin("login")}
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] active:bg-[#F1F5F9] text-[#1E293B] text-xs font-bold transition-all shadow-sm min-h-[46px] disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full h-10 flex items-center justify-center gap-2.5 px-4 rounded-md border border-slate-200/90 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-900 text-xs font-medium transition-all shadow-[0_1px_2px_rgba(15,23,42,0.04)] disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <GoogleIcon />
                 <span>{loading ? "Conectando con Google..." : "Continuar con Google"}</span>
               </button>
 
               <div className="relative flex items-center justify-center py-0.5">
-                <div className="border-t border-[#E2E8F0] w-full" />
-                <span className="bg-white px-3 text-[11px] text-[#64748B] font-medium uppercase tracking-wider relative">
+                <div className="border-t border-slate-200/80 w-full" />
+                <span className="bg-white px-3 text-[11px] text-slate-500 font-medium uppercase tracking-wider relative">
                   o con tu correo y contraseña
                 </span>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#1E293B] mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">
                     Correo Electrónico *
                   </label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-[#64748B] absolute left-3 top-3.5" strokeWidth={1.5} />
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" strokeWidth={1.5} />
                     <input
                       type="email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="usuario@correo.com"
-                      className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-9 pr-3 py-2.5 text-xs text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[44px]"
+                      className="w-full h-10 bg-white border border-slate-200/90 rounded-md pl-9 pr-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-semibold text-[#1E293B]">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-medium text-slate-700">
                       Contraseña *
                     </label>
                     <button
@@ -1190,13 +1190,13 @@ function LoginForm() {
                         setForgotSuccess(false);
                         setForgotError(null);
                       }}
-                      className="text-[11px] font-semibold text-[#0F172A] hover:text-[#1E3A8A] hover:underline transition-colors"
+                      className="text-[11px] font-medium text-slate-700 hover:text-slate-900 hover:underline transition-colors"
                     >
                       ¿Olvidaste tu contraseña?
                     </button>
                   </div>
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-[#64748B] absolute left-3 top-3.5" strokeWidth={1.5} />
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" strokeWidth={1.5} />
                     <input
                       type={showPassword ? "text" : "password"}
                       required
@@ -1204,12 +1204,12 @@ function LoginForm() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Tu contraseña"
-                      className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-9 pr-10 py-2.5 text-xs text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[44px]"
+                      className="w-full h-10 bg-white border border-slate-200/90 rounded-md pl-9 pr-10 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-3.5 text-[#64748B] hover:text-[#1E293B]"
+                      className="absolute right-3 top-3 text-slate-400 hover:text-slate-700"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -1219,7 +1219,7 @@ function LoginForm() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`w-full font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-xs transition-all shadow-sm min-h-[48px] bg-[#0F172A] hover:bg-[#1E3A8A] text-white ${
+                  className={`w-full h-10 font-medium px-4 rounded-md flex items-center justify-center gap-2 text-xs transition-all shadow-[0_1px_2px_rgba(15,23,42,0.08)] bg-slate-900 hover:bg-slate-800 text-white ${
                     loading ? "opacity-75 cursor-not-allowed" : ""
                   }`}
                 >
@@ -1240,7 +1240,7 @@ function LoginForm() {
 
             {/* TEXTO SUTIL Y DIRECTO AL PIE */}
             <div className="pt-2 text-center">
-              <p className="text-xs text-[#64748B]">
+              <p className="text-xs text-slate-600">
                 ¿No tienes una cuenta?{" "}
                 <button
                   type="button"
@@ -1251,7 +1251,7 @@ function LoginForm() {
                     setErrorType(null);
                     setSuccessMsg(null);
                   }}
-                  className="font-bold text-[#0F172A] hover:text-[#1E3A8A] hover:underline transition-colors"
+                  className="font-semibold text-slate-900 hover:text-slate-700 hover:underline transition-colors"
                 >
                   Regístrate aquí
                 </button>
@@ -1274,24 +1274,24 @@ function LoginForm() {
                   setSelectedRole("candidate");
                   setErrorMsg(null);
                 }}
-                className={`p-4 rounded-xl border text-left transition-all flex flex-col justify-between group min-h-[120px] ${
+                className={`p-4 rounded-lg border text-left transition-all flex flex-col justify-between group min-h-[116px] ${
                   selectedRole === "candidate"
-                    ? "border-[#0F172A] bg-white ring-2 ring-[#0F172A] shadow-sm"
-                    : "border-[#E2E8F0] bg-[#F8FAFC] hover:border-slate-300 hover:bg-slate-50"
+                    ? "border-slate-900 bg-white ring-1 ring-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
+                    : "border-slate-200/90 bg-slate-50/60 hover:border-slate-300 hover:bg-slate-50"
                 }`}
               >
                 <div>
-                  <div className="w-8 h-8 rounded-lg bg-[#ECFDF5] border border-[#10B981]/20 flex items-center justify-center text-[#10B981] mb-2.5">
-                    <UserCheck className="w-4 h-4" strokeWidth={1.75} />
+                  <div className="w-7 h-7 rounded-md bg-emerald-50/80 border border-emerald-200/60 flex items-center justify-center text-emerald-700 mb-2">
+                    <UserCheck className="w-3.5 h-3.5" strokeWidth={1.75} />
                   </div>
-                  <h3 className="text-xs font-bold text-[#1E293B] leading-snug">
+                  <h3 className="text-xs font-semibold text-slate-900 leading-snug">
                     Ingresar como personal operativo de seguridad
                   </h3>
-                  <p className="text-[11px] text-[#64748B] mt-1 leading-relaxed">
+                  <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
                     Acceso libre con Google o correo en 1 clic.
                   </p>
                 </div>
-                <div className="mt-3 flex items-center gap-1.5 text-[11px] font-semibold text-[#10B981]">
+                <div className="mt-2.5 flex items-center gap-1.5 text-[11px] font-medium text-emerald-700">
                   <CheckCircle className="w-3.5 h-3.5" strokeWidth={1.5} />
                   <span>Personal Operativo</span>
                 </div>
@@ -1304,24 +1304,24 @@ function LoginForm() {
                   setSelectedRole("company");
                   setErrorMsg(null);
                 }}
-                className={`p-4 rounded-xl border text-left transition-all flex flex-col justify-between group min-h-[120px] ${
+                className={`p-4 rounded-lg border text-left transition-all flex flex-col justify-between group min-h-[116px] ${
                   selectedRole === "company"
-                    ? "border-[#0F172A] bg-white ring-2 ring-[#0F172A] shadow-sm"
-                    : "border-[#E2E8F0] bg-[#F8FAFC] hover:border-slate-300 hover:bg-slate-50"
+                    ? "border-slate-900 bg-white ring-1 ring-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
+                    : "border-slate-200/90 bg-slate-50/60 hover:border-slate-300 hover:bg-slate-50"
                 }`}
               >
                 <div>
-                  <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-[#0F172A] mb-2.5">
-                    <Building2 className="w-4 h-4" strokeWidth={1.75} />
+                  <div className="w-7 h-7 rounded-md bg-slate-100 border border-slate-200/90 flex items-center justify-center text-slate-900 mb-2">
+                    <Building2 className="w-3.5 h-3.5" strokeWidth={1.75} />
                   </div>
-                  <h3 className="text-xs font-bold text-[#1E293B] leading-snug">
+                  <h3 className="text-xs font-semibold text-slate-900 leading-snug">
                     Soy Empresa de Seguridad
                   </h3>
-                  <p className="text-[11px] text-[#64748B] mt-1 leading-relaxed">
+                  <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
                     Registro corporativo con NIT y validación.
                   </p>
                 </div>
-                <div className="mt-3 flex items-center gap-1.5 text-[11px] font-semibold text-[#0F172A]">
+                <div className="mt-2.5 flex items-center gap-1.5 text-[11px] font-medium text-slate-900">
                   <Shield className="w-3.5 h-3.5" strokeWidth={1.5} />
                   <span>Empresa de Seguridad</span>
                 </div>
@@ -1330,15 +1330,15 @@ function LoginForm() {
 
             {/* FEEDBACK ALERTS */}
             {errorMsg && (
-              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2">
+              <div className="p-3 rounded-md bg-rose-50/80 border border-rose-200/80 text-xs text-rose-700 flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" strokeWidth={1.5} />
                 <span>{errorMsg}</span>
               </div>
             )}
 
             {successMsg && (
-              <div className="p-3 rounded-xl bg-[#ECFDF5] border border-[#10B981]/30 text-xs text-[#065F46] flex items-start gap-2">
-                <CheckCircle className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" strokeWidth={1.5} />
+              <div className="p-3 rounded-md bg-emerald-50/80 border border-emerald-200/70 text-xs text-emerald-800 flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" strokeWidth={1.5} />
                 <span>{successMsg}</span>
               </div>
             )}
@@ -1351,51 +1351,51 @@ function LoginForm() {
                   type="button"
                   onClick={() => handleGoogleLogin("register")}
                   disabled={loading}
-                  className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] active:bg-[#F1F5F9] text-[#1E293B] text-xs font-bold transition-all shadow-sm min-h-[46px] disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full h-10 flex items-center justify-center gap-2.5 px-4 rounded-md border border-slate-200/90 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-900 text-xs font-medium transition-all shadow-[0_1px_2px_rgba(15,23,42,0.04)] disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <GoogleIcon />
                   <span>{loading ? "Conectando con Google..." : "Registrarme con Google (1 Clic)"}</span>
                 </button>
 
                 <div className="relative flex items-center justify-center py-0.5">
-                  <div className="border-t border-[#E2E8F0] w-full" />
-                  <span className="bg-white px-3 text-[11px] text-[#64748B] font-medium uppercase tracking-wider relative">
+                  <div className="border-t border-slate-200/80 w-full" />
+                  <span className="bg-white px-3 text-[11px] text-slate-500 font-medium uppercase tracking-wider relative">
                     o completa tu registro con correo
                   </span>
                 </div>
 
-                <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-left">
-                  <p className="text-[11px] text-[#64748B] leading-relaxed">
-                    Plataforma abierta para: <strong className="text-[#1E293B] font-medium">Vigilante Fijo, Móvil, Escolta VIP, Supervisor Motorizado, Operador de Medios Tecnológicos, Manejador Canino e Inspector de Seguridad</strong>.
+                <div className="p-3 rounded-md bg-slate-50/80 border border-slate-200/90 text-left">
+                  <p className="text-[11px] text-slate-600 leading-relaxed">
+                    Plataforma abierta para: <strong className="text-slate-900 font-medium">Vigilante Fijo, Móvil, Escolta VIP, Supervisor Motorizado, Operador de Medios Tecnológicos, Manejador Canino e Inspector de Seguridad</strong>.
                   </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-3.5">
                   <div>
-                    <label className="block text-xs font-semibold text-[#1E293B] mb-1">
+                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
                       Nombre Completo (como en Cédula) *
                     </label>
                     <div className="relative">
-                      <User className="w-4 h-4 text-[#64748B] absolute left-3 top-3.5" strokeWidth={1.5} />
+                      <User className="w-4 h-4 text-slate-400 absolute left-3 top-3" strokeWidth={1.5} />
                       <input
                         type="text"
                         required
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         placeholder="Nombres y apellidos completos"
-                        className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-9 pr-3 py-2.5 text-xs text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[44px]"
+                        className="w-full h-10 bg-white border border-slate-200/90 rounded-md pl-9 pr-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#1E293B] mb-1">
+                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
                       Especialidad o Cargo Principal *
                     </label>
                     <select
                       value={primaryRole}
                       onChange={(e) => setPrimaryRole(e.target.value)}
-                      className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2.5 text-xs text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[44px] font-medium"
+                      className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
                     >
                       <option value="Vigilante Fijo">Vigilante Fijo</option>
                       <option value="Vigilante Móvil">Vigilante Móvil</option>
@@ -1409,45 +1409,45 @@ function LoginForm() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#1E293B] mb-1">
+                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
                       Número de WhatsApp *
                     </label>
                     <div className="relative">
-                      <Phone className="w-4 h-4 text-[#64748B] absolute left-3 top-3.5" strokeWidth={1.5} />
+                      <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" strokeWidth={1.5} />
                       <input
                         type="tel"
                         required
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="3101234567"
-                        className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-9 pr-3 py-2.5 text-xs text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[44px] tabular-nums"
+                        className="w-full h-10 bg-white border border-slate-200/90 rounded-md pl-9 pr-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors tabular-nums"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#1E293B] mb-1">
+                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
                       Correo Electrónico *
                     </label>
                     <div className="relative">
-                      <Mail className="w-4 h-4 text-[#64748B] absolute left-3 top-3.5" strokeWidth={1.5} />
+                      <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" strokeWidth={1.5} />
                       <input
                         type="email"
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="candidato@correo.com"
-                        className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-9 pr-3 py-2.5 text-xs text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[44px]"
+                        className="w-full h-10 bg-white border border-slate-200/90 rounded-md pl-9 pr-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#1E293B] mb-1">
+                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
                       Contraseña *
                     </label>
                     <div className="relative">
-                      <Lock className="w-4 h-4 text-[#64748B] absolute left-3 top-3.5" strokeWidth={1.5} />
+                      <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" strokeWidth={1.5} />
                       <input
                         type={showPassword ? "text" : "password"}
                         required
@@ -1455,12 +1455,12 @@ function LoginForm() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Mínimo 6 caracteres"
-                        className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-9 pr-10 py-2.5 text-xs text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[44px]"
+                        className="w-full h-10 bg-white border border-slate-200/90 rounded-md pl-9 pr-10 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-3.5 text-[#64748B] hover:text-[#1E293B]"
+                        className="absolute right-3 top-3 text-slate-400 hover:text-slate-700"
                       >
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -1468,7 +1468,7 @@ function LoginForm() {
                   </div>
 
                   {errorMsg && (
-                    <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 space-y-2">
+                    <div className="p-3 rounded-md bg-rose-50/80 border border-rose-200/80 text-xs text-rose-700 space-y-2">
                       <div className="flex items-start gap-2">
                         <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" strokeWidth={1.5} />
                         <span className="leading-relaxed">{errorMsg}</span>
@@ -1478,7 +1478,7 @@ function LoginForm() {
                           type="button"
                           onClick={handleResendConfirmation}
                           disabled={resendLoading}
-                          className="w-full py-2 px-3 rounded-lg bg-white border border-rose-300 text-[#0F172A] font-bold text-[11px] hover:bg-slate-50 transition-colors"
+                          className="w-full h-9 px-3 rounded-md bg-white border border-rose-300 text-slate-900 font-medium text-[11px] hover:bg-slate-50 transition-colors"
                         >
                           {resendLoading ? "Reenviando correo..." : "Reenviar correo de confirmación"}
                         </button>
@@ -1487,9 +1487,9 @@ function LoginForm() {
                   )}
 
                   {successMsg && (
-                    <div className="p-3.5 rounded-xl bg-[#ECFDF5] border border-[#10B981]/30 text-xs text-[#065F46] space-y-2">
+                    <div className="p-3.5 rounded-md bg-emerald-50/80 border border-emerald-200/70 text-xs text-emerald-800 space-y-2">
                       <div className="flex items-start gap-2">
-                        <CheckCircle className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" strokeWidth={1.75} />
+                        <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" strokeWidth={1.75} />
                         <span className="font-medium leading-relaxed">{successMsg}</span>
                       </div>
                       {pendingConfirmEmail && (
@@ -1497,7 +1497,7 @@ function LoginForm() {
                           type="button"
                           onClick={handleResendConfirmation}
                           disabled={resendLoading}
-                          className="w-full py-2 px-3 rounded-lg bg-white border border-[#10B981]/40 text-[#065F46] font-bold text-[11px] hover:bg-emerald-50 transition-colors"
+                          className="w-full h-9 px-3 rounded-md bg-white border border-emerald-300 text-emerald-800 font-medium text-[11px] hover:bg-emerald-50 transition-colors"
                         >
                           {resendLoading ? "Reenviando correo..." : "Reenviar correo de confirmación"}
                         </button>
@@ -1508,7 +1508,7 @@ function LoginForm() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className={`w-full font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-xs transition-all shadow-sm min-h-[48px] bg-[#0F172A] hover:bg-[#1E3A8A] text-white ${
+                    className={`w-full h-10 font-medium px-4 rounded-md flex items-center justify-center gap-2 text-xs transition-all shadow-[0_1px_2px_rgba(15,23,42,0.08)] bg-slate-900 hover:bg-slate-800 text-white ${
                       loading ? "opacity-75 cursor-not-allowed" : ""
                     }`}
                   >
@@ -1529,51 +1529,51 @@ function LoginForm() {
             ) : (
               /* REGISTRO EMPRESA DE SEGURIDAD */
               <div className="space-y-4 pt-1">
-                <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-start gap-2.5 text-xs text-[#64748B]">
-                  <Shield className="w-4 h-4 text-[#0F172A] shrink-0 mt-0.5" strokeWidth={1.5} />
+                <div className="p-3.5 rounded-md bg-slate-50/80 border border-slate-200/90 flex items-start gap-2.5 text-xs text-slate-600">
+                  <Shield className="w-4 h-4 text-slate-900 shrink-0 mt-0.5" strokeWidth={1.5} />
                   <p className="leading-relaxed text-[11px]">
-                    <strong className="text-[#1E293B]">Validación Institucional:</strong> Por seguridad del gremio, toda cuenta empresarial pasa por validación de NIT ante SuperVigilancia por nuestro equipo antes de publicar ofertas.
+                    <strong className="text-slate-900 font-semibold">Validación Institucional:</strong> Por seguridad del gremio, toda cuenta empresarial pasa por validación de NIT ante SuperVigilancia por nuestro equipo antes de publicar ofertas.
                   </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-3.5">
                   <div>
-                    <label className="block text-xs font-semibold text-[#1E293B] mb-1">
+                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
                       Nombre de la Persona de Contacto *
                     </label>
                     <div className="relative">
-                      <User className="w-4 h-4 text-[#64748B] absolute left-3 top-3.5" strokeWidth={1.5} />
+                      <User className="w-4 h-4 text-slate-400 absolute left-3 top-3" strokeWidth={1.5} />
                       <input
                         type="text"
                         required
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         placeholder="Ej: Dra. Claudia Santamaría (RRHH)"
-                        className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-9 pr-3 py-2.5 text-xs text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[44px]"
+                        className="w-full h-10 bg-white border border-slate-200/90 rounded-md pl-9 pr-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#1E293B] mb-1">
+                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
                       Razón Social de la Empresa *
                     </label>
                     <div className="relative">
-                      <Building2 className="w-4 h-4 text-[#64748B] absolute left-3 top-3.5" strokeWidth={1.5} />
+                      <Building2 className="w-4 h-4 text-slate-400 absolute left-3 top-3" strokeWidth={1.5} />
                       <input
                         type="text"
                         required
                         value={companyName}
                         onChange={(e) => setCompanyName(e.target.value)}
                         placeholder="Ej: Seguridad Atlas de Colombia"
-                        className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-9 pr-3 py-2.5 text-xs text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[44px]"
+                        className="w-full h-10 bg-white border border-slate-200/90 rounded-md pl-9 pr-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-[#1E293B] mb-1">
+                      <label className="block text-xs font-medium text-slate-700 mb-1.5">
                         NIT de la Empresa *
                       </label>
                       <input
@@ -1582,17 +1582,17 @@ function LoginForm() {
                         value={companyNit}
                         onChange={(e) => setCompanyNit(e.target.value)}
                         placeholder="860.024.112-9"
-                        className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2.5 text-xs text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[44px] font-mono"
+                        className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors font-mono tabular-nums"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-[#1E293B] mb-1">
+                      <label className="block text-xs font-medium text-slate-700 mb-1.5">
                         Ciudad Principal *
                       </label>
                       <select
                         value={city}
                         onChange={(e) => setCity(e.target.value)}
-                        className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2.5 text-xs text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[44px] font-medium"
+                        className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
                       >
                         <option value="Bogotá D.C.">Bogotá D.C.</option>
                         <option value="Medellín">Medellín</option>
@@ -1604,45 +1604,45 @@ function LoginForm() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#1E293B] mb-1">
+                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
                       Teléfono / WhatsApp Corporativo *
                     </label>
                     <div className="relative">
-                      <Phone className="w-4 h-4 text-[#64748B] absolute left-3 top-3.5" strokeWidth={1.5} />
+                      <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" strokeWidth={1.5} />
                       <input
                         type="tel"
                         required
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="3101234567"
-                        className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-9 pr-3 py-2.5 text-xs text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[44px] tabular-nums"
+                        className="w-full h-10 bg-white border border-slate-200/90 rounded-md pl-9 pr-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors tabular-nums"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#1E293B] mb-1">
+                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
                       Correo Corporativo *
                     </label>
                     <div className="relative">
-                      <Mail className="w-4 h-4 text-[#64748B] absolute left-3 top-3.5" strokeWidth={1.5} />
+                      <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" strokeWidth={1.5} />
                       <input
                         type="email"
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="seleccion@seguridadatlas.com.co"
-                        className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-9 pr-3 py-2.5 text-xs text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[44px]"
+                        className="w-full h-10 bg-white border border-slate-200/90 rounded-md pl-9 pr-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#1E293B] mb-1">
+                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
                       Contraseña *
                     </label>
                     <div className="relative">
-                      <Lock className="w-4 h-4 text-[#64748B] absolute left-3 top-3.5" strokeWidth={1.5} />
+                      <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" strokeWidth={1.5} />
                       <input
                         type={showPassword ? "text" : "password"}
                         required
@@ -1650,12 +1650,12 @@ function LoginForm() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Mínimo 6 caracteres"
-                        className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-9 pr-10 py-2.5 text-xs text-[#1E293B] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[44px]"
+                        className="w-full h-10 bg-white border border-slate-200/90 rounded-md pl-9 pr-10 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-3.5 text-[#64748B] hover:text-[#1E293B]"
+                        className="absolute right-3 top-3 text-slate-400 hover:text-slate-700"
                       >
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -1663,7 +1663,7 @@ function LoginForm() {
                   </div>
 
                   {errorMsg && (
-                    <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 space-y-2">
+                    <div className="p-3 rounded-md bg-rose-50/80 border border-rose-200/80 text-xs text-rose-700 space-y-2">
                       <div className="flex items-start gap-2">
                         <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" strokeWidth={1.5} />
                         <span className="leading-relaxed">{errorMsg}</span>
@@ -1673,7 +1673,7 @@ function LoginForm() {
                           type="button"
                           onClick={handleResendConfirmation}
                           disabled={resendLoading}
-                          className="w-full py-2 px-3 rounded-lg bg-white border border-rose-300 text-[#0F172A] font-bold text-[11px] hover:bg-slate-50 transition-colors"
+                          className="w-full h-9 px-3 rounded-md bg-white border border-rose-300 text-slate-900 font-medium text-[11px] hover:bg-slate-50 transition-colors"
                         >
                           {resendLoading ? "Reenviando correo..." : "Reenviar correo de confirmación"}
                         </button>
@@ -1682,9 +1682,9 @@ function LoginForm() {
                   )}
 
                   {successMsg && (
-                    <div className="p-3.5 rounded-xl bg-[#ECFDF5] border border-[#10B981]/30 text-xs text-[#065F46] space-y-2">
+                    <div className="p-3.5 rounded-md bg-emerald-50/80 border border-emerald-200/70 text-xs text-emerald-800 space-y-2">
                       <div className="flex items-start gap-2">
-                        <CheckCircle className="w-4 h-4 text-[#10B981] shrink-0 mt-0.5" strokeWidth={1.75} />
+                        <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" strokeWidth={1.75} />
                         <span className="font-medium leading-relaxed">{successMsg}</span>
                       </div>
                       {pendingConfirmEmail && (
@@ -1692,7 +1692,7 @@ function LoginForm() {
                           type="button"
                           onClick={handleResendConfirmation}
                           disabled={resendLoading}
-                          className="w-full py-2 px-3 rounded-lg bg-white border border-[#10B981]/40 text-[#065F46] font-bold text-[11px] hover:bg-emerald-50 transition-colors"
+                          className="w-full h-9 px-3 rounded-md bg-white border border-emerald-300 text-emerald-800 font-medium text-[11px] hover:bg-emerald-50 transition-colors"
                         >
                           {resendLoading ? "Reenviando correo..." : "Reenviar correo de confirmación"}
                         </button>
@@ -1703,7 +1703,7 @@ function LoginForm() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className={`w-full font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-xs transition-all shadow-sm min-h-[48px] bg-[#0F172A] hover:bg-[#1E3A8A] text-white ${
+                    className={`w-full h-10 font-medium px-4 rounded-md flex items-center justify-center gap-2 text-xs transition-all shadow-[0_1px_2px_rgba(15,23,42,0.08)] bg-slate-900 hover:bg-slate-800 text-white ${
                       loading ? "opacity-75 cursor-not-allowed" : ""
                     }`}
                   >
@@ -1725,7 +1725,7 @@ function LoginForm() {
 
             {/* REGRESAR A INICIAR SESIÓN */}
             <div className="pt-2 text-center">
-              <p className="text-xs text-[#64748B]">
+              <p className="text-xs text-slate-600">
                 ¿Ya tienes una cuenta?{" "}
                 <button
                   type="button"
@@ -1736,7 +1736,7 @@ function LoginForm() {
                     setErrorType(null);
                     setSuccessMsg(null);
                   }}
-                  className="font-bold text-[#0F172A] hover:text-[#1E3A8A] hover:underline transition-colors"
+                  className="font-semibold text-slate-900 hover:text-slate-700 hover:underline transition-colors"
                 >
                   Inicia sesión aquí
                 </button>
@@ -1754,8 +1754,8 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
       <Suspense
         fallback={
-          <div className="text-center text-[#64748B] text-xs flex items-center justify-center gap-2">
-            <div className="w-3.5 h-3.5 border-2 border-[#0F172A] border-t-transparent rounded-full animate-spin" />
+          <div className="text-center text-slate-500 text-xs flex items-center justify-center gap-2">
+            <div className="w-3.5 h-3.5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
             Cargando...
           </div>
         }

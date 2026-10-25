@@ -106,12 +106,12 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white text-[#1E293B]">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900">
       {/* Toast Warning */}
       {warningToast && (
-        <div className="fixed top-20 right-4 z-50 max-w-md bg-amber-50 border border-amber-200 text-amber-900 px-4 py-3 rounded-xl shadow-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
-          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-          <div className="text-xs font-semibold leading-relaxed">
+        <div className="fixed top-20 right-4 z-50 max-w-md bg-amber-50/95 border border-amber-200/80 text-amber-900 px-4 py-3 rounded-lg shadow-[0_4px_12px_rgba(15,23,42,0.08)] flex items-start gap-3">
+          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <div className="text-xs font-medium leading-relaxed">
             {warningToast}
           </div>
         </div>
@@ -121,48 +121,51 @@ export default function HomePage() {
       <Navbar />
 
       {/* 2. HERO SECTION + BUSCADOR PRINCIPAL */}
-      <section className="bg-white pt-12 pb-14 border-b border-[#E2E8F0]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          {/* Top Subtle Executive Pill Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 shadow-xs">
-            <Shield className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
+      <section className="bg-white pt-10 pb-12 border-b border-slate-200/90">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-5">
+          {/* Top Subtle Executive Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-slate-100/80 border border-slate-200/90 text-xs font-medium text-slate-700">
+            <Shield className="w-3.5 h-3.5 text-slate-600" strokeWidth={1.75} />
             <span>Bolsa de Empleo y Validación Especializada en Seguridad Privada</span>
           </div>
 
           {/* Main Title */}
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-[#1E293B] max-w-4xl mx-auto leading-[1.18]">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-slate-900 max-w-3xl mx-auto leading-tight">
             Reclutamiento y empleo especializado con{" "}
-            <span className="text-[#1E3A8A]">verificación real</span>.
+            <span className="text-[#0F172A] underline decoration-emerald-500/70 decoration-2 underline-offset-4">
+              verificación real
+            </span>
+            .
           </h1>
 
           {/* Subtitle */}
-          <p className="text-sm sm:text-base text-[#64748B] max-w-2xl mx-auto font-normal leading-relaxed">
+          <p className="text-sm text-slate-600 max-w-2xl mx-auto font-normal leading-relaxed">
             Conectamos a todo el talento operativo y profesional del sector seguridad con las empresas líderes en Colombia, integrando validación de antecedentes, visita domiciliaria y poligrafía en un solo lugar.
           </p>
 
           {/* HERO SEARCH BAR */}
           <div className="pt-2 max-w-3xl mx-auto">
-            <div className="bg-white p-2 rounded-xl shadow-lg border border-[#E2E8F0] flex flex-col md:flex-row items-center divide-y md:divide-y-0 md:divide-x divide-[#E2E8F0] gap-2 md:gap-0">
+            <div className="bg-white p-1.5 rounded-lg shadow-[0_1px_3px_rgba(15,23,42,0.06)] border border-slate-200/90 flex flex-col md:flex-row items-center divide-y md:divide-y-0 md:divide-x divide-slate-200/90 gap-1.5 md:gap-0">
               {/* Input 1: Cargo */}
-              <div className="flex-1 w-full px-3 py-1.5 text-left">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] block mb-0.5">
+              <div className="flex-1 w-full px-3.5 py-1.5 text-left">
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 block mb-0.5">
                   Cargo / Especialidad
                 </label>
                 <div className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-[#64748B] shrink-0" strokeWidth={1.5} />
+                  <Shield className="w-4 h-4 text-slate-400 shrink-0" strokeWidth={1.5} />
                   <input
                     type="text"
                     value={roleSearch}
                     onChange={(e) => setRoleSearch(e.target.value)}
                     placeholder="Vigilante Fijo, Escolta VIP, Supervisor..."
-                    className="w-full text-xs font-semibold text-[#1E293B] placeholder-[#94A3B8] focus:outline-none bg-transparent"
+                    className="w-full text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent h-6"
                   />
                 </div>
               </div>
 
               {/* Input 2: Ubicación con Autocompletado Predictivo */}
-              <div className="flex-1 w-full px-3 py-1.5 text-left relative">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] block mb-0.5">
+              <div className="flex-1 w-full px-3.5 py-1.5 text-left relative">
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 block mb-0.5">
                   Ubicación / Zona
                 </label>
                 <CityAutocompleteInput
@@ -179,9 +182,9 @@ export default function HomePage() {
                     ...(roleSearch ? { role: roleSearch } : {}),
                     ...(locationSearch ? { location: locationSearch } : {}),
                   }).toString()}`}
-                  className="w-full md:w-auto bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl py-3 px-6 text-xs font-bold transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
+                  className="w-full md:w-auto h-10 bg-[#0F172A] hover:bg-slate-800 text-white rounded-md px-5 text-xs font-medium transition-colors flex items-center justify-center gap-2 shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
                 >
-                  <Search className="w-4 h-4" strokeWidth={1.5} />
+                  <Search className="w-3.5 h-3.5" strokeWidth={1.75} />
                   <span>Buscar Vacantes</span>
                 </Link>
               </div>
@@ -191,59 +194,59 @@ export default function HomePage() {
             <div className="mt-3.5 flex flex-wrap items-center justify-center gap-2 text-xs">
               {role === "company" ? (
                 <>
-                  <span className="text-[11px] text-[#64748B] font-medium">Accesos rápidos de Empresa:</span>
+                  <span className="text-[11px] text-slate-500 font-medium">Accesos rápidos de Empresa:</span>
                   <Link
                     href="/empresa/vacantes/nueva"
-                    className="px-2.5 py-1 rounded-lg bg-[#0F172A] hover:bg-[#1E3A8A] text-white font-semibold text-[11px] flex items-center gap-1.5 transition-colors shadow-xs"
+                    className="px-2.5 py-1 rounded-md bg-[#0F172A] hover:bg-slate-800 text-white font-medium text-[11px] flex items-center gap-1.5 transition-colors"
                   >
-                    <PlusCircle className="w-3.5 h-3.5 text-[#10B981]" />
+                    <PlusCircle className="w-3.5 h-3.5 text-emerald-400" />
                     <span>Publicar Vacante</span>
                   </Link>
                   <Link
                     href="/empresa/vacantes"
-                    className="px-2.5 py-1 rounded-lg bg-[#F3F4F6] hover:bg-[#E5E7EB] text-[#1E293B] font-semibold text-[11px] transition-colors"
+                    className="px-2.5 py-1 rounded-md bg-slate-100/80 hover:bg-slate-200/70 text-slate-700 border border-slate-200/80 font-medium text-[11px] transition-colors"
                   >
                     Mis Vacantes & ATS
                   </Link>
                   <Link
                     href="/empresa/relevos"
-                    className="px-2.5 py-1 rounded-lg bg-[#ECFDF5] text-[#065F46] border border-[#10B981]/30 hover:bg-[#D1FAE5] font-semibold text-[11px] flex items-center gap-1.5 transition-colors"
+                    className="px-2.5 py-1 rounded-md bg-emerald-50/80 text-emerald-700 border border-emerald-200/60 hover:bg-emerald-100/70 font-medium text-[11px] flex items-center gap-1.5 transition-colors"
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
                     <span>Radar de Relevos Hoy</span>
                   </Link>
                   <Link
                     href="/empresa/estudios"
-                    className="px-2.5 py-1 rounded-lg bg-[#F3F4F6] hover:bg-[#E5E7EB] text-[#1E293B] font-semibold text-[11px] flex items-center gap-1 transition-colors"
+                    className="px-2.5 py-1 rounded-md bg-slate-100/80 hover:bg-slate-200/70 text-slate-700 border border-slate-200/80 font-medium text-[11px] flex items-center gap-1 transition-colors"
                   >
-                    <Lock className="w-3 h-3 text-[#10B981]" />
+                    <Lock className="w-3 h-3 text-emerald-600" />
                     <span>Estudios & Poligrafía</span>
                   </Link>
                   <Link
                     href="/precios-empresas"
-                    className="px-2.5 py-1 rounded-lg bg-[#F3F4F6] hover:bg-[#E5E7EB] text-[#1E293B] font-semibold text-[11px] transition-colors"
+                    className="px-2.5 py-1 rounded-md bg-slate-100/80 hover:bg-slate-200/70 text-slate-700 border border-slate-200/80 font-medium text-[11px] transition-colors"
                   >
                     Planes Empresas
                   </Link>
                 </>
               ) : (
                 <>
-                  <span className="text-[11px] text-[#64748B] font-medium">Búsquedas frecuentes:</span>
+                  <span className="text-[11px] text-slate-500 font-medium">Búsquedas frecuentes:</span>
                   <Link
                     href="/guarda/vacantes"
-                    className="px-2.5 py-1 rounded-lg bg-[#F3F4F6] hover:bg-[#E5E7EB] text-[#1E293B] font-medium text-[11px] transition-colors"
+                    className="px-2.5 py-1 rounded-md bg-slate-100/80 hover:bg-slate-200/70 text-slate-700 border border-slate-200/80 font-medium text-[11px] transition-colors"
                   >
                     Turno 2x2x2
                   </Link>
                   <Link
                     href="/guarda/vacantes"
-                    className="px-2.5 py-1 rounded-lg bg-[#F3F4F6] hover:bg-[#E5E7EB] text-[#1E293B] font-medium text-[11px] transition-colors"
+                    className="px-2.5 py-1 rounded-md bg-slate-100/80 hover:bg-slate-200/70 text-slate-700 border border-slate-200/80 font-medium text-[11px] transition-colors"
                   >
                     Escolta VIP Bilingüe
                   </Link>
                   <Link
                     href="/guarda/vacantes"
-                    className="px-2.5 py-1 rounded-lg bg-[#F3F4F6] hover:bg-[#E5E7EB] text-[#1E293B] font-medium text-[11px] transition-colors"
+                    className="px-2.5 py-1 rounded-md bg-slate-100/80 hover:bg-slate-200/70 text-slate-700 border border-slate-200/80 font-medium text-[11px] transition-colors"
                   >
                     Operador Medios Tecnológicos
                   </Link>
@@ -255,23 +258,23 @@ export default function HomePage() {
       </section>
 
       {/* 3. WORKSPACE PRINCIPAL (GRID 12 COLUMNAS) */}
-      <section className="bg-[#F8FAFC] py-12 px-4 sm:px-6 lg:px-8">
+      <section className="bg-[#F8FAFC] py-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* COLUMNA IZQUIERDA (lg:col-span-7) - JOB CARDS */}
-            <div className="lg:col-span-7 space-y-4">
+            <div className="lg:col-span-7 space-y-3.5">
               <div className="flex items-center justify-between pb-1">
                 <div>
-                  <h2 className="text-base font-bold text-[#1E293B]">
+                  <h2 className="text-base font-semibold tracking-tight text-slate-900">
                     Vacantes Destacadas con Verificación
                   </h2>
-                  <p className="text-xs text-[#64748B]">
+                  <p className="text-xs text-slate-500">
                     Ofertas activas de empresas de seguridad autorizadas por SuperVigilancia
                   </p>
                 </div>
                 <Link
                   href="/guarda/vacantes"
-                  className="text-xs font-semibold text-[#1E3A8A] hover:underline flex items-center gap-1"
+                  className="text-xs font-medium text-slate-700 hover:text-slate-950 flex items-center gap-1 tabular-nums"
                 >
                   <span>Ver todas ({featuredJobs.length})</span>
                   <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.5} />
@@ -280,20 +283,20 @@ export default function HomePage() {
 
               {/* Job Cards Feed */}
               {featuredJobs.length === 0 ? (
-                <div className="bg-white border border-slate-200 rounded-xl p-10 text-center shadow-xs space-y-3">
-                  <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 mx-auto">
-                    <Briefcase className="w-5 h-5" strokeWidth={1.5} />
+                <div className="bg-white border border-slate-200/90 rounded-lg p-10 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)] space-y-2.5">
+                  <div className="w-9 h-9 rounded-md bg-slate-100 border border-slate-200/80 flex items-center justify-center text-slate-500 mx-auto">
+                    <Briefcase className="w-4 h-4" strokeWidth={1.5} />
                   </div>
-                  <h3 className="text-sm font-bold text-[#1E293B]">
+                  <h3 className="text-sm font-semibold text-slate-900">
                     Aún no hay vacantes publicadas
                   </h3>
-                  <p className="text-xs text-[#64748B] max-w-md mx-auto leading-relaxed">
+                  <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
                     Las ofertas laborales de las empresas de seguridad autorizadas aparecerán aquí en tiempo real tan pronto sean publicadas.
                   </p>
                   <div className="pt-1">
                     <Link
                       href="/guarda/vacantes"
-                      className="inline-flex items-center gap-1.5 text-xs text-[#1E3A8A] font-semibold hover:underline"
+                      className="inline-flex items-center gap-1 text-xs text-slate-900 font-medium hover:underline"
                     >
                       <span>Ir al buscador general de vacantes</span>
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -304,73 +307,73 @@ export default function HomePage() {
                 featuredJobs.map((job) => (
                   <div
                     key={job.id}
-                    className="bg-white border border-slate-200 rounded-xl p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md space-y-4"
+                    className="bg-white border border-slate-200/90 hover:border-slate-300 rounded-lg p-5 transition-colors shadow-[0_1px_2px_rgba(15,23,42,0.04)] space-y-3.5"
                   >
                     {/* Card Header */}
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-[#F3F4F6] border border-[#E2E8F0] flex items-center justify-center font-bold text-[#1E293B] text-xs">
+                        <div className="w-9 h-9 rounded-md bg-slate-100 border border-slate-200/90 flex items-center justify-center font-semibold text-slate-800 text-xs">
                           {job.companyInitials}
                         </div>
                         <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-semibold text-xs text-[#1E293B]">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-medium text-xs text-slate-600">
                               {job.company}
                             </span>
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#065F46] bg-[#ECFDF5] border border-[#10B981]/30 px-1.5 py-0.2 rounded">
-                              <CheckCircle className="w-3 h-3 text-[#10B981]" strokeWidth={1.5} />
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50/80 border border-emerald-200/60 px-2 py-0.5 rounded-md">
+                              <CheckCircle className="w-3 h-3 text-emerald-600" strokeWidth={1.5} />
                               Empresa Verificada
                             </span>
                           </div>
-                          <h3 className="text-sm font-bold text-[#1E293B] mt-0.5">
+                          <h3 className="text-sm font-semibold tracking-tight text-slate-900 mt-0.5">
                             {job.title}
                           </h3>
                         </div>
                       </div>
 
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-lg bg-[#ECFDF5] text-[#065F46] border border-[#10B981]/30 tabular-nums">
+                      <span className="text-xs font-medium px-2.5 py-0.5 rounded-md bg-emerald-50/80 text-emerald-700 border border-emerald-200/60 tabular-nums shrink-0">
                         {job.compatibility} Compatible
                       </span>
                     </div>
 
                     {/* 3 Tags Row */}
-                    <div className="flex flex-wrap gap-2 text-xs">
-                      <span className="bg-[#F3F4F6] text-[#1E293B] rounded-lg px-3 py-1 text-xs font-medium flex items-center gap-1.5">
-                        <Shield className="w-3.5 h-3.5 text-[#64748B]" strokeWidth={1.5} />
+                    <div className="flex flex-wrap gap-1.5 text-xs">
+                      <span className="bg-slate-100/80 text-slate-700 border border-slate-200/80 rounded-md px-2.5 py-1 text-xs font-medium flex items-center gap-1.5">
+                        <Shield className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.5} />
                         {job.role}
                       </span>
-                      <span className="bg-[#F3F4F6] text-[#1E293B] rounded-lg px-3 py-1 text-xs font-medium flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-[#64748B]" strokeWidth={1.5} />
+                      <span className="bg-slate-100/80 text-slate-700 border border-slate-200/80 rounded-md px-2.5 py-1 text-xs font-medium flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.5} />
                         {job.location}
                       </span>
-                      <span className="bg-[#F3F4F6] text-[#1E293B] rounded-lg px-3 py-1 text-xs font-bold tabular-nums">
+                      <span className="bg-slate-100/80 text-slate-900 border border-slate-200/80 rounded-md px-2.5 py-1 text-xs font-semibold tabular-nums">
                         {job.salary} • {job.shift}
                       </span>
                     </div>
 
-                    <p className="text-xs text-[#64748B] leading-relaxed line-clamp-2">
+                    <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
                       {job.description}
                     </p>
 
                     {/* Card Footer with Intercepted Application Button */}
-                    <div className="pt-3 border-t border-[#E2E8F0] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                      <div className="flex items-center gap-1.5 text-xs text-[#065F46] font-medium">
-                        <Lock className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
+                    <div className="pt-3 border-t border-slate-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-medium">
+                        <Lock className="w-3.5 h-3.5 text-emerald-600" strokeWidth={1.5} />
                         <span>Estudios y Poligrafía 100% asumidos por la empresa</span>
                       </div>
 
                       {role === "company" ? (
                         <Link
                           href="/empresa/vacantes/nueva"
-                          className="w-full sm:w-auto bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200 text-center shadow-xs inline-flex items-center justify-center gap-1.5"
+                          className="w-full sm:w-auto h-9 bg-[#0F172A] hover:bg-slate-800 text-white rounded-md px-3.5 text-xs font-medium transition-colors text-center shadow-[0_1px_2px_rgba(15,23,42,0.05)] inline-flex items-center justify-center gap-1.5"
                         >
-                          <PlusCircle className="w-3.5 h-3.5 text-[#10B981]" />
+                          <PlusCircle className="w-3.5 h-3.5 text-emerald-400" />
                           <span>Publicar Oferta Similar</span>
                         </Link>
                       ) : role === "admin" ? (
                         <Link
                           href="/admin/estudios"
-                          className="w-full sm:w-auto bg-slate-800 hover:bg-slate-900 text-white rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200 text-center shadow-xs"
+                          className="w-full sm:w-auto h-9 bg-[#0F172A] hover:bg-slate-800 text-white rounded-md px-3.5 text-xs font-medium transition-colors text-center shadow-[0_1px_2px_rgba(15,23,42,0.05)] inline-flex items-center justify-center"
                         >
                           Gestionar en Admin
                         </Link>
@@ -378,7 +381,7 @@ export default function HomePage() {
                         <button
                           type="button"
                           onClick={() => handleApplyClick(job.id)}
-                          className="w-full sm:w-auto bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200 text-center shadow-xs"
+                          className="w-full sm:w-auto h-9 bg-[#0F172A] hover:bg-slate-800 text-white rounded-md px-4 text-xs font-medium transition-colors text-center shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
                         >
                           Postularme en 1 clic
                         </button>
@@ -390,29 +393,29 @@ export default function HomePage() {
             </div>
 
             {/* COLUMNA DERECHA (lg:col-span-5) - ACCESO POR ROL O VISTA PREVIA VISITANTE */}
-            <div className="lg:col-span-5 space-y-4">
+            <div className="lg:col-span-5 space-y-3.5">
               {isAuthenticated && role === "company" ? (
                 /* 1. VISTA EXCLUSIVA EMPRESA DE SEGURIDAD */
                 <>
                   <div className="pb-1">
-                    <h2 className="text-base font-bold text-[#1E293B]">
+                    <h2 className="text-base font-semibold tracking-tight text-slate-900">
                       Operación de Empresa de Seguridad
                     </h2>
-                    <p className="text-xs text-[#64748B]">
+                    <p className="text-xs text-slate-500">
                       Herramientas corporativas para reclutamiento y estudios de confiabilidad
                     </p>
                   </div>
 
-                  <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm sticky top-24 space-y-5">
-                    <div className="flex items-start gap-4 pb-4 border-b border-slate-100">
-                      <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 shrink-0">
-                        <Building2 className="w-6 h-6" strokeWidth={1.75} />
+                  <div className="bg-white border border-slate-200/90 rounded-lg p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sticky top-24 space-y-4">
+                    <div className="flex items-start gap-3.5 pb-3.5 border-b border-slate-200/80">
+                      <div className="w-10 h-10 rounded-md bg-amber-50/80 border border-amber-200/70 flex items-center justify-center text-amber-700 shrink-0">
+                        <Building2 className="w-5 h-5" strokeWidth={1.75} />
                       </div>
                       <div className="min-w-0">
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded-md">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-800 bg-amber-50/80 border border-amber-200/70 px-2 py-0.5 rounded-md">
                           Sesión Corporativa
                         </span>
-                        <h3 className="font-bold text-sm text-slate-900 mt-1 truncate">
+                        <h3 className="font-semibold text-sm text-slate-900 mt-1 truncate">
                           {fullName ? fullName : "Portal de Empresa"}
                         </h3>
                         <p className="text-xs text-slate-500 mt-0.5">
@@ -425,10 +428,10 @@ export default function HomePage() {
                       Gestiona la contratación de personal operativo con estudios de confiabilidad, antecedentes y polígrafo integrados.
                     </p>
 
-                    <div className="space-y-2.5 pt-1">
+                    <div className="space-y-2 pt-1">
                       <Link
                         href="/empresa/dashboard"
-                        className="w-full bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl py-3 px-4 font-bold text-xs flex items-center justify-between transition-colors shadow-xs"
+                        className="w-full h-10 bg-[#0F172A] hover:bg-slate-800 text-white rounded-md px-3.5 font-medium text-xs flex items-center justify-between transition-colors shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
                       >
                         <div className="flex items-center gap-2">
                           <Building2 className="w-4 h-4 text-amber-400" />
@@ -439,7 +442,7 @@ export default function HomePage() {
 
                       <Link
                         href="/empresa/vacantes/nueva"
-                        className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl py-3 px-4 font-bold text-xs flex items-center justify-between transition-colors shadow-xs"
+                        className="w-full h-10 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-md px-3.5 font-semibold text-xs flex items-center justify-between transition-colors shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
                       >
                         <div className="flex items-center gap-2">
                           <PlusCircle className="w-4 h-4 text-slate-950" />
@@ -450,7 +453,7 @@ export default function HomePage() {
 
                       <Link
                         href="/empresa/relevos"
-                        className="w-full bg-[#F8FAFC] hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl py-3 px-4 font-semibold text-xs flex items-center justify-between transition-colors"
+                        className="w-full h-10 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200/90 rounded-md px-3.5 font-medium text-xs flex items-center justify-between transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           <Search className="w-4 h-4 text-slate-500" />
@@ -465,25 +468,25 @@ export default function HomePage() {
                 /* 2. VISTA EXCLUSIVA PERSONAL OPERATIVO (CANDIDATE) */
                 <>
                   <div className="pb-1">
-                    <h2 className="text-base font-bold text-[#1E293B]">
+                    <h2 className="text-base font-semibold tracking-tight text-slate-900">
                       Mi Expediente Operativo
                     </h2>
-                    <p className="text-xs text-[#64748B]">
+                    <p className="text-xs text-slate-500">
                       Gestiona tu perfil, credenciales y postulaciones en tiempo real
                     </p>
                   </div>
 
-                  <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm sticky top-24 space-y-5">
-                    <div className="flex items-start gap-4 pb-4 border-b border-slate-100">
-                      <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-600 shrink-0">
-                        <Shield className="w-6 h-6 text-emerald-600" strokeWidth={1.75} />
+                  <div className="bg-white border border-slate-200/90 rounded-lg p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sticky top-24 space-y-4">
+                    <div className="flex items-start gap-3.5 pb-3.5 border-b border-slate-200/80">
+                      <div className="w-10 h-10 rounded-md bg-emerald-50/80 border border-emerald-200/60 flex items-center justify-center text-emerald-700 shrink-0">
+                        <Shield className="w-5 h-5 text-emerald-600" strokeWidth={1.75} />
                       </div>
                       <div className="min-w-0">
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50/80 border border-emerald-200/60 px-2 py-0.5 rounded-md">
                           <CheckCircle className="w-3 h-3 text-emerald-600" />
                           Personal Operativo
                         </span>
-                        <h3 className="font-bold text-sm text-slate-900 mt-1 truncate">
+                        <h3 className="font-semibold text-sm text-slate-900 mt-1 truncate">
                           {fullName ? fullName : "Mi Perfil de Candidato"}
                         </h3>
                         <p className="text-xs text-slate-500 mt-0.5">
@@ -496,10 +499,10 @@ export default function HomePage() {
                       Tu perfil auditado te permite postularte en 1 clic a empresas de seguridad verificadas sin intermediarios ni cobros.
                     </p>
 
-                    <div className="space-y-2.5 pt-1">
+                    <div className="space-y-2 pt-1">
                       <Link
                         href="/guarda/perfil"
-                        className="w-full bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl py-3 px-4 font-bold text-xs flex items-center justify-between transition-colors shadow-xs"
+                        className="w-full h-10 bg-[#0F172A] hover:bg-slate-800 text-white rounded-md px-3.5 font-medium text-xs flex items-center justify-between transition-colors shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
                       >
                         <div className="flex items-center gap-2">
                           <FileText className="w-4 h-4 text-emerald-400" />
@@ -510,7 +513,7 @@ export default function HomePage() {
 
                       <Link
                         href="/guarda/vacantes"
-                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-3 px-4 font-bold text-xs flex items-center justify-between transition-colors shadow-xs"
+                        className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-3.5 font-medium text-xs flex items-center justify-between transition-colors shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
                       >
                         <div className="flex items-center gap-2">
                           <Briefcase className="w-4 h-4" />
@@ -521,7 +524,7 @@ export default function HomePage() {
 
                       <Link
                         href="/guarda/documentos"
-                        className="w-full bg-[#F8FAFC] hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl py-3 px-4 font-semibold text-xs flex items-center justify-between transition-colors"
+                        className="w-full h-10 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200/90 rounded-md px-3.5 font-medium text-xs flex items-center justify-between transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           <BadgeCheck className="w-4 h-4 text-slate-500" />
@@ -536,24 +539,24 @@ export default function HomePage() {
                 /* 3. VISTA EXCLUSIVA SUPERADMIN */
                 <>
                   <div className="pb-1">
-                    <h2 className="text-base font-bold text-[#1E293B]">
+                    <h2 className="text-base font-semibold tracking-tight text-slate-900">
                       Gobierno de Plataforma SuperAdmin
                     </h2>
-                    <p className="text-xs text-[#64748B]">
+                    <p className="text-xs text-slate-500">
                       Control centralizado de empresas, estudios y academias
                     </p>
                   </div>
 
-                  <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm sticky top-24 space-y-5">
-                    <div className="flex items-start gap-4 pb-4 border-b border-slate-100">
-                      <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center text-amber-400 shrink-0">
-                        <Shield className="w-6 h-6" strokeWidth={1.75} />
+                  <div className="bg-white border border-slate-200/90 rounded-lg p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sticky top-24 space-y-4">
+                    <div className="flex items-start gap-3.5 pb-3.5 border-b border-slate-200/80">
+                      <div className="w-10 h-10 rounded-md bg-[#0F172A] flex items-center justify-center text-amber-400 shrink-0">
+                        <Shield className="w-5 h-5" strokeWidth={1.75} />
                       </div>
                       <div className="min-w-0">
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-800 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-800 bg-slate-100 border border-slate-200/90 px-2 py-0.5 rounded-md">
                           SuperAdministrador
                         </span>
-                        <h3 className="font-bold text-sm text-slate-900 mt-1 truncate">
+                        <h3 className="font-semibold text-sm text-slate-900 mt-1 truncate">
                           Panel SuperAdmin
                         </h3>
                         <p className="text-xs text-slate-500 mt-0.5">
@@ -566,10 +569,10 @@ export default function HomePage() {
                       Supervisa la aprobación de empresas de seguridad, asignación de estudios de confiabilidad y acuerdos con academias.
                     </p>
 
-                    <div className="space-y-2.5 pt-1">
+                    <div className="space-y-2 pt-1">
                       <Link
                         href="/admin/estudios"
-                        className="w-full bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl py-3 px-4 font-bold text-xs flex items-center justify-between transition-colors shadow-xs"
+                        className="w-full h-10 bg-[#0F172A] hover:bg-slate-800 text-white rounded-md px-3.5 font-medium text-xs flex items-center justify-between transition-colors shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
                       >
                         <div className="flex items-center gap-2">
                           <Shield className="w-4 h-4 text-amber-400" />
@@ -580,7 +583,7 @@ export default function HomePage() {
 
                       <Link
                         href="/admin/empresas"
-                        className="w-full bg-[#F8FAFC] hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl py-3 px-4 font-semibold text-xs flex items-center justify-between transition-colors"
+                        className="w-full h-10 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200/90 rounded-md px-3.5 font-medium text-xs flex items-center justify-between transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           <Building2 className="w-4 h-4 text-slate-500" />
@@ -595,101 +598,101 @@ export default function HomePage() {
                 /* 4. ÚNICO CASO: VISITANTE SIN SESIÓN INICIADA (VISTA PREVIA ILUSTRATIVA) */
                 <>
                   <div className="pb-1">
-                    <h2 className="text-base font-bold text-[#1E293B]">
+                    <h2 className="text-base font-semibold tracking-tight text-slate-900">
                       Expediente de Confiabilidad Verificado
                     </h2>
-                    <p className="text-xs text-[#64748B]">
+                    <p className="text-xs text-slate-500">
                       Así visualizan los directores de operaciones y analistas de seguridad el perfil del candidato
                     </p>
                   </div>
 
-                  <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm sticky top-24 space-y-5">
+                  <div className="bg-white border border-slate-200/90 rounded-lg p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sticky top-24 space-y-4">
                     {/* Header with Photo & Verification */}
-                    <div className="flex items-start gap-4">
-                      <div className="w-16 h-16 rounded-xl bg-[#F3F4F6] border border-[#E2E8F0] flex items-center justify-center font-bold text-base text-[#1E293B] shrink-0">
+                    <div className="flex items-start gap-3.5">
+                      <div className="w-12 h-12 rounded-md bg-slate-100 border border-slate-200/90 flex items-center justify-center font-semibold text-sm text-slate-800 shrink-0">
                         FV
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <h3 className="font-bold text-sm text-[#1E293B] truncate">
+                          <h3 className="font-semibold text-sm text-slate-900 truncate">
                             Aspirante Verificado (Vista Previa)
                           </h3>
-                          <CheckCircle className="w-4 h-4 text-[#10B981] shrink-0" strokeWidth={1.5} />
+                          <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={1.5} />
                         </div>
-                        <p className="text-xs font-semibold text-[#1E3A8A]">
+                        <p className="text-xs font-medium text-slate-700">
                           Personal Operativo & Seguridad Integral
                         </p>
-                        <p className="text-[11px] text-[#64748B] mt-0.5">
+                        <p className="text-[11px] text-slate-500 mt-0.5 tabular-nums">
                           6 años de experiencia • Bogotá D.C.
                         </p>
                       </div>
                     </div>
 
-                    {/* Banner Verde Prominente */}
-                    <div className="bg-[#ECFDF5] border border-[#10B981]/30 rounded-xl p-3.5 flex items-center justify-between">
+                    {/* Banner Verde Sobrio */}
+                    <div className="bg-emerald-50/80 border border-emerald-200/60 rounded-md p-3 flex items-center justify-between gap-2">
                       <div>
-                        <div className="text-xs font-bold text-[#065F46] flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-[#10B981]" />
+                        <div className="text-xs font-semibold text-emerald-800 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-600" />
                           <span>PERFIL VERIFICADO • CURSO VIGENTE</span>
                         </div>
-                        <div className="text-[11px] text-[#047857] mt-0.5">
+                        <div className="text-[11px] text-emerald-700 mt-0.5 tabular-nums">
                           Credencial SuperVigilancia al día (184 días restantes)
                         </div>
                       </div>
-                      <span className="bg-white text-[#065F46] border border-[#10B981]/30 px-2.5 py-1 rounded-md font-bold text-[11px] shadow-sm">
+                      <span className="bg-white text-emerald-700 border border-emerald-200/60 px-2.5 py-0.5 rounded-md font-medium text-[11px] shrink-0">
                         Antecedentes OK
                       </span>
                     </div>
 
                     {/* Bloque Certificaciones */}
-                    <div className="space-y-2">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-[#64748B]">
+                    <div className="space-y-1.5">
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                         Certificaciones y Permisos Validados
                       </div>
                       <div className="flex flex-wrap gap-1.5">
-                        <span className="bg-[#F3F4F6] text-[#1E293B] rounded-lg px-3 py-1.5 text-xs font-medium">
+                        <span className="bg-slate-100/80 text-slate-700 border border-slate-200/80 rounded-md px-2.5 py-1 text-xs font-medium tabular-nums">
                           Reentrenamiento Vigilancia 2026
                         </span>
-                        <span className="bg-[#F3F4F6] text-[#1E293B] rounded-lg px-3 py-1.5 text-xs font-medium">
+                        <span className="bg-slate-100/80 text-slate-700 border border-slate-200/80 rounded-md px-2.5 py-1 text-xs font-medium">
                           Manejo Armas Cortas (Indumil)
                         </span>
-                        <span className="bg-[#F3F4F6] text-[#1E293B] rounded-lg px-3 py-1.5 text-xs font-medium">
+                        <span className="bg-slate-100/80 text-slate-700 border border-slate-200/80 rounded-md px-2.5 py-1 text-xs font-medium">
                           Libreta Militar 1ra Clase
                         </span>
-                        <span className="bg-[#F3F4F6] text-[#1E293B] rounded-lg px-3 py-1.5 text-xs font-medium">
+                        <span className="bg-slate-100/80 text-slate-700 border border-slate-200/80 rounded-md px-2.5 py-1 text-xs font-medium tabular-nums">
                           Moto Propia 150cc
                         </span>
                       </div>
                     </div>
 
                     {/* Bloque Verificación Avanzada (Paquete Empresa) */}
-                    <div className="space-y-2">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-[#64748B]">
+                    <div className="space-y-1.5">
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                         Verificación Integral de Confiabilidad
                       </div>
                       <div className="grid grid-cols-3 gap-2">
-                        <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-2.5 text-center">
-                          <span className="text-[10px] text-[#64748B] block">Estudio Seg.</span>
-                          <span className="text-xs font-bold text-[#10B981] block mt-0.5">Aprobado</span>
+                        <div className="bg-slate-50/80 border border-slate-200/90 rounded-md p-2 text-center">
+                          <span className="text-[10px] text-slate-500 block">Estudio Seg.</span>
+                          <span className="text-xs font-semibold text-emerald-700 block mt-0.5">Aprobado</span>
                         </div>
-                        <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-2.5 text-center">
-                          <span className="text-[10px] text-[#64748B] block">Visita Domicil.</span>
-                          <span className="text-xs font-bold text-[#10B981] block mt-0.5">Realizada</span>
+                        <div className="bg-slate-50/80 border border-slate-200/90 rounded-md p-2 text-center">
+                          <span className="text-[10px] text-slate-500 block">Visita Domicil.</span>
+                          <span className="text-xs font-semibold text-emerald-700 block mt-0.5">Realizada</span>
                         </div>
-                        <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-2.5 text-center">
-                          <span className="text-[10px] text-[#64748B] block">Poligrafía</span>
-                          <span className="text-xs font-bold text-[#10B981] block mt-0.5">Sin Novedad</span>
+                        <div className="bg-slate-50/80 border border-slate-200/90 rounded-md p-2 text-center">
+                          <span className="text-[10px] text-slate-500 block">Poligrafía</span>
+                          <span className="text-xs font-semibold text-emerald-700 block mt-0.5">Sin Novedad</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Botón Inferior: Redirección limpia a /login */}
-                    <div className="pt-2">
+                    <div className="pt-1">
                       <Link
                         href="/login"
-                        className="w-full bg-[#0F172A] hover:bg-[#1E3A8A] text-white rounded-xl py-3 px-4 font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-sm text-center"
+                        className="w-full h-10 bg-[#0F172A] hover:bg-slate-800 text-white rounded-md px-4 font-medium text-xs flex items-center justify-center gap-2 transition-colors shadow-[0_1px_2px_rgba(15,23,42,0.05)] text-center"
                       >
-                        <Shield className="w-4 h-4 text-[#10B981]" strokeWidth={1.5} />
+                        <Shield className="w-4 h-4 text-emerald-400" strokeWidth={1.5} />
                         <span>Crear mi Hoja de Vida / Ingresar</span>
                         <ArrowRight className="w-3.5 h-3.5 ml-1" />
                       </Link>
@@ -703,50 +706,50 @@ export default function HomePage() {
       </section>
 
       {/* 4. SECCIÓN DE LAS 3 PROMESAS TÁCTICAS */}
-      <section className="bg-white py-16 border-t border-[#E2E8F0]">
+      <section className="bg-white py-14 border-t border-slate-200/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
-            <h2 className="text-2xl font-bold text-[#1E293B]">
+          <div className="text-center max-w-2xl mx-auto mb-10 space-y-1.5">
+            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900">
               Diseñado para resolver el dolor operativo del gremio
             </h2>
-            <p className="text-xs text-[#64748B]">
+            <p className="text-xs text-slate-500">
               Tres garantías reales para empresas de vigilancia y personal operativo en Colombia
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-6 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-3">
-              <div className="w-9 h-9 rounded-xl bg-[#0F172A] text-white flex items-center justify-center font-bold text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="p-5 rounded-lg bg-[#F8FAFC] border border-slate-200/90 space-y-2.5">
+              <div className="w-8 h-8 rounded-md bg-[#0F172A] text-white flex items-center justify-center font-mono font-semibold text-xs tabular-nums">
                 01
               </div>
-              <h3 className="font-bold text-sm text-[#1E293B]">
+              <h3 className="font-semibold text-sm text-slate-900 tracking-tight">
                 Garantía Cero Cobros al Personal Operativo
               </h3>
-              <p className="text-xs text-[#64748B] leading-relaxed">
+              <p className="text-xs text-slate-600 leading-relaxed">
                 Postulación 100% gratuita. Todo el personal operativo y profesionales en seguridad privada ven el salario real, turno (2x2x2, 4x2) y ubicación antes de aplicar, sin intermediarios ni cobros ilícitos.
               </p>
             </div>
 
-            <div className="p-6 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-3">
-              <div className="w-9 h-9 rounded-xl bg-[#0F172A] text-white flex items-center justify-center font-bold text-xs">
+            <div className="p-5 rounded-lg bg-[#F8FAFC] border border-slate-200/90 space-y-2.5">
+              <div className="w-8 h-8 rounded-md bg-[#0F172A] text-white flex items-center justify-center font-mono font-semibold text-xs tabular-nums">
                 02
               </div>
-              <h3 className="font-bold text-sm text-[#1E293B]">
+              <h3 className="font-semibold text-sm text-slate-900 tracking-tight">
                 Semáforo del Curso & Radar de Relevos
               </h3>
-              <p className="text-xs text-[#64748B] leading-relaxed">
+              <p className="text-xs text-slate-600 leading-relaxed">
                 Cálculo en vivo de vigencia ante SuperVigilancia y buscador de profesionales en seguridad disponibles para cubrir incapacidades y turnos urgentes de última hora.
               </p>
             </div>
 
-            <div className="p-6 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-3">
-              <div className="w-9 h-9 rounded-xl bg-[#0F172A] text-white flex items-center justify-center font-bold text-xs">
+            <div className="p-5 rounded-lg bg-[#F8FAFC] border border-slate-200/90 space-y-2.5">
+              <div className="w-8 h-8 rounded-md bg-[#0F172A] text-white flex items-center justify-center font-mono font-semibold text-xs tabular-nums">
                 03
               </div>
-              <h3 className="font-bold text-sm text-[#1E293B]">
+              <h3 className="font-semibold text-sm text-slate-900 tracking-tight">
                 Contratación Blindada Todo en Uno
               </h3>
-              <p className="text-xs text-[#64748B] leading-relaxed">
+              <p className="text-xs text-slate-600 leading-relaxed">
                 El gran diferenciador B2B: las empresas de seguridad publican vacantes y gestionan Estudio de Seguridad + Visita Domiciliaria + Poligrafía en 1 clic desde el mismo ATS.
               </p>
             </div>

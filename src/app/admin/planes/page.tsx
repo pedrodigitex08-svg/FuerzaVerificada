@@ -215,17 +215,17 @@ ON CONFLICT (id) DO UPDATE SET
   return (
     <div className="space-y-6 max-w-6xl">
       {/* 1. HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-[#E2E8F0]">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-slate-200/80">
         <div>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-[#0F172A] flex items-center justify-center text-white shadow-sm">
+            <div className="w-8 h-8 rounded-md bg-slate-900 flex items-center justify-center text-white shadow-xs">
               <Coins className="w-4 h-4 text-white" strokeWidth={1.75} />
             </div>
-            <h1 className="text-xl font-bold tracking-tight text-[#1E293B]">
+            <h1 className="text-lg font-semibold tracking-tight text-slate-900">
               Gestión de Planes y Precios B2B
             </h1>
           </div>
-          <p className="text-xs text-[#64748B] mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Modifica precios, créditos de estudios y beneficios en tiempo real. Los cambios se reflejan inmediatamente en la vista pública de precios.
           </p>
         </div>
@@ -234,7 +234,7 @@ ON CONFLICT (id) DO UPDATE SET
           <Link
             href="/precios-empresas"
             target="_blank"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E2E8F0] bg-white text-xs font-semibold text-[#1E293B] hover:bg-slate-50 transition-colors shadow-xs"
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-slate-200/90 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors shadow-xs"
           >
             <span>Ver Vista Pública (/precios-empresas)</span>
             <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
@@ -243,44 +243,44 @@ ON CONFLICT (id) DO UPDATE SET
           <button
             type="button"
             onClick={() => openEditModal()}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#0F172A] hover:bg-[#1E3A8A] text-xs font-bold text-white transition-all shadow-sm"
+            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-md bg-slate-900 hover:bg-slate-800 text-xs font-medium text-white transition-colors shadow-xs"
           >
-            <Plus className="w-3.5 h-3.5" strokeWidth={2} />
+            <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
             <span>Crear Plan</span>
           </button>
         </div>
       </div>
 
       {/* TABS NAVIGATION */}
-      <div className="flex border-b border-[#E2E8F0] gap-4">
+      <div className="flex border-b border-slate-200/80 gap-4">
         <Link
           href="/admin/configuracion"
-          className="pb-2.5 px-1 border-b-2 border-transparent text-xs font-medium text-[#64748B] hover:text-[#1E293B] hover:border-slate-300 flex items-center gap-1.5 transition-colors"
+          className="pb-2.5 px-1 border-b-2 border-transparent text-xs font-medium text-slate-500 hover:text-slate-900 hover:border-slate-300 flex items-center gap-1.5 transition-colors"
         >
           <Settings className="w-4 h-4 text-slate-400" strokeWidth={1.75} />
           <span>Canal WhatsApp Ventas</span>
         </Link>
         <Link
           href="/admin/planes"
-          className="pb-2.5 px-1 border-b-2 border-[#0F172A] text-xs font-bold text-[#0F172A] flex items-center gap-1.5"
+          className="pb-2.5 px-1 border-b-2 border-slate-900 text-xs font-semibold text-slate-900 flex items-center gap-1.5"
         >
-          <Coins className="w-4 h-4 text-[#0F172A]" strokeWidth={1.75} />
+          <Coins className="w-4 h-4 text-slate-900" strokeWidth={1.75} />
           <span>Planes & Tarifas B2B</span>
         </Link>
       </div>
 
       {/* FEEDBACK TOAST */}
       {savedSuccess && (
-        <div className="p-3.5 rounded-xl bg-[#ECFDF5] border border-[#10B981]/30 text-xs text-[#065F46] flex items-center gap-2.5 shadow-sm animate-in fade-in duration-200">
-          <CheckCircle2 className="w-4 h-4 text-[#10B981] shrink-0" strokeWidth={2} />
-          <span className="font-semibold">
+        <div className="p-3.5 rounded-lg bg-emerald-50/80 border border-emerald-200/60 text-xs text-emerald-800 flex items-center gap-2.5 shadow-subtle animate-in fade-in duration-200">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={2} />
+          <span className="font-medium">
             ¡Planes y tarifas actualizados con éxito en Supabase y disponibles en la web pública!
           </span>
         </div>
       )}
 
       {/* 2. PLANS GRID CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
         {plans.map((plan) => {
           const featuresList = normalizeFeatures(plan.features);
           const unitCost =
@@ -289,14 +289,14 @@ ON CONFLICT (id) DO UPDATE SET
           return (
             <div
               key={plan.id}
-              className={`rounded-xl bg-white border p-6 flex flex-col justify-between shadow-sm relative transition-all ${
+              className={`rounded-lg bg-white border p-6 flex flex-col justify-between shadow-subtle relative transition-colors ${
                 plan.is_active
-                  ? "border-[#E2E8F0] hover:border-slate-300 hover:shadow-md"
+                  ? "border-slate-200/90 hover:border-slate-300"
                   : "border-slate-200/60 bg-slate-50 opacity-70"
               }`}
             >
               {plan.badge && (
-                <div className="absolute -top-3 left-4 px-2.5 py-0.5 bg-[#0F172A] text-white text-[10px] font-bold rounded-full uppercase tracking-wider shadow-xs">
+                <div className="absolute -top-2.5 left-4 px-2.5 py-0.5 bg-slate-900 text-white text-[10px] font-semibold rounded-md uppercase tracking-wider shadow-xs">
                   {plan.badge}
                 </div>
               )}
@@ -304,18 +304,18 @@ ON CONFLICT (id) DO UPDATE SET
               <div className="space-y-4">
                 <div className="flex items-start justify-between gap-2 pt-1">
                   <div>
-                    <h3 className="text-base font-bold text-[#1E293B] leading-tight">
+                    <h3 className="text-base font-semibold text-slate-900 tracking-tight leading-tight">
                       {plan.name}
                     </h3>
-                    <p className="text-[11px] text-[#64748B] mt-1 line-clamp-2">
+                    <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
                       {plan.description}
                     </p>
                   </div>
 
                   <span
-                    className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                    className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-md shrink-0 ${
                       plan.is_active
-                        ? "bg-[#ECFDF5] text-[#065F46] border border-[#10B981]/30"
+                        ? "bg-emerald-50/80 text-emerald-700 border border-emerald-200/60"
                         : "bg-slate-200 text-slate-600"
                     }`}
                   >
@@ -324,36 +324,36 @@ ON CONFLICT (id) DO UPDATE SET
                 </div>
 
                 {/* Price Display */}
-                <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-1">
+                <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200/80 space-y-1">
                   <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-black text-[#1E293B] tabular-nums font-mono">
+                    <span className="text-2xl font-semibold text-slate-900 tracking-tight tabular-nums font-mono">
                       ${plan.price.toLocaleString("es-CO")}
                     </span>
-                    <span className="text-[11px] text-[#64748B]">COP</span>
+                    <span className="text-[11px] text-slate-500">COP</span>
                   </div>
-                  <div className="flex items-center justify-between text-[11px] text-[#64748B] pt-1 border-t border-slate-200/60">
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200/60">
                     <span>Créditos de Estudio:</span>
-                    <strong className="text-[#0F172A] font-bold font-mono">
+                    <strong className="text-slate-900 font-semibold font-mono tabular-nums">
                       {plan.credits} {plan.credits === 1 ? "crédito" : "créditos"}
                     </strong>
                   </div>
                   {plan.credits > 0 && (
-                    <div className="flex items-center justify-between text-[10px] text-[#065F46] font-semibold">
+                    <div className="flex items-center justify-between text-[10px] text-emerald-700 font-medium">
                       <span>Costo Unitario:</span>
-                      <span className="font-mono">${unitCost.toLocaleString("es-CO")} COP / estudio</span>
+                      <span className="font-mono tabular-nums">${unitCost.toLocaleString("es-CO")} COP / estudio</span>
                     </div>
                   )}
                 </div>
 
                 {/* Features Preview */}
                 <div className="space-y-1.5 text-xs">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block">
                     Beneficios ({featuresList.length}):
                   </span>
                   <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
                     {featuresList.map((f, i) => (
                       <div key={i} className="flex items-start gap-2 text-[11px] text-slate-600">
-                        <Check className="w-3.5 h-3.5 text-[#10B981] shrink-0 mt-0.5" strokeWidth={2} />
+                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" strokeWidth={2} />
                         <span className="leading-tight">{f}</span>
                       </div>
                     ))}
@@ -362,13 +362,13 @@ ON CONFLICT (id) DO UPDATE SET
               </div>
 
               {/* Action */}
-              <div className="pt-5 mt-4 border-t border-[#E2E8F0]">
+              <div className="pt-5 mt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => openEditModal(plan)}
-                  className="w-full py-2.5 px-3 rounded-xl border border-[#E2E8F0] bg-white hover:bg-[#0F172A] hover:text-white text-xs font-bold text-[#1E293B] transition-all flex items-center justify-center gap-2 shadow-xs group"
+                  className="w-full h-9 px-3 rounded-md border border-slate-200/90 bg-white hover:bg-slate-900 hover:text-white text-xs font-medium text-slate-800 transition-colors flex items-center justify-center gap-2 shadow-xs group"
                 >
-                  <Edit3 className="w-3.5 h-3.5 text-[#64748B] group-hover:text-white" strokeWidth={1.5} />
+                  <Edit3 className="w-3.5 h-3.5 text-slate-500 group-hover:text-white" strokeWidth={1.75} />
                   <span>Editar Plan y Tarifas</span>
                 </button>
               </div>
@@ -378,22 +378,22 @@ ON CONFLICT (id) DO UPDATE SET
       </div>
 
       {/* 3. SQL CODE ASSISTANT CARD */}
-      <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 shadow-sm space-y-3">
+      <div className="bg-white border border-slate-200/90 rounded-lg p-5 shadow-subtle space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Database className="w-4 h-4 text-[#64748B]" strokeWidth={1.75} />
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#1E293B]">
+            <Database className="w-4 h-4 text-slate-500" strokeWidth={1.75} />
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-800">
               Esquema de la Tabla en Supabase (public.subscription_plans)
             </h3>
           </div>
           <button
             type="button"
             onClick={copySql}
-            className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0F172A] hover:underline"
+            className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-900 hover:underline"
           >
             {copiedSql ? (
               <>
-                <Check className="w-3 h-3 text-[#10B981]" />
+                <Check className="w-3 h-3 text-emerald-600" />
                 <span>Copiado</span>
               </>
             ) : (
@@ -405,11 +405,11 @@ ON CONFLICT (id) DO UPDATE SET
           </button>
         </div>
 
-        <p className="text-[11px] text-[#64748B] leading-relaxed">
+        <p className="text-[11px] text-slate-500 leading-relaxed">
           Ejecuta este script en el editor SQL de tu panel de Supabase para tener la tabla oficial sincronizada. Los cambios realizados en este panel se guardan en la base de datos y se replican de inmediato en la web pública.
         </p>
 
-        <pre className="p-3 rounded-lg bg-[#0F172A] text-slate-300 text-[10px] font-mono overflow-x-auto max-h-40">
+        <pre className="p-3 rounded-md bg-slate-900 text-slate-300 text-[10px] font-mono overflow-x-auto max-h-40">
           {sqlSnippet}
         </pre>
       </div>
@@ -417,18 +417,18 @@ ON CONFLICT (id) DO UPDATE SET
       {/* 4. MODAL DE EDICIÓN / CREACIÓN */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-lg shadow-elevated p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0]">
+          <div className="bg-white border border-slate-200/90 rounded-lg w-full max-w-lg shadow-elevated p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200/80">
               <div className="flex items-center gap-2">
-                <Coins className="w-4 h-4 text-[#0F172A]" strokeWidth={1.75} />
-                <h3 className="text-sm font-bold text-[#1E293B]">
+                <Coins className="w-4 h-4 text-slate-900" strokeWidth={1.75} />
+                <h3 className="text-sm font-semibold text-slate-900 tracking-tight">
                   {editingPlan ? `Editar: ${editingPlan.name}` : "Crear Nuevo Paquete Comercial"}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-700 rounded-lg"
+                className="p-1 text-slate-400 hover:text-slate-700 rounded-md"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -436,7 +436,7 @@ ON CONFLICT (id) DO UPDATE SET
 
             <form onSubmit={handleSavePlan} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#1E293B] mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Nombre del Plan *
                 </label>
                 <input
@@ -445,13 +445,13 @@ ON CONFLICT (id) DO UPDATE SET
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   placeholder="Ej: Pack Contratación Segura x5"
-                  className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[42px] font-semibold"
+                  className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 font-medium"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-[#1E293B] mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Precio en COP *
                   </label>
                   <input
@@ -461,15 +461,15 @@ ON CONFLICT (id) DO UPDATE SET
                     step={10000}
                     value={formPrice}
                     onChange={(e) => setFormPrice(Number(e.target.value))}
-                    className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[42px] font-mono font-bold"
+                    className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 font-mono font-semibold tabular-nums"
                   />
-                  <span className="text-[10px] text-[#64748B] mt-0.5 block font-mono">
+                  <span className="text-[10px] text-slate-500 mt-0.5 block font-mono tabular-nums">
                     ${Number(formPrice).toLocaleString("es-CO")} COP
                   </span>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#1E293B] mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Créditos de Estudio *
                   </label>
                   <input
@@ -479,9 +479,9 @@ ON CONFLICT (id) DO UPDATE SET
                     max={500}
                     value={formCredits}
                     onChange={(e) => setFormCredits(Number(e.target.value))}
-                    className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[42px] font-mono font-bold"
+                    className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 font-mono font-semibold tabular-nums"
                   />
-                  <span className="text-[10px] text-[#64748B] mt-0.5 block">
+                  <span className="text-[10px] text-slate-500 mt-0.5 block tabular-nums">
                     {formCredits > 0
                       ? `$${Math.round(formPrice / formCredits).toLocaleString("es-CO")} / estudio`
                       : "Sin créditos"}
@@ -490,7 +490,7 @@ ON CONFLICT (id) DO UPDATE SET
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#1E293B] mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Insignia / Badge Destacado (Opcional)
                 </label>
                 <input
@@ -498,12 +498,12 @@ ON CONFLICT (id) DO UPDATE SET
                   value={formBadge}
                   onChange={(e) => setFormBadge(e.target.value)}
                   placeholder="Ej: Más Vendido, Gran Volumen, Recomendado"
-                  className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[42px]"
+                  className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#1E293B] mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Descripción Corta
                 </label>
                 <input
@@ -511,12 +511,12 @@ ON CONFLICT (id) DO UPDATE SET
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
                   placeholder="Descripción resumida para el card comercial"
-                  className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#0F172A] min-h-[42px]"
+                  className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#1E293B] mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Beneficios y Características (Uno por línea) *
                 </label>
                 <textarea
@@ -525,19 +525,19 @@ ON CONFLICT (id) DO UPDATE SET
                   value={formFeaturesText}
                   onChange={(e) => setFormFeaturesText(e.target.value)}
                   placeholder="Vacantes ilimitadas activas&#10;5 Combos Completos incluidos&#10;Acceso al Radar de Relevos&#10;Informes en PDF"
-                  className="w-full bg-white border border-[#E2E8F0] rounded-xl p-3 text-xs text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#0F172A] font-mono leading-relaxed"
+                  className="w-full bg-white border border-slate-200/90 rounded-md p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 font-mono leading-relaxed"
                 />
               </div>
 
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
+              <div className="flex items-center gap-3 p-3 rounded-md bg-slate-50 border border-slate-200/80">
                 <input
                   type="checkbox"
                   id="isActiveCheck"
                   checked={formIsActive}
                   onChange={(e) => setFormIsActive(e.target.checked)}
-                  className="w-4 h-4 rounded text-[#0F172A] focus:ring-[#0F172A]"
+                  className="w-4 h-4 rounded text-slate-900 focus:ring-slate-900"
                 />
-                <label htmlFor="isActiveCheck" className="text-xs font-semibold text-[#1E293B] cursor-pointer">
+                <label htmlFor="isActiveCheck" className="text-xs font-medium text-slate-800 cursor-pointer">
                   Plan Activo (Visible al público en /precios-empresas)
                 </label>
               </div>
@@ -547,14 +547,14 @@ ON CONFLICT (id) DO UPDATE SET
                   type="button"
                   disabled={loading}
                   onClick={() => setIsModalOpen(false)}
-                  className="w-1/3 py-2.5 px-3 rounded-xl border border-[#E2E8F0] text-xs font-semibold text-[#64748B] hover:bg-slate-100"
+                  className="w-1/3 h-10 px-3 rounded-md border border-slate-200/90 text-xs font-medium text-slate-600 hover:bg-slate-100"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-2/3 bg-[#0F172A] hover:bg-[#1E3A8A] text-white py-2.5 px-4 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2"
+                  className="w-2/3 h-10 bg-slate-900 hover:bg-slate-800 text-white px-4 rounded-md text-xs font-medium transition-colors shadow-xs flex items-center justify-center gap-2"
                 >
                   {loading ? "Guardando en Supabase..." : "Guardar Cambios"}
                 </button>

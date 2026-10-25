@@ -15,10 +15,10 @@ export function Footer() {
           {/* Col 1 */}
           <div className="space-y-3.5 md:col-span-1">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-[#0F172A] flex items-center justify-center text-white">
+              <div className="w-8 h-8 rounded-md bg-[#0F172A] flex items-center justify-center text-white">
                 <Shield className="w-4 h-4 text-white" strokeWidth={1.5} />
               </div>
-              <span className="text-base font-bold text-[#1E293B] tracking-tight">
+              <span className="text-base font-semibold text-slate-900 tracking-tight">
                 Fuerza<span className="text-[#0F172A]">Verificada</span>
               </span>
             </div>
@@ -173,12 +173,12 @@ export function Footer() {
 
           {/* Col 4 */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold text-[#1E293B] tracking-wider uppercase">
+            <h4 className="text-xs font-semibold text-slate-900 tracking-wider uppercase">
               Garantía Jurídica
             </h4>
-            <div className="p-3.5 rounded-xl bg-white border border-[#E2E8F0] space-y-2 text-xs text-[#64748B]">
-              <div className="flex items-center gap-1.5 font-bold text-[#1E293B]">
-                <FileCheck className="w-3.5 h-3.5 text-[#10B981]" strokeWidth={1.5} />
+            <div className="p-3.5 rounded-lg bg-white border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.03)] space-y-2 text-xs text-slate-600">
+              <div className="flex items-center gap-1.5 font-semibold text-slate-900">
+                <FileCheck className="w-3.5 h-3.5 text-emerald-600" strokeWidth={1.5} />
                 <span>Superintendencia de Vigilancia</span>
               </div>
               <p className="text-[11px] leading-relaxed">

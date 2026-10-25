@@ -156,24 +156,24 @@ export default function RadarRelevosPage() {
   return (
     <div className="space-y-6">
       {/* Header with Radar Pulse Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">
               Directorio Verificado & Radar Operativo
             </span>
           </div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-xl font-semibold text-slate-900 tracking-tight">
             Directorio de Personal Verificado & Radar de Relevos
           </h1>
-          <p className="text-xs text-slate-500 font-normal">
+          <p className="text-xs text-slate-600 font-normal">
             Base de datos de guardas, escoltas y personal con credencial SuperVigilancia vigente y filtro para relevos de emergencia.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="badge-emerald text-xs py-1 px-3">
+          <span className="badge-emerald text-xs py-1 px-3 tabular-nums">
             <Zap className="w-3.5 h-3.5 fill-emerald-600 text-emerald-600" />
             {filtered.length} {filtered.length === 1 ? "candidato listo" : "candidatos listos"}
           </span>
@@ -189,7 +189,7 @@ export default function RadarRelevosPage() {
             placeholder="Buscar por barrio o nombre..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-slate-400 shadow-subtle"
+            className="w-full h-10 bg-white border border-slate-200/90 rounded-md pl-10 pr-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors"
           />
         </div>
 
@@ -199,10 +199,10 @@ export default function RadarRelevosPage() {
               key={role}
               type="button"
               onClick={() => setSelectedRole(role)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap border transition-all ${
+              className={`h-9 px-3 rounded-md text-xs font-medium whitespace-nowrap border transition-all ${
                 selectedRole === role
-                  ? "bg-slate-900 text-white border-slate-900 font-semibold shadow-subtle"
-                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                  ? "bg-slate-900 text-white border-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.06)]"
+                  : "bg-white text-slate-600 border-slate-200/90 hover:bg-slate-50"
               }`}
             >
               {role}
@@ -212,10 +212,10 @@ export default function RadarRelevosPage() {
           <button
             type="button"
             onClick={() => setOnlyImmediate(!onlyImmediate)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap border flex items-center gap-1.5 transition-all ${
+            className={`h-9 px-3 rounded-md text-xs font-medium whitespace-nowrap border flex items-center gap-1.5 transition-all ${
               onlyImmediate
-                ? "bg-[#10B981] text-white border-[#10B981] shadow-sm"
-                : "bg-white text-[#64748B] border-[#E2E8F0] hover:bg-[#F8FAFC]"
+                ? "bg-emerald-600 text-white border-emerald-600 shadow-[0_1px_2px_rgba(15,23,42,0.06)]"
+                : "bg-white text-slate-600 border-slate-200/90 hover:bg-slate-50"
             }`}
           >
             <Zap className={`w-3.5 h-3.5 ${onlyImmediate ? "fill-white text-white" : "text-amber-500"}`} />
@@ -225,10 +225,10 @@ export default function RadarRelevosPage() {
           <button
             type="button"
             onClick={() => setOnlyMotorcycle(!onlyMotorcycle)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap border flex items-center gap-1.5 transition-all ${
+            className={`h-9 px-3 rounded-md text-xs font-medium whitespace-nowrap border flex items-center gap-1.5 transition-all ${
               onlyMotorcycle
-                ? "bg-[#0F172A] text-white border-[#0F172A] shadow-sm"
-                : "bg-white text-[#64748B] border-[#E2E8F0] hover:bg-[#F8FAFC]"
+                ? "bg-slate-900 text-white border-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.06)]"
+                : "bg-white text-slate-600 border-slate-200/90 hover:bg-slate-50"
             }`}
           >
             <Bike className="w-3.5 h-3.5" />
@@ -239,9 +239,9 @@ export default function RadarRelevosPage() {
 
       {/* GUARDS CARDS GRID OR EMPTY STATE */}
       {filtered.length === 0 ? (
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-12 text-center shadow-subtle">
-          <Users className="w-12 h-12 mx-auto mb-3 text-slate-300" strokeWidth={1.5} />
-          <h3 className="text-base font-bold text-slate-800">
+        <div className="bg-white border border-slate-200/90 rounded-lg p-12 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+          <Users className="w-10 h-10 mx-auto mb-3 text-slate-300" strokeWidth={1.5} />
+          <h3 className="text-base font-semibold tracking-tight text-slate-900">
             No se encontraron perfiles operativos registrados con estos criterios
           </h3>
           <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
@@ -264,21 +264,21 @@ export default function RadarRelevosPage() {
             return (
               <div
                 key={guard.id}
-                className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-subtle hover:border-slate-300 transition-all space-y-4"
+                className="bg-white border border-slate-200/90 rounded-lg p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:border-slate-300 transition-all space-y-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-slate-900 text-amber-400 font-bold flex items-center justify-center text-sm shrink-0">
+                    <div className="w-10 h-10 rounded-md bg-slate-900 text-white font-semibold flex items-center justify-center text-sm shrink-0">
                       {guard.full_name.charAt(0)}
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-slate-900 leading-snug">
+                      <h3 className="text-sm font-semibold tracking-tight text-slate-900 leading-snug">
                         {guard.full_name}
                       </h3>
-                      <div className="text-xs font-semibold text-amber-700 font-mono mt-0.5">
+                      <div className="text-xs font-medium text-slate-700 font-mono mt-0.5">
                         {guard.primary_role}
                       </div>
-                      <div className="text-[11px] text-slate-400 mt-0.5">
+                      <div className="text-[11px] text-slate-500 font-mono tabular-nums mt-0.5">
                         C.C. {guard.national_id}
                       </div>
                     </div>
@@ -291,31 +291,31 @@ export default function RadarRelevosPage() {
                 </div>
 
                 {/* Attributes line */}
-                <div className="grid grid-cols-3 gap-2 text-xs py-2 border-t border-b border-slate-100">
+                <div className="grid grid-cols-3 gap-2 text-xs py-2.5 border-t border-b border-slate-200/80">
                   <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">Ubicación</span>
+                    <span className="text-[10px] text-slate-500 uppercase font-medium block">Ubicación</span>
                     <span className="font-semibold text-slate-800">{guard.locality}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">Credencial</span>
-                    <span className="font-bold text-emerald-700 font-mono tabular-nums">
+                    <span className="text-[10px] text-slate-500 uppercase font-medium block">Credencial</span>
+                    <span className="font-semibold text-emerald-700 font-mono tabular-nums">
                       {guard.days_remaining > 0 ? `${guard.days_remaining}d vigentes` : "Por validar"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">Vehículo</span>
-                    <span className="font-semibold text-slate-800">
+                    <span className="text-[10px] text-slate-500 uppercase font-medium block">Vehículo</span>
+                    <span className="font-semibold text-slate-800 tabular-nums">
                       {guard.has_own_motorcycle ? `Moto ${guard.motorcycle_cc || 150}cc` : "Sin moto"}
                     </span>
                   </div>
                 </div>
 
                 {/* Action Buttons: 10-second contact */}
-                <div className="flex items-center gap-2 pt-1">
+                <div className="flex items-center gap-2 pt-0.5">
                   <button
                     type="button"
                     onClick={() => setSelectedCandidate(guard)}
-                    className="btn-secondary text-xs py-2 px-3 font-semibold w-1/2"
+                    className="btn-secondary text-xs h-9 px-3 font-medium w-1/2"
                   >
                     <FileText className="w-3.5 h-3.5 text-slate-600" strokeWidth={1.75} />
                     Ver Hoja de Vida
@@ -324,7 +324,7 @@ export default function RadarRelevosPage() {
                     href={directWhatsappLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn-emerald text-xs py-2 px-3 font-semibold w-1/2"
+                    className="btn-emerald text-xs h-9 px-3 font-medium w-1/2"
                   >
                     <MessageCircle className="w-3.5 h-3.5" strokeWidth={1.75} />
                     WhatsApp Inmediato

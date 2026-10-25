@@ -266,7 +266,7 @@ export default function AdminEmpresasPage() {
     <div className="space-y-6">
       {/* Toast Notification */}
       {notification && (
-        <div className="p-3.5 rounded-xl bg-slate-900 text-white text-xs font-semibold flex items-center justify-between border border-slate-800 shadow-elevated animate-in fade-in">
+        <div className="p-3.5 rounded-lg bg-slate-900 text-white text-xs font-medium flex items-center justify-between border border-slate-800 shadow-card animate-in fade-in">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
             <span>{notification}</span>
@@ -283,28 +283,28 @@ export default function AdminEmpresasPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200/80">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+          <h1 className="text-lg font-semibold text-slate-900 tracking-tight flex items-center gap-2">
             Empresas Clientes & Recarga de Créditos B2B
           </h1>
           <p className="text-xs text-slate-500 font-normal">
-            Validación de personería jurídica ante SuperVigilancia, activación del Sello Dorado y asignación de saldos de poligrafía.
+            Validación de personería jurídica ante SuperVigilancia, activación del Sello Verificado y asignación de saldos de poligrafía.
           </p>
         </div>
 
         <button
           onClick={() => setIsAddCompanyOpen(true)}
-          className="btn-primary text-xs py-2 px-3.5 flex items-center gap-1.5"
+          className="btn-primary text-xs h-9 px-3.5 flex items-center gap-1.5"
         >
-          <Plus className="w-4 h-4" strokeWidth={2} />
+          <Plus className="w-4 h-4" strokeWidth={1.75} />
           <span>Registrar Empresa Cliente</span>
         </button>
       </div>
 
       {/* SEARCH AND FILTERS */}
-      <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-subtle flex flex-col sm:flex-row gap-3 items-center justify-between">
+      <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div className="relative flex-1 w-full max-w-md">
           <Search
-            className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"
+            className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"
             strokeWidth={1.75}
           />
           <input
@@ -312,21 +312,21 @@ export default function AdminEmpresasPage() {
             placeholder="Buscar por Razón Social, NIT o Ciudad..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"
+            className="w-full h-10 pl-9 pr-3 text-sm rounded-md border border-slate-200/90 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
           />
         </div>
 
-        <div className="text-xs text-slate-500 font-medium">
-          Mostrando <strong className="text-slate-800">{filteredCompanies.length}</strong> de{" "}
+        <div className="text-xs text-slate-500 font-medium tabular-nums">
+          Mostrando <strong className="text-slate-800 font-semibold">{filteredCompanies.length}</strong> de{" "}
           {companies.length} empresas registradas
         </div>
       </div>
 
       {/* COMPANIES TABLE */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-subtle overflow-hidden">
+      <div className="bg-white border border-slate-200/90 rounded-lg shadow-subtle overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50/75 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+            <thead className="bg-slate-50/80 border-b border-slate-200/90 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
               <tr>
                 <th className="py-3 px-4">Empresa / Razón Social</th>
                 <th className="py-3 px-4">NIT & Licencia SuperVigilancia</th>
@@ -346,31 +346,31 @@ export default function AdminEmpresasPage() {
                 </tr>
               ) : (
                 filteredCompanies.map((comp) => (
-                  <tr key={comp.id} className="hover:bg-slate-50/80 transition-colors">
+                  <tr key={comp.id} className="hover:bg-slate-50/70 transition-colors">
                     {/* Company Name */}
                     <td className="py-3 px-4">
-                      <div className="font-bold text-slate-900 flex items-center gap-2">
+                      <div className="font-semibold text-slate-900 flex items-center gap-1.5">
                         <span>{comp.company_name}</span>
                         {comp.is_verified_company && (
                           <span
                             title="Empresa Verificada SuperVigilancia"
-                            className="inline-flex items-center text-amber-500"
+                            className="inline-flex items-center text-emerald-600"
                           >
-                            <Shield className="w-3.5 h-3.5 fill-amber-500/20" strokeWidth={2} />
+                            <Shield className="w-3.5 h-3.5" strokeWidth={2} />
                           </span>
                         )}
                       </div>
-                      <div className="text-[11px] text-slate-500">
+                      <div className="text-[11px] text-slate-500 tabular-nums">
                         Contacto: {comp.contact_person} ({comp.contact_phone})
                       </div>
                     </td>
 
                     {/* NIT & License */}
                     <td className="py-3 px-4">
-                      <div className="font-mono text-xs font-semibold text-slate-800">
+                      <div className="font-mono text-xs font-semibold text-slate-800 tabular-nums">
                         {comp.nit}
                       </div>
-                      <div className="text-[10px] text-slate-500">
+                      <div className="text-[10px] text-slate-500 tabular-nums">
                         {comp.supervigilancia_license || "Sin licencia cargada"}
                       </div>
                     </td>
@@ -385,16 +385,16 @@ export default function AdminEmpresasPage() {
                       <button
                         type="button"
                         onClick={() => handleToggleVerification(comp.id)}
-                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-all border ${
+                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors border ${
                           comp.is_verified_company
-                            ? "bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100"
-                            : "bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200"
+                            ? "bg-emerald-50/80 text-emerald-700 border-emerald-200/70 hover:bg-emerald-100/80"
+                            : "bg-slate-100 text-slate-500 border-slate-200/80 hover:bg-slate-200"
                         }`}
                         title="Clic para cambiar estado de verificación oficial"
                       >
                         <span
-                          className={`w-2 h-2 rounded-full ${
-                            comp.is_verified_company ? "bg-amber-500" : "bg-slate-400"
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            comp.is_verified_company ? "bg-emerald-500" : "bg-slate-400"
                           }`}
                         />
                         <span>{comp.is_verified_company ? "Verificada" : "Sin Validar"}</span>
@@ -403,7 +403,7 @@ export default function AdminEmpresasPage() {
 
                     {/* Plan Name */}
                     <td className="py-3 px-4">
-                      <span className="text-[10px] px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wider bg-slate-100 text-slate-700">
+                      <span className="text-[10px] px-2 py-0.5 rounded-md font-mono font-semibold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200/80">
                         {comp.plan_name.replace("_", " ")}
                       </span>
                     </td>
@@ -411,10 +411,10 @@ export default function AdminEmpresasPage() {
                     {/* Credits Counter */}
                     <td className="py-3 px-4 text-center">
                       <span
-                        className={`inline-flex items-center justify-center font-mono font-bold text-xs px-2.5 py-1 rounded-lg tabular-nums ${
+                        className={`inline-flex items-center justify-center font-mono font-semibold text-xs px-2.5 py-1 rounded-md tabular-nums ${
                           comp.credits_security_studies > 0
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            : "bg-rose-50 text-rose-700 border border-rose-200"
+                            ? "bg-emerald-50/80 text-emerald-700 border border-emerald-200/60"
+                            : "bg-rose-50/80 text-rose-700 border border-rose-200/60"
                         }`}
                       >
                         {comp.credits_security_studies} Créditos
@@ -429,7 +429,7 @@ export default function AdminEmpresasPage() {
                           setSelectedPlan(comp.plan_name);
                           setCreditAmount(5);
                         }}
-                        className="btn-amber text-xs py-1 px-3 inline-flex items-center gap-1.5 font-bold"
+                        className="btn-primary text-xs h-8 px-3 inline-flex items-center gap-1.5 font-medium"
                       >
                         <Coins className="w-3.5 h-3.5" strokeWidth={1.75} />
                         <span>Recargar Paquete</span>
@@ -446,15 +446,15 @@ export default function AdminEmpresasPage() {
       {/* RECHARGE CREDITS MODAL */}
       {selectedCompanyForRecharge && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md shadow-elevated p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white border border-slate-200/90 rounded-lg w-full max-w-md shadow-elevated p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
             {/* Header */}
-            <div className="flex items-start justify-between pb-3 border-b border-slate-200">
+            <div className="flex items-start justify-between pb-3 border-b border-slate-200/80">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600">
-                  <Coins className="w-5 h-5" strokeWidth={1.75} />
+                <div className="w-9 h-9 rounded-md bg-slate-900 flex items-center justify-center text-white">
+                  <Coins className="w-4 h-4" strokeWidth={1.75} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">
+                  <h3 className="text-sm font-semibold text-slate-900 tracking-tight">
                     Recarga de Paquete B2B
                   </h3>
                   <p className="text-xs text-slate-500">
@@ -464,29 +464,29 @@ export default function AdminEmpresasPage() {
               </div>
               <button
                 onClick={() => setSelectedCompanyForRecharge(null)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-md"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Current Balance */}
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
+            <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
               <span className="text-slate-500 font-medium">Saldo actual de la empresa:</span>
-              <span className="font-mono font-bold text-slate-900 tabular-nums">
+              <span className="font-mono font-semibold text-slate-900 tabular-nums">
                 {selectedCompanyForRecharge.credits_security_studies} Créditos
               </span>
             </div>
 
             {/* Plan Selection */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 block">
+              <label className="text-xs font-medium text-slate-700 block">
                 Plan Comercial Facturado
               </label>
               <select
                 value={selectedPlan}
                 onChange={(e) => setSelectedPlan(e.target.value)}
-                className="w-full text-xs p-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900 font-semibold"
+                className="w-full h-10 text-xs px-3 rounded-md border border-slate-200/90 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 font-medium"
               >
                 <option value="pack_operativo">Paquete Contratación Segura x5 ($850.000 COP)</option>
                 <option value="pack_corporativo_vip">Paquete Blindaje Total x15 ($2.250.000 COP)</option>
@@ -497,7 +497,7 @@ export default function AdminEmpresasPage() {
 
             {/* Credits Amount Selector */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 block">
+              <label className="text-xs font-medium text-slate-700 block">
                 Créditos a Sumar (Estudio + Visita + Polígrafo)
               </label>
               <div className="grid grid-cols-4 gap-2">
@@ -506,10 +506,10 @@ export default function AdminEmpresasPage() {
                     key={num}
                     type="button"
                     onClick={() => setCreditAmount(num)}
-                    className={`py-2 text-xs font-bold rounded-xl border transition-all ${
+                    className={`py-2 text-xs font-semibold rounded-md border tabular-nums transition-colors ${
                       creditAmount === num
-                        ? "bg-slate-900 border-slate-900 text-white shadow-sm"
-                        : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                        ? "bg-slate-900 border-slate-900 text-white shadow-xs"
+                        : "bg-slate-50 border-slate-200/90 text-slate-700 hover:bg-slate-100"
                     }`}
                   >
                     +{num}
@@ -529,7 +529,7 @@ export default function AdminEmpresasPage() {
                 max="500"
                 value={creditAmount}
                 onChange={(e) => setCreditAmount(parseInt(e.target.value, 10) || 1)}
-                className="w-full text-xs font-mono font-bold p-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                className="w-full h-10 text-xs font-mono font-semibold px-3.5 rounded-md border border-slate-200/90 tabular-nums focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
               />
             </div>
 
@@ -538,7 +538,7 @@ export default function AdminEmpresasPage() {
               <button
                 type="button"
                 onClick={() => setSelectedCompanyForRecharge(null)}
-                className="btn-secondary w-1/3 text-xs"
+                className="btn-secondary w-1/3 h-10 text-xs"
               >
                 Cancelar
               </button>
@@ -546,7 +546,7 @@ export default function AdminEmpresasPage() {
                 type="button"
                 disabled={isProcessing || creditAmount <= 0}
                 onClick={handleConfirmRecharge}
-                className="btn-amber w-2/3 text-xs font-bold"
+                className="btn-primary w-2/3 h-10 text-xs font-medium tabular-nums"
               >
                 {isProcessing ? "Acreditando..." : `Confirmar +${creditAmount} Créditos`}
               </button>
@@ -560,15 +560,15 @@ export default function AdminEmpresasPage() {
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
           <form
             onSubmit={handleCreateCompany}
-            className="bg-white border border-slate-200 rounded-2xl w-full max-w-lg shadow-elevated p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150"
+            className="bg-white border border-slate-200/90 rounded-lg w-full max-w-lg shadow-elevated p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150"
           >
-            <div className="flex items-start justify-between pb-3 border-b border-slate-200">
+            <div className="flex items-start justify-between pb-3 border-b border-slate-200/80">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center">
+                <div className="w-8 h-8 rounded-md bg-slate-900 text-white flex items-center justify-center">
                   <Building2 className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">
+                  <h3 className="text-sm font-semibold text-slate-900 tracking-tight">
                     Registrar Nueva Empresa de Seguridad
                   </h3>
                   <p className="text-xs text-slate-500">
@@ -587,7 +587,7 @@ export default function AdminEmpresasPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div className="sm:col-span-2">
-                <label className="font-semibold text-slate-700 block mb-1">
+                <label className="font-medium text-slate-700 block mb-1">
                   Razón Social / Nombre Comercial *
                 </label>
                 <input
@@ -596,12 +596,12 @@ export default function AdminEmpresasPage() {
                   placeholder="Ej. Seguridad Nacional Proteger Ltda."
                   value={newCompanyName}
                   onChange={(e) => setNewCompanyName(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  className="w-full h-10 px-3.5 rounded-md border border-slate-200/90 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">
+                <label className="font-medium text-slate-700 block mb-1">
                   NIT (Con dígito de verificación) *
                 </label>
                 <input
@@ -610,18 +610,18 @@ export default function AdminEmpresasPage() {
                   placeholder="860.123.456-7"
                   value={newCompanyNit}
                   onChange={(e) => setNewCompanyNit(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900 font-mono"
+                  className="w-full h-10 px-3.5 rounded-md border border-slate-200/90 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 font-mono tabular-nums"
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">
+                <label className="font-medium text-slate-700 block mb-1">
                   Ciudad Principal
                 </label>
                 <select
                   value={newCompanyCity}
                   onChange={(e) => setNewCompanyCity(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900 font-medium"
+                  className="w-full h-10 px-3 rounded-md border border-slate-200/90 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 font-medium"
                 >
                   <option value="Bogotá D.C.">Bogotá D.C.</option>
                   <option value="Medellín">Medellín</option>
@@ -632,7 +632,7 @@ export default function AdminEmpresasPage() {
               </div>
 
               <div className="sm:col-span-2">
-                <label className="font-semibold text-slate-700 block mb-1">
+                <label className="font-medium text-slate-700 block mb-1">
                   Resolución / Licencia SuperVigilancia
                 </label>
                 <input
@@ -640,12 +640,12 @@ export default function AdminEmpresasPage() {
                   placeholder="Ej. Licencia SV-01452 de 2023"
                   value={newCompanyLicense}
                   onChange={(e) => setNewCompanyLicense(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  className="w-full h-10 px-3.5 rounded-md border border-slate-200/90 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 tabular-nums"
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">
+                <label className="font-medium text-slate-700 block mb-1">
                   Persona de Contacto (RRHH / Operaciones)
                 </label>
                 <input
@@ -653,12 +653,12 @@ export default function AdminEmpresasPage() {
                   placeholder="Ej. Dra. Natalia Gómez"
                   value={newCompanyContact}
                   onChange={(e) => setNewCompanyContact(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  className="w-full h-10 px-3.5 rounded-md border border-slate-200/90 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">
+                <label className="font-medium text-slate-700 block mb-1">
                   Teléfono / WhatsApp Corporativo
                 </label>
                 <input
@@ -666,12 +666,12 @@ export default function AdminEmpresasPage() {
                   placeholder="3150000000"
                   value={newCompanyPhone}
                   onChange={(e) => setNewCompanyPhone(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900 tabular-nums"
+                  className="w-full h-10 px-3.5 rounded-md border border-slate-200/90 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 font-mono tabular-nums"
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">
+                <label className="font-medium text-slate-700 block mb-1">
                   Créditos Iniciales de Poligrafía/Visita
                 </label>
                 <input
@@ -679,7 +679,7 @@ export default function AdminEmpresasPage() {
                   min="0"
                   value={newCompanyInitialCredits}
                   onChange={(e) => setNewCompanyInitialCredits(parseInt(e.target.value, 10) || 0)}
-                  className="w-full p-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900 font-mono font-bold"
+                  className="w-full h-10 px-3.5 rounded-md border border-slate-200/90 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 font-mono font-semibold tabular-nums"
                 />
               </div>
             </div>
@@ -688,13 +688,13 @@ export default function AdminEmpresasPage() {
               <button
                 type="button"
                 onClick={() => setIsAddCompanyOpen(false)}
-                className="btn-secondary w-1/3 text-xs"
+                className="btn-secondary w-1/3 h-10 text-xs"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                className="btn-primary w-2/3 text-xs font-bold"
+                className="btn-primary w-2/3 h-10 text-xs font-medium"
               >
                 Crear y Activar Empresa
               </button>

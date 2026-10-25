@@ -148,9 +148,9 @@ export default function DocumentosPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200/80">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-lg font-semibold text-slate-900 tracking-tight">
             Credencial SuperVigilancia & Bóveda Documental
           </h1>
           <p className="text-xs text-slate-500 font-normal">
@@ -158,7 +158,7 @@ export default function DocumentosPage() {
           </p>
         </div>
 
-        <Link href="/guarda/onboarding" className="btn-secondary text-xs">
+        <Link href="/guarda/onboarding" className="btn-secondary text-xs h-9 px-3.5">
           <Upload className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
           Actualizar Documentos
         </Link>
@@ -172,14 +172,14 @@ export default function DocumentosPage() {
       />
 
       {/* CREDENCIAL CORPORATE CARD */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-subtle space-y-5">
+      <div className="bg-white border border-slate-200/90 rounded-lg p-6 shadow-subtle space-y-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-md bg-slate-900 text-white flex items-center justify-center">
               <Shield className="w-4 h-4" strokeWidth={1.75} />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900">
+              <h3 className="text-sm font-semibold text-slate-900 tracking-tight">
                 Credencial de Identificación SuperVigilancia
               </h3>
               <p className="text-xs text-slate-500">
@@ -193,28 +193,28 @@ export default function DocumentosPage() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+          <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200/80">
             <span className="text-[10px] uppercase tracking-wider text-slate-400 block font-semibold">
               Número de Credencial
             </span>
-            <span className="font-bold text-slate-900 font-mono text-sm tabular-nums mt-0.5 block">
+            <span className="font-semibold text-slate-900 font-mono text-sm tabular-nums mt-0.5 block">
               {credencialSupervigilancia}
             </span>
           </div>
-          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+          <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200/80">
             <span className="text-[10px] uppercase tracking-wider text-slate-400 block font-semibold">
               Fecha de Realización
             </span>
-            <span className="font-bold text-slate-900 font-mono text-sm tabular-nums mt-0.5 block">
+            <span className="font-semibold text-slate-900 font-mono text-sm tabular-nums mt-0.5 block">
               {courseCompletionDate || "Sin registrar"}
             </span>
           </div>
-          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+          <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200/80">
             <span className="text-[10px] uppercase tracking-wider text-slate-400 block font-semibold">
               Academia Emisora
             </span>
-            <span className="font-semibold text-slate-800 text-xs mt-0.5 block truncate">
+            <span className="font-medium text-slate-800 text-xs mt-0.5 block truncate">
               {courseAcademy}
             </span>
           </div>
@@ -228,7 +228,7 @@ export default function DocumentosPage() {
             href={renewalLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-secondary text-xs py-2 px-3.5 font-semibold text-amber-700 hover:text-amber-800"
+            className="btn-secondary text-xs h-9 px-3.5 font-medium text-slate-700 hover:text-slate-900"
           >
             <MessageCircle className="w-3.5 h-3.5 text-emerald-600" strokeWidth={1.75} />
             Consultar Convenio con Academia Aliada (15% OFF)
@@ -237,29 +237,29 @@ export default function DocumentosPage() {
       </div>
 
       {/* REPOSITORIO DE DOCUMENTOS */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-subtle space-y-4">
+      <div className="bg-white border border-slate-200/90 rounded-lg p-6 shadow-subtle space-y-4">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
           Documentos Operativos Almacenados
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Doc 1 */}
-          <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50 flex flex-col justify-between space-y-3">
+          <div className="p-4 rounded-lg border border-slate-200/80 bg-slate-50 flex flex-col justify-between space-y-3">
             <div className="flex items-start justify-between">
-              <FileText className="w-6 h-6 text-slate-700" strokeWidth={1.5} />
+              <FileText className="w-5 h-5 text-slate-700" strokeWidth={1.5} />
               <span className={hasResume ? "badge-emerald text-[10px]" : "badge-amber text-[10px]"}>
                 {hasResume ? "Cargado" : "Pendiente"}
               </span>
             </div>
             <div>
-              <h4 className="text-xs font-bold text-slate-900">Hoja de Vida en PDF</h4>
+              <h4 className="text-xs font-semibold text-slate-900">Hoja de Vida en PDF</h4>
               <p className="text-[11px] text-slate-500 mt-0.5">Formato tradicional descargable</p>
             </div>
             {resumeUrl ? (
               <button
                 type="button"
                 onClick={() => openSecureDocument(resumeUrl)}
-                className="text-[11px] font-semibold text-emerald-700 hover:underline flex items-center gap-1"
+                className="text-[11px] font-medium text-emerald-700 hover:underline flex items-center gap-1"
               >
                 <span>Ver Hoja_de_Vida.pdf</span>
                 <ExternalLink className="w-3 h-3" />
@@ -270,22 +270,22 @@ export default function DocumentosPage() {
           </div>
 
           {/* Doc 2 */}
-          <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50 flex flex-col justify-between space-y-3">
+          <div className="p-4 rounded-lg border border-slate-200/80 bg-slate-50 flex flex-col justify-between space-y-3">
             <div className="flex items-start justify-between">
-              <FileCheck className="w-6 h-6 text-emerald-600" strokeWidth={1.5} />
+              <FileCheck className="w-5 h-5 text-emerald-600" strokeWidth={1.5} />
               <span className={hasCourseDiploma ? "badge-emerald text-[10px]" : "badge-amber text-[10px]"}>
                 {hasCourseDiploma ? "Cargado" : "Pendiente"}
               </span>
             </div>
             <div>
-              <h4 className="text-xs font-bold text-slate-900">Diploma del Curso</h4>
+              <h4 className="text-xs font-semibold text-slate-900">Diploma del Curso</h4>
               <p className="text-[11px] text-slate-500 mt-0.5">Certificado de Reentrenamiento</p>
             </div>
             {courseDiplomaUrl ? (
               <button
                 type="button"
                 onClick={() => openSecureDocument(courseDiplomaUrl)}
-                className="text-[11px] font-semibold text-emerald-700 hover:underline flex items-center gap-1"
+                className="text-[11px] font-medium text-emerald-700 hover:underline flex items-center gap-1"
               >
                 <span>Ver Diploma_Vigilancia.pdf</span>
                 <ExternalLink className="w-3 h-3" />
@@ -296,22 +296,22 @@ export default function DocumentosPage() {
           </div>
 
           {/* Doc 3 */}
-          <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50 flex flex-col justify-between space-y-3">
+          <div className="p-4 rounded-lg border border-slate-200/80 bg-slate-50 flex flex-col justify-between space-y-3">
             <div className="flex items-start justify-between">
-              <CreditCard className="w-6 h-6 text-slate-700" strokeWidth={1.5} />
+              <CreditCard className="w-5 h-5 text-slate-700" strokeWidth={1.5} />
               <span className={hasIdCard ? "badge-emerald text-[10px]" : "badge-amber text-[10px]"}>
                 {hasIdCard ? "Cargado" : "Pendiente"}
               </span>
             </div>
             <div>
-              <h4 className="text-xs font-bold text-slate-900">Cédula de Ciudadanía</h4>
+              <h4 className="text-xs font-semibold text-slate-900">Cédula de Ciudadanía</h4>
               <p className="text-[11px] text-slate-500 mt-0.5">Documento de identidad nacional</p>
             </div>
             {idCardUrl ? (
               <button
                 type="button"
                 onClick={() => openSecureDocument(idCardUrl)}
-                className="text-[11px] font-semibold text-emerald-700 hover:underline flex items-center gap-1"
+                className="text-[11px] font-medium text-emerald-700 hover:underline flex items-center gap-1"
               >
                 <span>Ver Documento_Identidad.pdf</span>
                 <ExternalLink className="w-3 h-3" />
@@ -324,12 +324,12 @@ export default function DocumentosPage() {
       </div>
 
       {/* RED DE ACADEMIAS ALIADAS AUTORIZADAS */}
-      <div id="academias" className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-subtle space-y-4">
+      <div id="academias" className="bg-white border border-slate-200/90 rounded-lg p-6 shadow-subtle space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <div className="flex items-center gap-2">
-              <GraduationCap className="w-5 h-5 text-amber-600" strokeWidth={1.75} />
-              <h3 className="text-sm font-bold text-slate-900">
+              <GraduationCap className="w-5 h-5 text-slate-700" strokeWidth={1.75} />
+              <h3 className="text-sm font-semibold text-slate-900 tracking-tight">
                 Red de Academias Aliadas Autorizadas (SuperVigilancia)
               </h3>
             </div>
@@ -358,11 +358,11 @@ export default function DocumentosPage() {
               return (
                 <div
                   key={acad.id}
-                  className="p-4 rounded-xl border border-slate-200/80 bg-slate-50 flex flex-col justify-between space-y-3 hover:border-slate-300 transition-colors"
+                  className="p-4 rounded-lg border border-slate-200/80 bg-slate-50 flex flex-col justify-between space-y-3 hover:border-slate-300 transition-colors"
                 >
                   <div className="space-y-1.5">
                     <div className="flex items-start justify-between gap-2">
-                      <h4 className="text-xs font-bold text-slate-900 leading-snug">
+                      <h4 className="text-xs font-semibold text-slate-900 leading-snug">
                         {acad.name}
                       </h4>
                       <span className="badge-amber text-[9px] px-1.5 py-0.5 whitespace-nowrap">
@@ -375,8 +375,8 @@ export default function DocumentosPage() {
                       <span>{acad.city}</span>
                     </div>
 
-                    <div className="text-[10px] text-slate-400 font-mono">
-                      Código de Convenio: <span className="font-bold text-slate-700">{acad.referral_code || "FUERZA2026"}</span>
+                    <div className="text-[10px] text-slate-400 font-mono tabular-nums">
+                      Código de Convenio: <span className="font-semibold text-slate-700">{acad.referral_code || "FUERZA2026"}</span>
                     </div>
                   </div>
 
@@ -384,7 +384,7 @@ export default function DocumentosPage() {
                     href={acadLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn-emerald w-full py-2 px-3 text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs"
+                    className="btn-emerald w-full h-9 px-3 text-xs font-medium flex items-center justify-center gap-1.5"
                   >
                     <MessageCircle className="w-3.5 h-3.5" strokeWidth={1.75} />
                     <span>Contactar por WhatsApp</span>
@@ -394,7 +394,7 @@ export default function DocumentosPage() {
             })}
           </div>
         ) : (
-          <div className="p-6 rounded-xl border border-dashed border-slate-200 text-center text-slate-400 text-xs">
+          <div className="p-6 rounded-lg border border-dashed border-slate-200 text-center text-slate-400 text-xs">
             <p className="font-medium text-slate-600">Consulte nuestras academias asociadas en Bogotá, Medellín y Cali.</p>
             <p className="text-[11px] text-slate-400 mt-1">
               Comuníquese a la línea de soporte para acceder a los convenios de hasta 15% de descuento en su certificado.

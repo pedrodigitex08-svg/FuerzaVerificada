@@ -323,35 +323,35 @@ export default function AdminEstudiosPage() {
     switch (status) {
       case "solicitado":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-blue-50/80 text-blue-700 border border-blue-200/70">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
             Solicitado
           </span>
         );
       case "agendado":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-amber-50/80 text-amber-800 border border-amber-200/70">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
             Agendado
           </span>
         );
       case "en_proceso":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-indigo-50/80 text-indigo-700 border border-indigo-200/70">
             <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
             En Proceso
           </span>
         );
       case "aprobado":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-emerald-50/80 text-emerald-700 border border-emerald-200/60">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
             Aprobado Sin Riesgo
           </span>
         );
       case "rechazado_riesgo":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-rose-50/80 text-rose-700 border border-rose-200/60">
             <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
             Riesgo Identificado
           </span>
@@ -365,7 +365,7 @@ export default function AdminEstudiosPage() {
     <div className="space-y-6">
       {/* Toast Notification */}
       {notification && (
-        <div className="p-3.5 rounded-xl bg-slate-900 text-white text-xs font-semibold flex items-center justify-between border border-slate-800 shadow-elevated animate-in fade-in">
+        <div className="p-3.5 rounded-lg bg-slate-900 text-white text-xs font-medium flex items-center justify-between border border-slate-800 shadow-card animate-in fade-in">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
             <span>{notification}</span>
@@ -382,7 +382,7 @@ export default function AdminEstudiosPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200/80">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+          <h1 className="text-lg font-semibold text-slate-900 tracking-tight flex items-center gap-2">
             Bandeja Operativa: Estudios de Seguridad y Validación de Personal
           </h1>
           <p className="text-xs text-slate-500 font-normal">
@@ -397,7 +397,7 @@ export default function AdminEstudiosPage() {
               setNotification("Bandeja operativa sincronizada con Supabase.");
               setTimeout(() => setNotification(null), 3000);
             }}
-            className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5"
+            className="btn-secondary text-xs h-9 px-3 flex items-center gap-1.5"
             title="Recargar órdenes y candidatos"
           >
             <RefreshCw className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
@@ -407,19 +407,19 @@ export default function AdminEstudiosPage() {
       </div>
 
       {/* MODULE TABS: ESTUDIOS B2B vs VALIDACIÓN CANDIDATOS */}
-      <div className="flex border-b border-slate-200 gap-2">
+      <div className="flex border-b border-slate-200/80 gap-2">
         <button
           type="button"
           onClick={() => setActiveTab("ordenes")}
-          className={`pb-3 px-4 text-xs font-bold transition-all border-b-2 flex items-center gap-2 ${
+          className={`pb-3 px-4 text-xs font-semibold transition-colors border-b-2 flex items-center gap-2 ${
             activeTab === "ordenes"
-              ? "border-amber-500 text-slate-900"
+              ? "border-slate-900 text-slate-900"
               : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          <Shield className="w-4 h-4 text-amber-500" strokeWidth={1.75} />
+          <Shield className="w-4 h-4 text-slate-700" strokeWidth={1.75} />
           <span>Órdenes de Poligrafía & Visitas</span>
-          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
+          <span className="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600">
             {totalOrders}
           </span>
         </button>
@@ -427,15 +427,15 @@ export default function AdminEstudiosPage() {
         <button
           type="button"
           onClick={() => setActiveTab("candidatos")}
-          className={`pb-3 px-4 text-xs font-bold transition-all border-b-2 flex items-center gap-2 ${
+          className={`pb-3 px-4 text-xs font-semibold transition-colors border-b-2 flex items-center gap-2 ${
             activeTab === "candidatos"
-              ? "border-amber-500 text-slate-900"
+              ? "border-slate-900 text-slate-900"
               : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
           <BadgeCheck className="w-4 h-4 text-emerald-600" strokeWidth={1.75} />
           <span>Validación de Candidatos & Documentos</span>
-          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
+          <span className="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600">
             {totalCandidates}
           </span>
         </button>
@@ -446,53 +446,53 @@ export default function AdminEstudiosPage() {
         <div className="space-y-6">
           {/* KPI BENTO GRID */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-subtle">
+            <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-500">Total Órdenes</span>
-                <span className="p-1.5 rounded-lg bg-slate-100 text-slate-600">
+                <span className="text-xs font-medium text-slate-500">Total Órdenes</span>
+                <span className="p-1.5 rounded-md bg-slate-100 text-slate-600">
                   <FileCheck2 className="w-4 h-4" strokeWidth={1.75} />
                 </span>
               </div>
-              <div className="mt-2 text-2xl font-bold text-slate-900 tabular-nums">
+              <div className="mt-2 text-2xl font-semibold text-slate-900 tracking-tight tabular-nums">
                 {totalOrders}
               </div>
               <p className="mt-1 text-[11px] text-slate-400">Radicadas por empresas</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-subtle">
+            <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-500">Por Agendar</span>
-                <span className="p-1.5 rounded-lg bg-blue-50 text-blue-600">
+                <span className="text-xs font-medium text-slate-500">Por Agendar</span>
+                <span className="p-1.5 rounded-md bg-blue-50 text-blue-600">
                   <Clock className="w-4 h-4" strokeWidth={1.75} />
                 </span>
               </div>
-              <div className="mt-2 text-2xl font-bold text-blue-600 tabular-nums">
+              <div className="mt-2 text-2xl font-semibold text-blue-600 tracking-tight tabular-nums">
                 {pendingScheduling}
               </div>
               <p className="mt-1 text-[11px] text-slate-400">Requieren cita inmediata</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-subtle">
+            <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-500">En Evaluación</span>
-                <span className="p-1.5 rounded-lg bg-amber-50 text-amber-600">
+                <span className="text-xs font-medium text-slate-500">En Evaluación</span>
+                <span className="p-1.5 rounded-md bg-amber-50 text-amber-600">
                   <Shield className="w-4 h-4" strokeWidth={1.75} />
                 </span>
               </div>
-              <div className="mt-2 text-2xl font-bold text-amber-600 tabular-nums">
+              <div className="mt-2 text-2xl font-semibold text-amber-600 tracking-tight tabular-nums">
                 {inEvaluation}
               </div>
               <p className="mt-1 text-[11px] text-slate-400">En polígrafo o visita</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-subtle">
+            <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-500">Dictámenes Listos</span>
-                <span className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600">
+                <span className="text-xs font-medium text-slate-500">Dictámenes Listos</span>
+                <span className="p-1.5 rounded-md bg-emerald-50 text-emerald-600">
                   <CheckCircle2 className="w-4 h-4" strokeWidth={1.75} />
                 </span>
               </div>
-              <div className="mt-2 text-2xl font-bold text-emerald-600 tabular-nums">
+              <div className="mt-2 text-2xl font-semibold text-emerald-600 tracking-tight tabular-nums">
                 {completedApproved}{" "}
                 <span className="text-xs font-normal text-rose-500">({completedRejected} no aptos)</span>
               </div>
@@ -501,12 +501,12 @@ export default function AdminEstudiosPage() {
           </div>
 
           {/* FILTER & SEARCH BAR */}
-          <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-subtle space-y-3">
+          <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle space-y-3">
             <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
               {/* Search Input */}
               <div className="relative flex-1 max-w-md">
                 <Search
-                  className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"
+                  className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"
                   strokeWidth={1.75}
                 />
                 <input
@@ -514,7 +514,7 @@ export default function AdminEstudiosPage() {
                   placeholder="Buscar por candidato, cédula, empresa o cargo..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"
+                  className="w-full h-10 pl-9 pr-3 text-sm rounded-md border border-slate-200/90 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
                 />
               </div>
 
@@ -533,16 +533,16 @@ export default function AdminEstudiosPage() {
                     <button
                       key={chip.id}
                       onClick={() => setSelectedFilter(chip.id)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors border ${
                         active
-                          ? "bg-slate-900 border-slate-900 text-white shadow-sm"
-                          : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                          ? "bg-slate-900 border-slate-900 text-white shadow-xs"
+                          : "bg-white border-slate-200/90 text-slate-600 hover:bg-slate-50"
                       }`}
                     >
                       <span>{chip.label}</span>
                       <span
-                        className={`ml-1.5 text-[10px] tabular-nums font-mono px-1.5 py-0.2 rounded ${
-                          active ? "bg-slate-800 text-amber-300" : "bg-slate-100 text-slate-500"
+                        className={`ml-1.5 text-[10px] tabular-nums font-mono px-1.5 py-0.5 rounded-md ${
+                          active ? "bg-slate-800 text-emerald-300" : "bg-slate-100 text-slate-500"
                         }`}
                       >
                         {chip.count}
@@ -555,10 +555,10 @@ export default function AdminEstudiosPage() {
           </div>
 
           {/* HIGH DENSITY ORDERS TABLE */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl shadow-subtle overflow-hidden">
+          <div className="bg-white border border-slate-200/90 rounded-lg shadow-subtle overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50/75 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <thead className="bg-slate-50/80 border-b border-slate-200/90 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                   <tr>
                     <th className="py-3 px-4">Candidato / Documento</th>
                     <th className="py-3 px-4">Empresa Solicitante</th>
@@ -581,21 +581,21 @@ export default function AdminEstudiosPage() {
                       <tr
                         key={order.id}
                         onClick={() => setSelectedOrderForDrawer(order)}
-                        className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                        className="hover:bg-slate-50/70 transition-colors cursor-pointer group"
                       >
                         {/* Candidate */}
                         <td className="py-3 px-4">
-                          <div className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                          <div className="font-semibold text-slate-900 group-hover:text-slate-700 transition-colors">
                             {order.candidate_name}
                           </div>
-                          <div className="text-[11px] text-slate-500 font-mono">
+                          <div className="text-[11px] text-slate-500 font-mono tabular-nums">
                             CC. {order.national_id} • {order.job_title}
                           </div>
                         </td>
 
                         {/* Company */}
                         <td className="py-3 px-4">
-                          <div className="font-semibold text-slate-800 flex items-center gap-1.5">
+                          <div className="font-medium text-slate-800 flex items-center gap-1.5">
                             <Building2 className="w-3.5 h-3.5 text-slate-400" />
                             {order.company_name}
                           </div>
@@ -604,13 +604,13 @@ export default function AdminEstudiosPage() {
                         {/* Scope */}
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-1">
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium">
                               Antecedentes
                             </span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium">
                               Visita
                             </span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 font-semibold border border-amber-200/60">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-50/80 text-amber-800 font-medium border border-amber-200/70">
                               Polígrafo
                             </span>
                           </div>
@@ -623,7 +623,7 @@ export default function AdminEstudiosPage() {
 
                         {/* Scheduled Date / Progress */}
                         <td className="py-3 px-4 text-slate-600 max-w-xs">
-                          <div className="truncate text-xs font-medium">
+                          <div className="truncate text-xs font-medium tabular-nums">
                             {order.scheduled_date || "Por agendar"}
                           </div>
                         </td>
@@ -637,7 +637,7 @@ export default function AdminEstudiosPage() {
                                 e.stopPropagation();
                                 openSecureDocument(order.report_pdf_url);
                               }}
-                              className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-800"
+                              className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 hover:underline"
                             >
                               <Download className="w-3.5 h-3.5" />
                               <span>Descargar PDF</span>
@@ -656,7 +656,7 @@ export default function AdminEstudiosPage() {
                               e.stopPropagation();
                               setSelectedOrderForDrawer(order);
                             }}
-                            className="btn-secondary text-[11px] py-1 px-3 group-hover:border-slate-400"
+                            className="btn-secondary text-[11px] h-8 px-3 group-hover:border-slate-400"
                           >
                             Gestionar
                           </button>
@@ -676,53 +676,53 @@ export default function AdminEstudiosPage() {
         <div className="space-y-6">
           {/* CANDIDATES KPI BENTO GRID */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-subtle">
+            <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-500">Total Candidatos</span>
-                <span className="p-1.5 rounded-lg bg-slate-100 text-slate-600">
+                <span className="text-xs font-medium text-slate-500">Total Candidatos</span>
+                <span className="p-1.5 rounded-md bg-slate-100 text-slate-600">
                   <User className="w-4 h-4" strokeWidth={1.75} />
                 </span>
               </div>
-              <div className="mt-2 text-2xl font-bold text-slate-900 tabular-nums">
+              <div className="mt-2 text-2xl font-semibold text-slate-900 tracking-tight tabular-nums">
                 {totalCandidates}
               </div>
               <p className="mt-1 text-[11px] text-slate-400">Registrados en la plataforma</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-subtle">
+            <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-500">Perfiles Verificados</span>
-                <span className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600">
+                <span className="text-xs font-medium text-slate-500">Perfiles Verificados</span>
+                <span className="p-1.5 rounded-md bg-emerald-50 text-emerald-600">
                   <BadgeCheck className="w-4 h-4" strokeWidth={1.75} />
                 </span>
               </div>
-              <div className="mt-2 text-2xl font-bold text-emerald-600 tabular-nums">
+              <div className="mt-2 text-2xl font-semibold text-emerald-600 tracking-tight tabular-nums">
                 {verifiedCandidates}
               </div>
               <p className="mt-1 text-[11px] text-slate-400">Con sello oficial activo</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-subtle">
+            <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-500">Sin Validar</span>
-                <span className="p-1.5 rounded-lg bg-amber-50 text-amber-600">
+                <span className="text-xs font-medium text-slate-500">Sin Validar</span>
+                <span className="p-1.5 rounded-md bg-amber-50 text-amber-600">
                   <Clock className="w-4 h-4" strokeWidth={1.75} />
                 </span>
               </div>
-              <div className="mt-2 text-2xl font-bold text-amber-600 tabular-nums">
+              <div className="mt-2 text-2xl font-semibold text-amber-600 tracking-tight tabular-nums">
                 {unverifiedCandidates}
               </div>
               <p className="mt-1 text-[11px] text-slate-400">Pendientes de revisión</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-subtle">
+            <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-500">Con Documentos</span>
-                <span className="p-1.5 rounded-lg bg-blue-50 text-blue-600">
+                <span className="text-xs font-medium text-slate-500">Con Documentos</span>
+                <span className="p-1.5 rounded-md bg-blue-50 text-blue-600">
                   <FileText className="w-4 h-4" strokeWidth={1.75} />
                 </span>
               </div>
-              <div className="mt-2 text-2xl font-bold text-blue-600 tabular-nums">
+              <div className="mt-2 text-2xl font-semibold text-blue-600 tracking-tight tabular-nums">
                 {candidatesWithDocs}
               </div>
               <p className="mt-1 text-[11px] text-slate-400">Archivos adjuntos cargados</p>
@@ -730,12 +730,12 @@ export default function AdminEstudiosPage() {
           </div>
 
           {/* CANDIDATES FILTER & SEARCH BAR */}
-          <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-subtle space-y-3">
+          <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle space-y-3">
             <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
               {/* Search Input */}
               <div className="relative flex-1 max-w-md">
                 <Search
-                  className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"
+                  className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"
                   strokeWidth={1.75}
                 />
                 <input
@@ -743,7 +743,7 @@ export default function AdminEstudiosPage() {
                   placeholder="Buscar por nombre, cédula, cargo o ciudad..."
                   value={candidateSearchTerm}
                   onChange={(e) => setCandidateSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"
+                  className="w-full h-10 pl-9 pr-3 text-sm rounded-md border border-slate-200/90 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
                 />
               </div>
 
@@ -759,16 +759,16 @@ export default function AdminEstudiosPage() {
                     <button
                       key={chip.id}
                       onClick={() => setCandidateFilter(chip.id as any)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors border ${
                         active
-                          ? "bg-slate-900 border-slate-900 text-white shadow-sm"
-                          : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                          ? "bg-slate-900 border-slate-900 text-white shadow-xs"
+                          : "bg-white border-slate-200/90 text-slate-600 hover:bg-slate-50"
                       }`}
                     >
                       <span>{chip.label}</span>
                       <span
-                        className={`ml-1.5 text-[10px] tabular-nums font-mono px-1.5 py-0.2 rounded ${
-                          active ? "bg-slate-800 text-amber-300" : "bg-slate-100 text-slate-500"
+                        className={`ml-1.5 text-[10px] tabular-nums font-mono px-1.5 py-0.5 rounded-md ${
+                          active ? "bg-slate-800 text-emerald-300" : "bg-slate-100 text-slate-500"
                         }`}
                       >
                         {chip.count}
@@ -781,10 +781,10 @@ export default function AdminEstudiosPage() {
           </div>
 
           {/* CANDIDATES VERIFICATION TABLE */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl shadow-subtle overflow-hidden">
+          <div className="bg-white border border-slate-200/90 rounded-lg shadow-subtle overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50/75 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <thead className="bg-slate-50/80 border-b border-slate-200/90 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                   <tr>
                     <th className="py-3 px-4">Candidato / Identificación</th>
                     <th className="py-3 px-4">Curso de Seguridad</th>
@@ -806,33 +806,33 @@ export default function AdminEstudiosPage() {
                     filteredCandidates.map((cand) => (
                       <tr
                         key={cand.user_id}
-                        className="hover:bg-slate-50/80 transition-colors group"
+                        className="hover:bg-slate-50/70 transition-colors group"
                       >
                         {/* Candidate & ID */}
                         <td className="py-3 px-4">
-                          <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                          <div className="font-semibold text-slate-900 flex items-center gap-1.5">
                             <span>{cand.full_name}</span>
                             {cand.is_verified_by_admin && (
                               <BadgeCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                             )}
                           </div>
-                          <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                          <div className="text-[11px] text-slate-500 font-mono tabular-nums mt-0.5">
                             CC. {cand.national_id} • {cand.primary_role}
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">
+                          <div className="text-[10px] text-slate-400 tabular-nums mt-0.5">
                             {cand.city} {cand.locality ? `(${cand.locality})` : ""} • Tel: {cand.phone_whatsapp}
                           </div>
                         </td>
 
                         {/* Course & Credential */}
                         <td className="py-3 px-4">
-                          <div className="font-semibold text-slate-800">
+                          <div className="font-medium text-slate-800">
                             {cand.course_name}
                           </div>
                           <div className="text-[11px] text-slate-500">
                             {cand.academy_name}
                           </div>
-                          <div className="text-[10px] text-amber-700 font-mono mt-0.5">
+                          <div className="text-[10px] text-slate-600 font-mono tabular-nums mt-0.5">
                             Credencial: {cand.credential_number || "Por validar"}
                           </div>
                         </td>
@@ -844,14 +844,14 @@ export default function AdminEstudiosPage() {
                               <button
                                 type="button"
                                 onClick={() => openSecureDocument(cand.cedula_url)}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors border border-blue-200/60"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-blue-50/80 text-blue-700 hover:bg-blue-100 transition-colors border border-blue-200/60"
                                 title="Ver documento de identidad"
                               >
                                 <FileText className="w-3 h-3" />
                                 <span>Cédula</span>
                               </button>
                             ) : (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-400">
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-400">
                                 Sin Cédula
                               </span>
                             )}
@@ -860,14 +860,14 @@ export default function AdminEstudiosPage() {
                               <button
                                 type="button"
                                 onClick={() => openSecureDocument(cand.resume_url)}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors border border-indigo-200/60"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-indigo-50/80 text-indigo-700 hover:bg-indigo-100 transition-colors border border-indigo-200/60"
                                 title="Ver hoja de vida"
                               >
                                 <Download className="w-3 h-3" />
                                 <span>Hoja de Vida</span>
                               </button>
                             ) : (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-400">
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-400">
                                 Sin HV
                               </span>
                             )}
@@ -876,14 +876,14 @@ export default function AdminEstudiosPage() {
                               <button
                                 type="button"
                                 onClick={() => openSecureDocument(cand.diploma_url)}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors border border-amber-200/60"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-amber-50/80 text-amber-800 hover:bg-amber-100 transition-colors border border-amber-200/60"
                                 title="Ver diploma de curso"
                               >
                                 <Award className="w-3 h-3" />
                                 <span>Diploma</span>
                               </button>
                             ) : (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-400">
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-400">
                                 Sin Diploma
                               </span>
                             )}
@@ -892,7 +892,7 @@ export default function AdminEstudiosPage() {
                               <button
                                 type="button"
                                 onClick={() => openSecureDocument(cand.judicial_url)}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors border border-emerald-200/60"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-50/80 text-emerald-700 hover:bg-emerald-100 transition-colors border border-emerald-200/60"
                                 title="Ver antecedentes judiciales"
                               >
                                 <Shield className="w-3 h-3" />
@@ -904,7 +904,7 @@ export default function AdminEstudiosPage() {
                               <button
                                 type="button"
                                 onClick={() => openSecureDocument(cand.medical_url)}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors border border-rose-200/60"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-rose-50/80 text-rose-700 hover:bg-rose-100 transition-colors border border-rose-200/60"
                                 title="Ver examen médico"
                               >
                                 <FileCheck2 className="w-3 h-3" />
@@ -917,12 +917,12 @@ export default function AdminEstudiosPage() {
                         {/* Verification Status Badge */}
                         <td className="py-3 px-4 whitespace-nowrap">
                           {cand.is_verified_by_admin ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-emerald-50/80 text-emerald-700 border border-emerald-200/60">
                               <BadgeCheck className="w-3.5 h-3.5 text-emerald-600" />
                               Perfil Verificado
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200/80">
                               <Clock className="w-3.5 h-3.5 text-slate-400" />
                               Sin Validar
                             </span>
@@ -935,7 +935,7 @@ export default function AdminEstudiosPage() {
                             <button
                               type="button"
                               onClick={() => handleToggleCandidateVerification(cand)}
-                              className="btn-secondary text-[11px] py-1 px-3 text-rose-600 hover:border-rose-300 hover:bg-rose-50 transition-colors inline-flex items-center gap-1"
+                              className="btn-secondary text-[11px] h-8 px-3 text-rose-600 hover:border-rose-300 hover:bg-rose-50 transition-colors inline-flex items-center gap-1"
                               title="Revocar sello de verificación"
                             >
                               <X className="w-3.5 h-3.5" />
@@ -945,7 +945,7 @@ export default function AdminEstudiosPage() {
                             <button
                               type="button"
                               onClick={() => handleToggleCandidateVerification(cand)}
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[11px] py-1 px-3 rounded-lg shadow-sm transition-colors inline-flex items-center gap-1"
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-[11px] h-8 px-3 rounded-md shadow-xs transition-colors inline-flex items-center gap-1"
                               title="Validar antecedentes y otorgar sello oficial"
                             >
                               <Check className="w-3.5 h-3.5" />
