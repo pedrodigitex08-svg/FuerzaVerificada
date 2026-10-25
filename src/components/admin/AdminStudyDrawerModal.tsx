@@ -231,15 +231,16 @@ export function AdminStudyDrawerModal({
             {/* Soportes y HV PDF */}
             <div className="pt-2 flex flex-wrap gap-2">
               {order.resume_pdf_url ? (
-                <button
-                  type="button"
-                  onClick={() => openSecureDocument(order.resume_pdf_url)}
+                <a
+                  href={order.resume_pdf_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="btn-secondary text-[11px] h-8 px-2.5 inline-flex items-center gap-1.5"
                 >
                   <FileText className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
-                  <span>Hoja de Vida (PDF Firmado)</span>
+                  <span>Ver / Descargar Hoja de Vida cargada</span>
                   <ExternalLink className="w-3 h-3 text-slate-400" strokeWidth={1.75} />
-                </button>
+                </a>
               ) : (
                 <span className="text-[11px] text-slate-400 py-1">Sin HV adjunta</span>
               )}

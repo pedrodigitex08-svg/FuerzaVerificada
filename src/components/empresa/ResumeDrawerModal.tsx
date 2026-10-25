@@ -155,14 +155,15 @@ export function ResumeDrawerModal({
                     </div>
                   </div>
                   {candidate.resume_pdf_url ? (
-                    <button
-                      type="button"
-                      onClick={() => openSecureDocument(candidate.resume_pdf_url)}
-                      className="btn-secondary text-xs h-8 px-3 font-medium"
+                    <a
+                      href={candidate.resume_pdf_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-secondary text-xs h-8 px-3 font-semibold text-slate-800 hover:text-slate-950 inline-flex items-center gap-1.5 transition-colors"
                     >
-                      <Download className="w-3.5 h-3.5" strokeWidth={1.75} />
-                      Ver PDF
-                    </button>
+                      <Download className="w-3.5 h-3.5 text-slate-700" strokeWidth={1.75} />
+                      Ver / Descargar Hoja de Vida cargada
+                    </a>
                   ) : (
                     <span className="text-xs text-slate-400 italic">No adjuntado</span>
                   )}

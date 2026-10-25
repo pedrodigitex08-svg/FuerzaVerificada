@@ -21,6 +21,8 @@ import {
   Bike,
   Check,
   BadgeCheck,
+  AlertCircle,
+  ExternalLink,
 } from "lucide-react";
 import { CourseSemaphoreBanner } from "@/components/guarda/CourseSemaphoreBanner";
 import { SecurityRoleType, WorkExperienceItem } from "@/types/database";
@@ -123,6 +125,9 @@ export default function OnboardingPage() {
             if (candProfile.motorcycle_cc) {
               setMotorcycleCc(candProfile.motorcycle_cc);
             }
+            if (candProfile.resume_pdf_url) {
+              setExistingResumeUrl(candProfile.resume_pdf_url);
+            }
           }
         }
       } catch {}
@@ -136,6 +141,8 @@ export default function OnboardingPage() {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [courseFile, setCourseFile] = useState<File | null>(null);
   const [cedulaFile, setCedulaFile] = useState<File | null>(null);
+  const [existingResumeUrl, setExistingResumeUrl] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleAddExperience = () => {
     if (!newCompany || !newRole) return;
@@ -157,126 +164,157 @@ export default function OnboardingPage() {
   };
 
   const handleCompleteOnboarding = async () => {
+    setErrorMsg(null);
     setLoading(true);
 
     try {
-      const { data: authData } = await supabase.auth.getUser();
-      const userId = authData?.user?.id;
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError || !authData?.user) {
+        throw new Error("No se detectó una sesión activa. Por favor inicia sesión nuevamente.");
+      }
+      const userId = authData.user.id;
 
       let uploadedResumeUrl: string | null = null;
       let uploadedCourseUrl: string | null = null;
       let uploadedCedulaUrl: string | null = null;
 
-      if (userId) {
-        // 1. Upsert public.profiles para garantizar llave foránea antes de candidate_profiles
-        await supabase.from("profiles").upsert(
-          {
-            id: userId,
-            role: "candidate",
-            full_name: fullName.trim() || "Personal Operativo",
-            phone_whatsapp: phone.trim(),
-            email: authData?.user?.email || "",
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "id" }
-        );
+      // 1. Upsert public.profiles para garantizar llave foránea antes de candidate_profiles
+      const { error: profileError } = await supabase.from("profiles").upsert(
+        {
+          id: userId,
+          role: "candidate",
+          full_name: fullName.trim() || "Personal Operativo",
+          phone_whatsapp: phone.trim(),
+          email: authData.user.email || "",
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "id" }
+      );
 
-        // 2. Upload files to Storage bucket 'documents' if provided
-        const uploadDoc = async (file: File, folder: string) => {
-          try {
-            const ext = file.name.split(".").pop() || "pdf";
-            const path = `${folder}/${userId}-${Date.now()}.${ext}`;
-            const { data: upData, error: upErr } = await supabase.storage
-              .from("documents")
-              .upload(path, file, { upsert: true });
-            if (!upErr && upData) {
-              const { data: pub } = supabase.storage
-                .from("documents")
-                .getPublicUrl(upData.path);
-              return pub.publicUrl;
-            }
-          } catch {}
-          return null;
-        };
+      if (profileError) {
+        console.error("Error al actualizar perfil base:", profileError);
+      }
 
-        if (resumeFile) uploadedResumeUrl = await uploadDoc(resumeFile, "resumes");
-        if (courseFile) uploadedCourseUrl = await uploadDoc(courseFile, "courses");
-        if (cedulaFile) uploadedCedulaUrl = await uploadDoc(cedulaFile, "id_cards");
+      // 2. Subida real a Supabase Storage (bucket: 'documents')
+      const uploadDoc = async (file: File, folder: "cvs" | "courses" | "id_cards") => {
+        const cleanFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const filePath = `${folder}/${userId}/${Date.now()}_${cleanFileName}`;
 
-        const validPrimaryRole =
-          primaryRole === "Operador de Medios Tecnológicos"
-            ? "Operador Medios Tecnológicos"
-            : primaryRole;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("documents")
+          .upload(filePath, file, { upsert: true });
 
-        // 3. Upsert candidate_profiles
-        await supabase.from("candidate_profiles").upsert(
-          {
-            user_id: userId,
-            national_id: nationalId.trim() || `CC-${userId.slice(0, 8)}`,
-            city,
-            locality_neighborhood: locality,
-            primary_role: validPrimaryRole,
-            years_experience: yearsExperience,
-            has_military_booklet: hasMilitaryBooklet,
-            has_own_motorcycle: hasMotorcycle,
-            motorcycle_cc: hasMotorcycle ? motorcycleCc : null,
-            available_immediately: true,
-            resume_pdf_url: uploadedResumeUrl,
-            work_experience_json: experiences as any,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id" }
-        );
-
-        // 4. Insert/update candidate_courses if completion date was provided
-        if (courseCompletionDate) {
-          const compDateObj = new Date(courseCompletionDate);
-          compDateObj.setFullYear(compDateObj.getFullYear() + 1);
-          const computedExpirationDate = compDateObj.toISOString().split("T")[0];
-
-          await supabase.from("candidate_courses").insert({
-            candidate_id: userId,
-            course_name: `Reentrenamiento - ${validPrimaryRole}`,
-            academy_name: courseAcademy.trim() || "Academia Autorizada SuperVigilancia",
-            completion_date: courseCompletionDate,
-            expiration_date: computedExpirationDate,
-            nro_credencial_supervigilancia: credencialSupervigilancia.trim() || null,
-            certificate_file_url: uploadedCourseUrl,
-            is_verified_by_admin: false,
-          });
+        if (uploadError) {
+          console.error(`Error en Supabase Storage (${folder}):`, uploadError);
+          throw new Error(`Error al subir ${file.name} al bucket de documentos: ${uploadError.message}`);
         }
 
-        // 5. Record documents in candidate_documents (usando columnas reales doc_type y file_url)
-        const docsToInsert: any[] = [];
-        if (resumeFile && uploadedResumeUrl) {
-          docsToInsert.push({
-            candidate_id: userId,
-            doc_type: "hoja_de_vida_pdf",
-            file_url: uploadedResumeUrl,
-          });
-        }
-        if (courseFile && uploadedCourseUrl) {
-          docsToInsert.push({
-            candidate_id: userId,
-            doc_type: "diploma_curso",
-            file_url: uploadedCourseUrl,
-          });
-        }
-        if (cedulaFile && uploadedCedulaUrl) {
-          docsToInsert.push({
-            candidate_id: userId,
-            doc_type: "cedula_ciudadania",
-            file_url: uploadedCedulaUrl,
-          });
-        }
-        if (docsToInsert.length > 0) {
-          await supabase.from("candidate_documents").insert(docsToInsert);
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("documents").getPublicUrl(filePath);
+
+        return publicUrl;
+      };
+
+      if (resumeFile) {
+        uploadedResumeUrl = await uploadDoc(resumeFile, "cvs");
+      }
+      if (courseFile) {
+        uploadedCourseUrl = await uploadDoc(courseFile, "courses");
+      }
+      if (cedulaFile) {
+        uploadedCedulaUrl = await uploadDoc(cedulaFile, "id_cards");
+      }
+
+      const validPrimaryRole =
+        primaryRole === "Operador de Medios Tecnológicos"
+          ? "Operador Medios Tecnológicos"
+          : primaryRole;
+
+      const finalResumeUrl = uploadedResumeUrl || existingResumeUrl || null;
+
+      // 3. Upsert en public.candidate_profiles asegurando la existencia y guardando resume_pdf_url
+      const { error: candProfileError } = await supabase.from("candidate_profiles").upsert(
+        {
+          user_id: userId,
+          national_id: nationalId.trim() || `CC-${userId.slice(0, 8)}`,
+          city,
+          locality_neighborhood: locality,
+          primary_role: validPrimaryRole,
+          years_experience: yearsExperience,
+          has_military_booklet: hasMilitaryBooklet,
+          has_own_motorcycle: hasMotorcycle,
+          motorcycle_cc: hasMotorcycle ? motorcycleCc : null,
+          available_immediately: true,
+          resume_pdf_url: finalResumeUrl,
+          work_experience_json: experiences as any,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" }
+      );
+
+      if (candProfileError) {
+        throw new Error(`Error guardando expediente del candidato: ${candProfileError.message}`);
+      }
+
+      // 4. Insert/update candidate_courses si se proporcionó fecha de curso
+      if (courseCompletionDate) {
+        const compDateObj = new Date(courseCompletionDate);
+        compDateObj.setFullYear(compDateObj.getFullYear() + 1);
+        const computedExpirationDate = compDateObj.toISOString().split("T")[0];
+
+        const { error: courseError } = await supabase.from("candidate_courses").insert({
+          candidate_id: userId,
+          course_name: `Reentrenamiento - ${validPrimaryRole}`,
+          academy_name: courseAcademy.trim() || "Academia Autorizada SuperVigilancia",
+          completion_date: courseCompletionDate,
+          expiration_date: computedExpirationDate,
+          nro_credencial_supervigilancia: credencialSupervigilancia.trim() || null,
+          certificate_file_url: uploadedCourseUrl,
+          is_verified_by_admin: false,
+        });
+
+        if (courseError) {
+          console.warn("Aviso al registrar curso:", courseError);
         }
       }
 
+      // 5. Registrar documento en public.candidate_documents guardando el publicUrl
+      const docsToInsert: any[] = [];
+      if (uploadedResumeUrl) {
+        docsToInsert.push({
+          candidate_id: userId,
+          doc_type: "hoja_de_vida_pdf",
+          file_url: uploadedResumeUrl,
+        });
+      }
+      if (uploadedCourseUrl) {
+        docsToInsert.push({
+          candidate_id: userId,
+          doc_type: "diploma_curso",
+          file_url: uploadedCourseUrl,
+        });
+      }
+      if (uploadedCedulaUrl) {
+        docsToInsert.push({
+          candidate_id: userId,
+          doc_type: "cedula_ciudadania",
+          file_url: uploadedCedulaUrl,
+        });
+      }
+
+      if (docsToInsert.length > 0) {
+        const { error: docsError } = await supabase.from("candidate_documents").insert(docsToInsert);
+        if (docsError) {
+          console.warn("Aviso al registrar en candidate_documents:", docsError);
+        }
+      }
+
+      // Redirigir al feed de vacantes únicamente tras guardar exitosamente
       router.push("/guarda/vacantes");
-    } catch {
-      router.push("/guarda/vacantes");
+    } catch (err: any) {
+      console.error("Error al completar onboarding:", err);
+      setErrorMsg(err.message || "Ocurrió un error al guardar los documentos y el perfil.");
     } finally {
       setLoading(false);
     }
@@ -632,6 +670,22 @@ export default function OnboardingPage() {
                     Archivo listo para carga: {resumeFile.name}
                   </div>
                 )}
+                {existingResumeUrl && !resumeFile && (
+                  <div className="p-2.5 rounded-md bg-emerald-50/80 border border-emerald-200/80 text-xs text-emerald-800 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 font-medium">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      Hoja de Vida actual cargada en el sistema
+                    </span>
+                    <a
+                      href={existingResumeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold underline hover:text-emerald-950 inline-flex items-center gap-1 text-[11px]"
+                    >
+                      Ver / Descargar archivo <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                )}
               </div>
 
               {/* EXPERIENCIAS */}
@@ -697,6 +751,17 @@ export default function OnboardingPage() {
                 </div>
               </div>
 
+              {/* Mensaje de Error Visible si falla la subida o la base de datos */}
+              {errorMsg && (
+                <div className="p-3.5 rounded-md bg-rose-50 border border-rose-200/90 text-xs text-rose-700 flex items-start gap-2.5 animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" strokeWidth={1.75} />
+                  <div className="space-y-1">
+                    <strong className="block font-semibold">No fue posible completar el guardado:</strong>
+                    <p className="leading-relaxed">{errorMsg}</p>
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-3 pt-3">
                 <button
                   type="button"
@@ -713,7 +778,7 @@ export default function OnboardingPage() {
                   className="btn-emerald w-2/3 h-10 text-xs font-medium"
                 >
                   {loading ? (
-                    "Guardando..."
+                    "Guardando y subiendo archivo..."
                   ) : (
                     <>
                       <CheckCircle2 className="w-4 h-4" strokeWidth={2} />

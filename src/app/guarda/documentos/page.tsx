@@ -256,14 +256,15 @@ export default function DocumentosPage() {
               <p className="text-[11px] text-slate-500 mt-0.5">Formato tradicional descargable</p>
             </div>
             {resumeUrl ? (
-              <button
-                type="button"
-                onClick={() => openSecureDocument(resumeUrl)}
-                className="text-[11px] font-medium text-emerald-700 hover:underline flex items-center gap-1"
+              <a
+                href={resumeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 hover:underline inline-flex items-center gap-1.5"
               >
-                <span>Ver Hoja_de_Vida.pdf</span>
-                <ExternalLink className="w-3 h-3" />
-              </button>
+                <span>Ver / Descargar Hoja de Vida cargada</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
             ) : (
               <span className="text-[10px] text-slate-400 font-mono">Sin archivo</span>
             )}

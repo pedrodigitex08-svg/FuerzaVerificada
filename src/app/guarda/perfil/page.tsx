@@ -17,6 +17,9 @@ import {
   Save,
   Check,
   BadgeCheck,
+  Upload,
+  ExternalLink,
+  AlertCircle,
 } from "lucide-react";
 import { CourseSemaphoreBanner } from "@/components/guarda/CourseSemaphoreBanner";
 import { SecurityRoleType } from "@/types/database";
@@ -49,6 +52,8 @@ export default function PerfilGuardaPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [honeypot, setHoneypot] = useState("");
+  const [uploadingCv, setUploadingCv] = useState(false);
+  const [uploadCvError, setUploadCvError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadCandidateProfile() {
@@ -161,6 +166,87 @@ export default function PerfilGuardaPage() {
       console.error("Error saving profile:", err);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDirectResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadCvError(null);
+    setUploadingCv(true);
+    const supabase = createClient();
+
+    try {
+      const {
+        data: { user },
+        error: userErr,
+      } = await supabase.auth.getUser();
+
+      if (userErr || !user) {
+        throw new Error("No hay una sesión activa de usuario.");
+      }
+
+      // 1. Construir ruta limpia sin caracteres especiales:
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const filePath = `cvs/${user.id}/${Date.now()}_${cleanFileName}`;
+
+      // 2. Subir al bucket 'documents':
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("documents")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) {
+        throw new Error(`Error en Supabase Storage: ${uploadError.message}`);
+      }
+
+      // 3. Obtener URL pública:
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("documents").getPublicUrl(filePath);
+
+      // 4. Asegurar/actualizar candidate_profiles con resume_pdf_url
+      const { error: profileErr } = await supabase.from("candidate_profiles").upsert(
+        {
+          user_id: user.id,
+          national_id: nationalId.trim() || `TEMP-${user.id.slice(0, 8)}`,
+          city,
+          locality_neighborhood: locality,
+          primary_role: primaryRole,
+          years_experience: yearsExperience,
+          has_military_booklet: hasMilitaryBooklet,
+          has_own_motorcycle: hasMotorcycle,
+          motorcycle_cc: hasMotorcycle ? motorcycleCc : null,
+          resume_pdf_url: publicUrl,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" }
+      );
+
+      if (profileErr) {
+        throw new Error(`Error actualizando perfil: ${profileErr.message}`);
+      }
+
+      // 5. Registrar en candidate_documents
+      const { error: docErr } = await supabase.from("candidate_documents").insert({
+        candidate_id: user.id,
+        doc_type: "hoja_de_vida_pdf",
+        file_url: publicUrl,
+      });
+
+      if (docErr) {
+        console.warn("Aviso al registrar en candidate_documents:", docErr);
+      }
+
+      setResumeUrl(publicUrl);
+      setSavedNotice(true);
+      setTimeout(() => setSavedNotice(false), 3000);
+    } catch (err: any) {
+      console.error("Error subiendo Hoja de Vida:", err);
+      setUploadCvError(err.message || "Error al subir el archivo.");
+    } finally {
+      setUploadingCv(false);
+      if (e.target) e.target.value = "";
     }
   };
 
@@ -370,16 +456,27 @@ export default function PerfilGuardaPage() {
             </h3>
 
             {resumeUrl ? (
-              <div className="space-y-2.5 text-xs">
-                <div className="p-3 rounded-lg border border-slate-200/80 bg-slate-50 flex items-center justify-between">
+              <div className="space-y-3 text-xs">
+                <div className="p-3.5 rounded-lg border border-slate-200/80 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5">
-                    <FileText className="w-4 h-4 text-slate-600" strokeWidth={1.75} />
+                    <div className="w-8 h-8 rounded-md bg-white border border-slate-200/90 flex items-center justify-center text-slate-700 shrink-0">
+                      <FileText className="w-4 h-4 text-slate-700" strokeWidth={1.75} />
+                    </div>
                     <div>
                       <strong className="text-slate-900 font-semibold block">Hoja de Vida Adjunta (PDF)</strong>
-                      <span className="text-[10px] text-slate-400">Documento activo en postulaciones</span>
+                      <span className="text-[11px] text-slate-500">Documento activo consultable por reclutadores</span>
                     </div>
                   </div>
-                  <span className="badge-emerald text-[10px]">Cargado</span>
+
+                  <a
+                    href={resumeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-secondary text-xs h-8 px-3 font-semibold text-emerald-700 hover:text-emerald-900 border-emerald-200 bg-emerald-50/60 hover:bg-emerald-100/70 inline-flex items-center justify-center gap-1.5 transition-colors shrink-0"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Ver / Descargar Hoja de Vida cargada
+                  </a>
                 </div>
               </div>
             ) : (
@@ -389,12 +486,39 @@ export default function PerfilGuardaPage() {
               </div>
             )}
 
-            <div className="pt-1">
+            {/* Error visible si falla la subida */}
+            {uploadCvError && (
+              <div className="p-3 rounded-md bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <p>{uploadCvError}</p>
+              </div>
+            )}
+
+            {/* Botón directo para subir o actualizar Hoja de Vida */}
+            <div className="pt-1 flex flex-col sm:flex-row items-center gap-3">
+              <label className="w-full sm:w-auto inline-flex items-center justify-center gap-2 btn-secondary text-xs cursor-pointer h-9 px-3.5">
+                <Upload className="w-3.5 h-3.5 text-slate-600" strokeWidth={1.75} />
+                <span>
+                  {uploadingCv
+                    ? "Subiendo archivo a Storage..."
+                    : resumeUrl
+                    ? "Reemplazar Hoja de Vida (PDF)"
+                    : "Subir Hoja de Vida (PDF)"}
+                </span>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  className="hidden"
+                  disabled={uploadingCv}
+                  onChange={handleDirectResumeUpload}
+                />
+              </label>
+
               <Link
                 href="/guarda/onboarding"
-                className="text-xs text-slate-900 font-medium hover:underline"
+                className="text-xs text-slate-600 hover:text-slate-900 hover:underline"
               >
-                + Modificar archivos en el Onboarding completo
+                o configurar en el Asistente de Onboarding →
               </Link>
             </div>
           </div>
