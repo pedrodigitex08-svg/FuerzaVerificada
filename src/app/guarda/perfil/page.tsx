@@ -47,6 +47,8 @@ export default function PerfilGuardaPage() {
   const [courseDate, setCourseDate] = useState<string | null>(null);
   const [savedNotice, setSavedNotice] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [honeypot, setHoneypot] = useState("");
 
   useEffect(() => {
     async function loadCandidateProfile() {
@@ -115,6 +117,8 @@ export default function PerfilGuardaPage() {
   }, []);
 
   const handleSave = async () => {
+    if (honeypot || isSaving) return;
+    setIsSaving(true);
     const supabase = createClient();
 
     try {
@@ -155,6 +159,8 @@ export default function PerfilGuardaPage() {
       setTimeout(() => setSavedNotice(false), 3000);
     } catch (err) {
       console.error("Error saving profile:", err);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -180,10 +186,20 @@ export default function PerfilGuardaPage() {
           <button
             type="button"
             onClick={handleSave}
-            className="btn-primary text-xs h-9 px-4 font-medium inline-flex items-center gap-1.5"
+            disabled={isSaving}
+            className="btn-primary text-xs h-9 px-4 font-medium inline-flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <Save className="w-3.5 h-3.5" strokeWidth={1.75} />
-            Guardar Cambios
+            {isSaving ? (
+              <span className="flex items-center gap-1.5">
+                <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                Guardando...
+              </span>
+            ) : (
+              <>
+                <Save className="w-3.5 h-3.5" strokeWidth={1.75} />
+                Guardar Cambios
+              </>
+            )}
           </button>
         </div>
       </div>

@@ -231,7 +231,13 @@ export default function HomePage() {
                 </>
               ) : (
                 <>
-                  <span className="text-[11px] text-slate-500 font-medium">Búsquedas frecuentes:</span>
+                  <Link
+                    href="/login?tab=register&role=company"
+                    className="px-2.5 py-1 rounded-md bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 font-semibold text-[11px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors flex items-center gap-1 mr-1"
+                  >
+                    <span>Soy Empresa de Seguridad →</span>
+                  </Link>
+                  <span className="text-[11px] text-slate-500 font-medium">Búsquedas rápidas:</span>
                   <Link
                     href="/guarda/vacantes"
                     className="px-2.5 py-1 rounded-md bg-slate-100/80 hover:bg-slate-200/70 text-slate-700 border border-slate-200/80 font-medium text-[11px] transition-colors"

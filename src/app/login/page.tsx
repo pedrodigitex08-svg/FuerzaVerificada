@@ -86,6 +86,10 @@ function LoginForm() {
   const [pendingConfirmEmail, setPendingConfirmEmail] = useState<string | null>(null);
   const [registrationCompleted, setRegistrationCompleted] = useState(false);
 
+  // Anti-Spam Honeypot & Cooldown protection
+  const [honeypot, setHoneypot] = useState("");
+  const [lastSubmitTime, setLastSubmitTime] = useState<number>(0);
+
   // Evita condición de carrera entre onAuthStateChange y handleSubmit durante el registro
   const isSubmittingRef = useRef(false);
 
@@ -520,14 +524,54 @@ function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 1. Anti-Spam Honeypot Verification
+    if (honeypot) {
+      // Bot detected: exit silently without contacting Supabase
+      return;
+    }
+
+    // 2. Cooldown against rapid bot submissions (1.2s threshold)
+    const now = Date.now();
+    if (now - lastSubmitTime < 1200) {
+      return;
+    }
+    setLastSubmitTime(now);
+
     setErrorMsg(null);
     setErrorType(null);
     setSuccessMsg(null);
     setPendingConfirmEmail(null);
-    setLoading(true);
-    isSubmittingRef.current = true;
 
     const cleanEmail = email.trim().toLowerCase();
+
+    // 3. Form Validation: Email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setErrorType("generic");
+      setErrorMsg("Por favor ingresa un correo electrónico válido (ejemplo: usuario@correo.com).");
+      return;
+    }
+
+    // 4. Form Validation: Password minimum length
+    if (!password || password.length < 6) {
+      setErrorType("generic");
+      setErrorMsg("La contraseña debe tener un mínimo de 6 caracteres.");
+      return;
+    }
+
+    // 5. Form Validation in Register mode: Colombian Phone digits (10 digits)
+    if (mode === "register") {
+      const cleanPhoneDigits = phone.replace(/\D/g, "");
+      if (cleanPhoneDigits.length !== 10) {
+        setErrorType("generic");
+        setErrorMsg("El número de teléfono o WhatsApp debe tener exactamente 10 dígitos (ejemplo: 3101234567).");
+        return;
+      }
+    }
+
+    setLoading(true);
+    isSubmittingRef.current = true;
 
     try {
       if (mode === "login") {
@@ -1160,6 +1204,18 @@ function LoginForm() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Anti-Spam Honeypot */}
+                <div className="hidden" aria-hidden="true" tabIndex={-1}>
+                  <input
+                    type="text"
+                    name="fv_security_check"
+                    value={honeypot}
+                    onChange={(e) => setHoneypot(e.target.value)}
+                    tabIndex={-1}
+                    autoComplete="off"
+                  />
+                </div>
+
                 <div>
                   <label className="block text-xs font-medium text-slate-700 mb-1.5">
                     Correo Electrónico *
@@ -1371,6 +1427,18 @@ function LoginForm() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-3.5">
+                  {/* Anti-Spam Honeypot */}
+                  <div className="hidden" aria-hidden="true" tabIndex={-1}>
+                    <input
+                      type="text"
+                      name="fv_security_check"
+                      value={honeypot}
+                      onChange={(e) => setHoneypot(e.target.value)}
+                      tabIndex={-1}
+                      autoComplete="off"
+                    />
+                  </div>
+
                   <div>
                     <label className="block text-xs font-medium text-slate-700 mb-1.5">
                       Nombre Completo (como en Cédula) *
@@ -1558,6 +1626,18 @@ function LoginForm() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-3.5">
+                  {/* Anti-Spam Honeypot */}
+                  <div className="hidden" aria-hidden="true" tabIndex={-1}>
+                    <input
+                      type="text"
+                      name="fv_security_check"
+                      value={honeypot}
+                      onChange={(e) => setHoneypot(e.target.value)}
+                      tabIndex={-1}
+                      autoComplete="off"
+                    />
+                  </div>
+
                   <div>
                     <label className="block text-xs font-medium text-slate-700 mb-1.5">
                       Nombre de la Persona de Contacto *

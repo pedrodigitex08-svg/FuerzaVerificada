@@ -48,6 +48,7 @@ export default function NuevaVacantePage() {
   const [loading, setLoading] = useState(false);
   const [successToast, setSuccessToast] = useState(false);
   const [companyName, setCompanyName] = useState("Empresa de Seguridad");
+  const [honeypot, setHoneypot] = useState("");
 
   // Form Fields
   const [title, setTitle] = useState("");
@@ -103,6 +104,7 @@ export default function NuevaVacantePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (honeypot) return;
     setLoading(true);
 
     try {
@@ -238,6 +240,17 @@ export default function NuevaVacantePage() {
         
         {/* LEFT COLUMN: STRUCTURED FORM */}
         <form onSubmit={handleSubmit} className="lg:col-span-7 bg-white border border-slate-200/90 rounded-lg p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)] space-y-6">
+          {/* Anti-Spam Honeypot */}
+          <div className="hidden" aria-hidden="true" tabIndex={-1}>
+            <input
+              type="text"
+              name="fv_field_check"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+            />
+          </div>
           
           {/* Section 1: General Info */}
           <div className="space-y-4">
