@@ -191,8 +191,8 @@ export function Footer() {
         <div className="mt-8 pt-6 border-t border-[#E2E8F0] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#64748B]">
           <p>© 2026 FuerzaVerificada. Todos los derechos reservados. Colombia.</p>
           <div className="flex gap-4">
-            <Link href="/" className="hover:text-[#0F172A]">Términos de Servicio</Link>
-            <Link href="/" className="hover:text-[#0F172A]">Aviso de Privacidad</Link>
+            <Link href="/terminos" className="hover:text-[#0F172A] transition-colors">Términos de Servicio</Link>
+            <Link href="/privacidad" className="hover:text-[#0F172A] transition-colors">Aviso de Privacidad</Link>
             {role === "admin" && (
               <Link href="/admin/estudios" className="text-slate-400 hover:text-[#0F172A]">
                 Mando SuperAdmin

@@ -1505,6 +1505,27 @@ function LoginForm() {
                     </div>
                   )}
 
+                  {/* Aceptación de Términos y Política de Datos */}
+                  <div className="flex items-start gap-2 pt-1 text-left">
+                    <input
+                      type="checkbox"
+                      id="terms-candidate"
+                      required
+                      defaultChecked
+                      className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 text-slate-900 focus:ring-slate-900/10 cursor-pointer shrink-0"
+                    />
+                    <label htmlFor="terms-candidate" className="text-[11px] text-slate-600 leading-tight cursor-pointer">
+                      Acepto los{" "}
+                      <Link href="/terminos" target="_blank" className="font-medium text-slate-900 underline hover:text-slate-700">
+                        Términos y Condiciones
+                      </Link>{" "}
+                      y la{" "}
+                      <Link href="/privacidad" target="_blank" className="font-medium text-slate-900 underline hover:text-slate-700">
+                        Política de Tratamiento de Datos (Ley 1581 de 2012)
+                      </Link>.
+                    </label>
+                  </div>
+
                   <button
                     type="submit"
                     disabled={loading}
@@ -1699,6 +1720,27 @@ function LoginForm() {
                       )}
                     </div>
                   )}
+
+                  {/* Aceptación de Términos y Política de Datos */}
+                  <div className="flex items-start gap-2 pt-1 text-left">
+                    <input
+                      type="checkbox"
+                      id="terms-company"
+                      required
+                      defaultChecked
+                      className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 text-slate-900 focus:ring-slate-900/10 cursor-pointer shrink-0"
+                    />
+                    <label htmlFor="terms-company" className="text-[11px] text-slate-600 leading-tight cursor-pointer">
+                      Acepto los{" "}
+                      <Link href="/terminos" target="_blank" className="font-medium text-slate-900 underline hover:text-slate-700">
+                        Términos Corporativos
+                      </Link>{" "}
+                      y la{" "}
+                      <Link href="/privacidad" target="_blank" className="font-medium text-slate-900 underline hover:text-slate-700">
+                        Política de Tratamiento de Datos (Ley 1581 de 2012)
+                      </Link>.
+                    </label>
+                  </div>
 
                   <button
                     type="submit"
