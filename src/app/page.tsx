@@ -26,11 +26,39 @@ import {
   Bike,
   Check,
 } from "lucide-react";
+import Image from "next/image";
 import { Navbar } from "@/components/public/Navbar";
 import { Footer } from "@/components/public/Footer";
 import { CityAutocompleteInput } from "@/components/ui/CityAutocompleteInput";
 import { useAuth } from "@/lib/supabase/useAuth";
 import { createClient } from "@/lib/supabase/client";
+
+const HERO_SCENES = [
+  {
+    id: "vigilante",
+    image: "/images/hero/hero-vigilante.jpg",
+    tag: "Vigilancia Corporativa",
+    alt: "Guardas de seguridad privada en torniquetes de cristal en rascacielos empresarial de Bogotá",
+  },
+  {
+    id: "cctv",
+    image: "/images/hero/hero-cctv.jpg",
+    tag: "Operación CCTV",
+    alt: "Operador de medios tecnológicos monitoreando centro de control de cámaras de seguridad",
+  },
+  {
+    id: "supervisor",
+    image: "/images/hero/hero-supervisor.jpg",
+    tag: "Supervisión Táctica",
+    alt: "Supervisor de seguridad privada con radio y tablet inspeccionando puesto corporativo",
+  },
+  {
+    id: "escolta",
+    image: "/images/hero/hero-escolta.jpg",
+    tag: "Protección & Escoltas",
+    alt: "Escolta ejecutivo y motorizado junto a camioneta blindada frente a edificio financiero",
+  },
+];
 
 export default function HomePage() {
   const router = useRouter();
@@ -40,6 +68,14 @@ export default function HomePage() {
   const [warningToast, setWarningToast] = useState<string | null>(null);
   const [featuredJobs, setFeaturedJobs] = useState<any[]>([]);
   const [activeDirectoryTab, setActiveDirectoryTab] = useState<"localizacion" | "cargos">("localizacion");
+  const [activeSceneIndex, setActiveSceneIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveSceneIndex((prev) => (prev + 1) % HERO_SCENES.length);
+    }, 5500);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     async function loadFeaturedJobs() {
@@ -129,26 +165,73 @@ export default function HomePage() {
       {/* 1. NAVBAR GLOBAL COMPUTRAVAJO STYLE */}
       <Navbar />
 
-      {/* 2. HERO CON CURVA INFERIOR EN ARCO Y BUSCADOR EN PÍLDORA BLANCA GIGANTE */}
-      <section className="relative bg-gradient-to-b from-[#072140] via-[#0B3B70] to-[#0D4482] text-white pt-16 pb-12 sm:pb-20 overflow-hidden">
-        {/* Subtle decorative background glow */}
-        <div className="absolute inset-0 opacity-15 pointer-events-none bg-[radial-gradient(#FFFFFF_1px,transparent_1px)] [background-size:24px_24px]" />
+      {/* 2. HERO CINEMÁTICO CON SECUENCIA CONTINUA, OVERLAY Y BUSCADOR EN PÍLDORA */}
+      <section className="relative min-h-[580px] sm:min-h-[620px] text-white pt-14 pb-16 sm:pb-24 overflow-hidden flex items-center justify-center">
+        {/* FONDO DINÁMICO MULTICAPA DETRÁS DEL CONTENIDO */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+          {HERO_SCENES.map((scene, idx) => {
+            const isActive = idx === activeSceneIndex;
+            return (
+              <div
+                key={scene.id}
+                className={`absolute inset-0 w-full h-full hero-cinematic-slide ${
+                  isActive ? "active" : "inactive"
+                }`}
+                aria-hidden={!isActive}
+              >
+                <Image
+                  src={scene.image}
+                  alt={scene.alt}
+                  fill
+                  priority={idx === 0}
+                  sizes="100vw"
+                  quality={85}
+                  className="object-cover object-center w-full h-full"
+                />
+              </div>
+            );
+          })}
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-6">
-          {/* Badge superior pill */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold text-white tracking-wide shadow-xs">
-            <Shield className="w-4 h-4 text-emerald-400" strokeWidth={2} />
-            <span>Portal Oficial de Empleo en Seguridad Privada • Colombia</span>
+          {/* OVERLAY INSTITUCIONAL PARA CONTRASTE PERFECTO */}
+          {/* 1. Gradiente vertical azul marino translúcido */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#072140]/80 via-[#0B3B70]/70 to-[#072140]/88" />
+
+          {/* 2. Radial vignette suave para centrar la mirada en el buscador y titular */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,rgba(7,33,64,0.6)_100%)]" />
+
+          {/* 3. Textura sutil de cuadrícula tecnológica */}
+          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#FFFFFF_1px,transparent_1px)] [background-size:24px_24px]" />
+        </div>
+
+        {/* CONTENIDO PRINCIPAL DEL HERO */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-6 w-full">
+          {/* Fila de Insignia Oficial + Especialidad en Escena */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5">
+            {/* Badge superior pill */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#072140]/60 backdrop-blur-md border border-white/20 text-xs font-semibold text-white tracking-wide shadow-xs">
+              <Shield className="w-4 h-4 text-emerald-400" strokeWidth={2} />
+              <span>Portal Oficial de Empleo en Seguridad Privada • Colombia</span>
+            </div>
+
+            {/* Etiqueta dinámica de la especialidad activa */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-medium text-white shadow-xs">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FFE066] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#FFE066]"></span>
+              </span>
+              <span className="text-slate-300 text-[11px]">Especialidad en escena:</span>
+              <span className="text-[#FFE066] font-bold text-xs">{HERO_SCENES[activeSceneIndex].tag}</span>
+            </div>
           </div>
 
           {/* Gran Título Hero */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white max-w-4xl mx-auto leading-tight">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white max-w-4xl mx-auto leading-tight drop-shadow-sm">
             Encuentra tu próximo empleo en{" "}
             <span className="text-[#FFE066] drop-shadow-xs">seguridad privada</span>
           </h1>
 
           {/* Subtítulo */}
-          <p className="text-sm sm:text-base text-slate-200 max-w-2xl mx-auto font-normal leading-relaxed">
+          <p className="text-sm sm:text-base text-slate-200 max-w-2xl mx-auto font-normal leading-relaxed drop-shadow-xs">
             Miles de vacantes verificadas para vigilantes, escoltas, supervisores y operadores de medios tecnológicos con salario legal y turno garantizado.
           </p>
 
@@ -156,7 +239,7 @@ export default function HomePage() {
           <div className="pt-2 max-w-4xl mx-auto">
             <form
               onSubmit={handleSearchSubmit}
-              className="rounded-full bg-white p-2 sm:p-2.5 shadow-2xl flex flex-col md:flex-row items-center gap-2 border border-slate-100 text-slate-900"
+              className="rounded-full bg-white p-2 sm:p-2.5 shadow-2xl flex flex-col md:flex-row items-center gap-2 border border-slate-100 text-slate-900 transition-all focus-within:ring-4 focus-within:ring-[#005DA4]/20"
             >
               {/* Campo 1: Cargo o Categoría */}
               <div className="flex-1 w-full px-4 py-2 flex items-center gap-3 text-left">
@@ -193,17 +276,17 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Botón Píldora Computrabajo #0B3B70 */}
+              {/* Botón Píldora Computrabajo #0B3B70 con Micro-interacción Emil Kowalski */}
               <button
                 type="submit"
-                className="rounded-full bg-[#0B3B70] hover:bg-[#082a52] text-white font-bold px-8 py-3.5 text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md shrink-0 w-full md:w-auto"
+                className="hero-search-btn rounded-full bg-[#0B3B70] text-white font-bold px-8 py-3.5 text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shrink-0 w-full md:w-auto active:scale-[0.97] transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]"
               >
                 <Search className="w-4 h-4" strokeWidth={2.5} />
                 <span>Buscar empleos</span>
               </button>
             </form>
 
-            {/* Accesos rápidos de búsqueda */}
+            {/* Accesos rápidos de búsqueda con Micro-interacciones Emil Kowalski */}
             <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-slate-200">
               <span className="font-semibold text-slate-300">Búsquedas populares:</span>
               {[
@@ -216,17 +299,35 @@ export default function HomePage() {
                 <Link
                   key={term}
                   href={`/vacantes?search=${encodeURIComponent(term)}`}
-                  className="rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-xs border border-white/20 px-3 py-1 text-[11px] font-medium text-white transition-colors"
+                  className="hero-chip rounded-full bg-white/10 backdrop-blur-xs border border-white/20 px-3 py-1 text-[11px] font-medium text-white shadow-2xs active:scale-[0.97] transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]"
                 >
                   {term}
                 </Link>
+              ))}
+            </div>
+
+            {/* Indicador de escena en píldoras interactivas */}
+            <div className="flex items-center justify-center gap-1.5 pt-4">
+              {HERO_SCENES.map((scene, idx) => (
+                <button
+                  key={scene.id}
+                  type="button"
+                  onClick={() => setActiveSceneIndex(idx)}
+                  className={`h-1.5 rounded-full transition-all duration-500 cursor-pointer ${
+                    idx === activeSceneIndex
+                      ? "w-7 bg-[#FFE066] shadow-xs"
+                      : "w-2 bg-white/30 hover:bg-white/60"
+                  }`}
+                  aria-label={`Ver escena ${scene.tag}`}
+                  title={scene.tag}
+                />
               ))}
             </div>
           </div>
         </div>
 
         {/* CIERRE INFERIOR EN ARCO CURVO BLANCO EXACTO */}
-        <div className="absolute bottom-0 inset-x-0 w-full overflow-hidden leading-none pointer-events-none">
+        <div className="absolute bottom-0 inset-x-0 w-full overflow-hidden leading-none pointer-events-none z-20">
           <svg
             viewBox="0 0 1440 60"
             fill="none"

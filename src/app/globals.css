@@ -3,6 +3,12 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
   * {
     border-color: #E2E8F0;
   }
@@ -71,6 +77,57 @@
 
   .badge-rose {
     @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-rose-50/80 text-rose-700 border border-rose-200/70;
+  }
+}
+
+/* ==========================================================================
+   Emil Kowalski Animation Engineering Utilities
+   Hardware-accelerated cinematic motion and tactile feedback
+   ========================================================================== */
+
+.hero-cinematic-slide {
+  will-change: transform, opacity, filter;
+  transition: opacity 900ms cubic-bezier(0.23, 1, 0.32, 1),
+              filter 900ms cubic-bezier(0.23, 1, 0.32, 1),
+              transform 6500ms linear;
+}
+
+.hero-cinematic-slide.active {
+  opacity: 1;
+  filter: blur(0px);
+  transform: scale(1.08) translate3d(-1.5%, 0, 0);
+}
+
+.hero-cinematic-slide.inactive {
+  opacity: 0;
+  filter: blur(2px);
+  transform: scale(1.02) translate3d(0, 0, 0);
+  pointer-events: none;
+}
+
+/* Reduced motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .hero-cinematic-slide {
+    transform: none !important;
+    filter: none !important;
+    transition: opacity 600ms ease !important;
+  }
+  .hero-chip,
+  .hero-search-btn {
+    transition: none !important;
+  }
+}
+
+/* Fine-pointer hover gating to prevent sticky hovers on touch devices */
+@media (hover: hover) and (pointer: fine) {
+  .hero-chip:hover {
+    background-color: rgba(255, 255, 255, 0.22);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
+  }
+  .hero-search-btn:hover {
+    background-color: #082B54;
+    box-shadow: 0 4px 14px rgba(11, 59, 112, 0.35);
   }
 }
 
