@@ -69,7 +69,7 @@ Tengo el código de descuento por convenio: *${params.referralCode || "FUERZA202
   return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
 }
 
-export const DEFAULT_WHATSAPP_SALES_NUMBER = "573104508920";
+export const DEFAULT_WHATSAPP_SALES_NUMBER = "573133778276";
 
 /**
  * Returns current corporate sales WhatsApp number from client cache or default fallback.

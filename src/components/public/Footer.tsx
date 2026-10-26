@@ -146,17 +146,17 @@ export function Footer() {
               </li>
               <li className="pt-1">
                 <a
-                  href="https://wa.me/573104508920?text=Hola,%20requiero%20asistencia%20en%20FuerzaVerificada"
+                  href="https://wa.me/573133778276?text=Hola,%20requiero%20asistencia%20en%20FuerzaVerificada"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-emerald-700 font-semibold hover:underline inline-flex items-center gap-1.5"
                 >
                   <Phone className="w-3.5 h-3.5" />
-                  <span>Soporte WhatsApp (+57 310 450 8920)</span>
+                  <span className="tabular-nums">Soporte WhatsApp (+57 313 377 8276)</span>
                 </a>
               </li>
               <li className="text-[11px] text-[#627384]">
-                Sede Central: Bogotá D.C., Colombia
+                Sede Central: Barranquilla, Colombia
               </li>
             </ul>
           </div>

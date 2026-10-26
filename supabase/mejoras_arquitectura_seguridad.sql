@@ -142,7 +142,7 @@ CREATE POLICY "Lectura segura de documentos autenticados"
 
 CREATE TABLE IF NOT EXISTS public.platform_settings (
   id text PRIMARY KEY DEFAULT 'global',
-  whatsapp_sales_number text NOT NULL DEFAULT '573104508920',
+  whatsapp_sales_number text NOT NULL DEFAULT '573133778276',
   updated_at timestamptz DEFAULT now()
 );
 

@@ -122,7 +122,7 @@ export default function AdminConfiguracionPage() {
   const sqlSnippet = `-- Tabla de configuración global en Supabase
 CREATE TABLE IF NOT EXISTS public.platform_settings (
   id text PRIMARY KEY DEFAULT 'global',
-  whatsapp_sales_number text NOT NULL DEFAULT '573104508920',
+  whatsapp_sales_number text NOT NULL DEFAULT '573133778276',
   updated_at timestamp with time zone DEFAULT now()
 );
 
@@ -138,7 +138,7 @@ CREATE POLICY "Modificación admin configuraciones"
 
 -- Registro inicial
 INSERT INTO public.platform_settings (id, whatsapp_sales_number)
-VALUES ('global', '573104508920')
+VALUES ('global', '573133778276')
 ON CONFLICT (id) DO NOTHING;`;
 
   const copySql = () => {
@@ -241,13 +241,13 @@ ON CONFLICT (id) DO NOTHING;`;
                   required
                   value={salesPhone}
                   onChange={(e) => setSalesPhone(e.target.value)}
-                  placeholder="573104508920"
+                  placeholder="573133778276"
                   className="w-full h-10 bg-white border border-slate-200/90 rounded-md pl-10 pr-4 text-sm font-mono font-semibold text-slate-900 tabular-nums focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
                 />
               </div>
               <p className="text-[11px] text-slate-500 mt-1.5 flex items-center gap-1.5">
                 <Info className="w-3.5 h-3.5 text-slate-400 shrink-0" strokeWidth={1.5} />
-                <span>Formato recomendado con código de país Colombia (+57): ej. <code className="bg-slate-100 px-1 py-0.5 rounded font-mono tabular-nums text-slate-900">573104508920</code></span>
+                <span>Formato recomendado con código de país Colombia (+57): ej. <code className="bg-slate-100 px-1 py-0.5 rounded font-mono tabular-nums text-slate-900">573133778276</code></span>
               </p>
             </div>
 

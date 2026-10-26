@@ -290,7 +290,7 @@ export default function PostulacionesPage() {
 
                     <div className="pt-1">
                       <a
-                        href={`https://wa.me/573104508920?text=Hola,%20confirmo%20mi%20asistencia%20a%20la%20entrevista%20para%20la%20vacante%20de%20${encodeURIComponent(
+                        href={`https://wa.me/573133778276?text=Hola,%20confirmo%20mi%20asistencia%20a%20la%20entrevista%20para%20la%20vacante%20de%20${encodeURIComponent(
                           app.job_title
                         )}`}
                         target="_blank"
