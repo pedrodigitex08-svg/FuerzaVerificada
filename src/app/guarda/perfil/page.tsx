@@ -20,6 +20,9 @@ import {
   Upload,
   ExternalLink,
   AlertCircle,
+  Sparkles,
+  Award,
+  Calendar,
 } from "lucide-react";
 import { CourseSemaphoreBanner } from "@/components/guarda/CourseSemaphoreBanner";
 import { SecurityRoleType } from "@/types/database";
@@ -348,20 +351,37 @@ export default function PerfilGuardaPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80">
+      {/* Botón trampa Honeypot anti-spam */}
+      <input
+        type="text"
+        name="company_tax_id_bypass"
+        value={honeypot}
+        onChange={(e) => setHoneypot(e.target.value)}
+        tabIndex={-1}
+        aria-hidden="true"
+        className="hidden"
+      />
+
+      {/* CABECERA ESTILO COMPUTRABAJO */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-lg font-semibold text-slate-900 tracking-tight">
-            Mi Perfil & Hoja de Vida Profesional
-          </h1>
-          <p className="text-xs text-slate-500 font-normal">
-            Actualice su información operativa, preferencias de turno y documentos adjuntos.
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+              Mi Hoja de Vida & Perfil Profesional
+            </h1>
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#005DA4] bg-[#EAF3FA] px-2.5 py-0.5 rounded-full border border-[#D5E6F5]">
+              <Shield className="w-3 h-3 text-[#005DA4]" />
+              SuperVigilancia
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Gestiona tu información operativa, preferencias de turno y documento adjunto en PDF para empresas de seguridad.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 shrink-0">
           {savedNotice && (
-            <span className="text-xs text-emerald-700 font-medium flex items-center gap-1">
+            <span className="text-xs text-emerald-700 font-semibold flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
               <Check className="w-3.5 h-3.5" strokeWidth={2.5} /> Cambios guardados
             </span>
           )}
@@ -369,16 +389,16 @@ export default function PerfilGuardaPage() {
             type="button"
             onClick={handleSave}
             disabled={isSaving}
-            className="btn-primary text-xs h-9 px-4 font-medium inline-flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs font-semibold h-10 px-6 inline-flex items-center gap-2 shadow-xs transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isSaving ? (
-              <span className="flex items-center gap-1.5">
-                <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              <span className="flex items-center gap-2">
+                <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 Guardando...
               </span>
             ) : (
               <>
-                <Save className="w-3.5 h-3.5" strokeWidth={1.75} />
+                <Save className="w-4 h-4" strokeWidth={2} />
                 Guardar Cambios
               </>
             )}
@@ -386,47 +406,47 @@ export default function PerfilGuardaPage() {
         </div>
       </div>
 
-      {/* EXECUTIVE COMPLETION PROGRESS BANNER (0% - 100%) */}
-      <div className="bg-white border border-slate-200/90 rounded-lg p-5 shadow-subtle space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+      {/* EXECUTIVE COMPLETION PROGRESS BANNER (0% - 100%) ESTILO COMPUTRABAJO */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
             <div
-              className={`w-10 h-10 rounded-md flex items-center justify-center shrink-0 border ${
+              className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${
                 completionPercentage === 100
                   ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-                  : "bg-slate-900 border-slate-800 text-white"
+                  : "bg-[#0B3B70] border-[#0B3B70] text-white"
               }`}
             >
               {completionPercentage === 100 ? (
-                <CheckCircle2 className="w-5 h-5 text-emerald-600" strokeWidth={2} />
+                <CheckCircle2 className="w-6 h-6 text-emerald-600" strokeWidth={2.5} />
               ) : (
-                <span className="text-xs font-mono font-bold tabular-nums">{completionPercentage}%</span>
+                <span className="text-sm font-bold tabular-nums">{completionPercentage}%</span>
               )}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold text-slate-900 tracking-tight">
+                <h2 className="text-sm font-bold text-slate-900 tracking-tight">
                   Nivel de Completitud de tu Hoja de Vida
                 </h2>
                 <span
-                  className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md tabular-nums ${
+                  className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full tabular-nums ${
                     completionPercentage === 100
-                      ? "bg-emerald-100/80 text-emerald-800 border border-emerald-200"
-                      : "bg-slate-100 text-slate-700 border border-slate-200"
+                      ? "bg-emerald-100/90 text-emerald-800 border border-emerald-200"
+                      : "bg-[#EAF3FA] text-[#0B3B70] border border-[#D5E6F5]"
                   }`}
                 >
                   {completionPercentage}% de 100%
                 </span>
               </div>
-              <p className="text-xs text-slate-600 mt-0.5">
+              <p className="text-xs text-slate-600 mt-1 max-w-xl">
                 {nextPrompt}
               </p>
             </div>
           </div>
 
           {completionPercentage < 100 && !hasResume && (
-            <label className="btn-emerald text-xs h-9 px-3.5 font-medium cursor-pointer inline-flex items-center gap-1.5 shrink-0 self-start sm:self-auto">
-              <Upload className="w-3.5 h-3.5" strokeWidth={2} />
+            <label className="rounded-full bg-[#EAF3FA] hover:bg-[#D5E6F5] text-[#0B3B70] border border-[#D5E6F5] text-xs h-10 px-4 font-semibold cursor-pointer inline-flex items-center gap-2 shrink-0 self-start sm:self-auto transition-colors shadow-2xs">
+              <Upload className="w-4 h-4 text-[#005DA4]" strokeWidth={2} />
               <span>Subir Hoja de Vida (+25%)</span>
               <input
                 type="file"
@@ -440,17 +460,17 @@ export default function PerfilGuardaPage() {
         </div>
 
         {/* Progress Bar Container */}
-        <div className="space-y-1.5">
-          <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/60">
+        <div className="space-y-1.5 pt-1">
+          <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden border border-slate-200">
             <div
               className={`h-full transition-all duration-500 rounded-full ${
                 completionPercentage === 100
                   ? "bg-emerald-600"
                   : completionPercentage >= 75
-                  ? "bg-slate-900"
+                  ? "bg-[#0B3B70]"
                   : completionPercentage >= 50
-                  ? "bg-amber-500"
-                  : "bg-rose-500"
+                  ? "bg-[#005DA4]"
+                  : "bg-amber-500"
               }`}
               style={{ width: `${Math.max(completionPercentage, 5)}%` }}
             />
@@ -458,30 +478,30 @@ export default function PerfilGuardaPage() {
         </div>
 
         {/* Checklist Chips */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-1 border-t border-slate-100">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-2 border-t border-slate-100">
           {steps.map((st) => (
             <div
               key={st.id}
-              className={`p-2.5 rounded-md border text-xs flex items-center gap-2.5 transition-colors ${
+              className={`p-3 rounded-xl border text-xs flex items-center gap-3 transition-colors ${
                 st.done
-                  ? "bg-emerald-50/70 border-emerald-200/70 text-emerald-900"
-                  : "bg-slate-50 border-slate-200/80 text-slate-500"
+                  ? "bg-[#EAF3FA]/60 border-[#D5E6F5] text-[#0B3B70]"
+                  : "bg-slate-50 border-slate-200 text-slate-500"
               }`}
             >
               <div
-                className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold ${
+                className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold ${
                   st.done
-                    ? "bg-emerald-600 text-white"
+                    ? "bg-[#005DA4] text-white"
                     : "bg-white border border-slate-300 text-slate-400"
                 }`}
               >
-                {st.done ? <Check className="w-3 h-3" strokeWidth={2.5} /> : "+25%"}
+                {st.done ? <Check className="w-3.5 h-3.5" strokeWidth={2.5} /> : "+25%"}
               </div>
               <div className="min-w-0">
-                <div className="font-semibold truncate text-[11px] leading-tight text-slate-900">
+                <div className="font-bold truncate text-xs leading-tight text-slate-900">
                   {st.label}
                 </div>
-                <div className="text-[10px] text-slate-500 truncate leading-tight">
+                <div className="text-[11px] text-slate-500 truncate leading-tight mt-0.5">
                   {st.desc}
                 </div>
               </div>
@@ -490,19 +510,22 @@ export default function PerfilGuardaPage() {
         </div>
       </div>
 
-      {/* 2-COLUMN WORKSPACE */}
+      {/* 2-COLUMN WORKSPACE ESTILO COMPUTRABAJO */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* LEFT COLUMN: EDITABLE DETAILS (7 cols) */}
         <div className="lg:col-span-7 space-y-5">
           {/* Section 1: Contact */}
-          <div className="bg-white border border-slate-200/90 rounded-lg p-6 shadow-subtle space-y-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Datos de Identificación y Contacto
-            </h3>
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+              <User className="w-4 h-4 text-[#005DA4]" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                Datos de Identificación y Contacto
+              </h3>
+            </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   Nombre Completo
                 </label>
                 <input
@@ -510,46 +533,46 @@ export default function PerfilGuardaPage() {
                   placeholder="Ingrese sus nombres y apellidos"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                  className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Cédula
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Cédula de Ciudadanía
                   </label>
                   <input
                     type="text"
                     placeholder="Número de cédula"
                     value={nationalId}
                     onChange={(e) => setNationalId(e.target.value)}
-                    className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                    className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-sm font-semibold text-slate-900 font-mono tabular-nums placeholder:text-slate-400 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    WhatsApp
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    WhatsApp de Contacto
                   </label>
                   <input
                     type="tel"
                     placeholder="Ej. 3001234567"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                    className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-sm font-semibold text-slate-900 font-mono tabular-nums placeholder:text-slate-400 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Ciudad
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Ciudad de Residencia
                   </label>
                   <select
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                    className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-sm font-medium text-slate-900 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all cursor-pointer"
                   >
                     <option value="Bogotá D.C.">Bogotá D.C.</option>
                     <option value="Medellín">Medellín</option>
@@ -561,15 +584,15 @@ export default function PerfilGuardaPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Barrio / Localidad
                   </label>
                   <input
                     type="text"
-                    placeholder="Ej. Suba, Kennedy, Chapinero..."
+                    placeholder="Ej. Suba, Kennedy, Poblado..."
                     value={locality}
                     onChange={(e) => setLocality(e.target.value)}
-                    className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                    className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all"
                   />
                 </div>
               </div>
@@ -577,15 +600,18 @@ export default function PerfilGuardaPage() {
           </div>
 
           {/* Section 2: Role & Experience */}
-          <div className="bg-white border border-slate-200/90 rounded-lg p-6 shadow-subtle space-y-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Cargo y Dotación Operativa
-            </h3>
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+              <Briefcase className="w-4 h-4 text-[#005DA4]" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                Cargo y Dotación Operativa
+              </h3>
+            </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-2">
-                  Especialidad Principal:
+                <label className="block text-xs font-semibold text-slate-700 mb-2">
+                  Especialidad Principal en Seguridad:
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {SECURITY_ROLE_OPTIONS.map((opt) => (
@@ -593,10 +619,10 @@ export default function PerfilGuardaPage() {
                       key={opt.value}
                       type="button"
                       onClick={() => setPrimaryRole(opt.value)}
-                      className={`p-2 rounded-md text-xs font-medium border text-left transition-colors ${
+                      className={`p-2.5 rounded-xl text-xs font-semibold border text-left transition-all ${
                         normalizeSecurityRole(primaryRole) === opt.value
-                          ? "bg-slate-900 text-white border-slate-900"
-                          : "bg-slate-50 text-slate-700 border-slate-200/90 hover:bg-slate-100"
+                          ? "bg-[#0B3B70] text-white border-[#0B3B70] shadow-xs"
+                          : "bg-white text-slate-700 border-slate-200 hover:border-[#005DA4] hover:bg-[#EAF3FA]/30"
                       }`}
                     >
                       {opt.label}
@@ -606,8 +632,8 @@ export default function PerfilGuardaPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Años de Experiencia en Seguridad
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Años de Experiencia en el Sector
                 </label>
                 <input
                   type="number"
@@ -615,34 +641,40 @@ export default function PerfilGuardaPage() {
                   max="40"
                   value={yearsExperience}
                   onChange={(e) => setYearsExperience(parseInt(e.target.value, 10) || 0)}
-                  className="w-full sm:w-40 h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                  className="w-full sm:w-48 h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-sm font-bold text-slate-900 font-mono tabular-nums focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
-                <div className="p-3 rounded-md border border-slate-200/80 bg-slate-50 flex items-center justify-between">
-                  <span className="text-xs font-medium text-slate-700">Libreta Militar</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+                <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-bold text-slate-800 block">Libreta Militar</span>
+                    <span className="text-[11px] text-slate-500">Documento de primera o segunda clase</span>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setHasMilitaryBooklet(!hasMilitaryBooklet)}
-                    className={`w-10 h-5 rounded-full p-0.5 transition-colors flex items-center ${
-                      hasMilitaryBooklet ? "bg-emerald-600 justify-end" : "bg-slate-300 justify-start"
+                    className={`w-11 h-6 rounded-full p-0.5 transition-colors flex items-center shrink-0 ${
+                      hasMilitaryBooklet ? "bg-[#005DA4] justify-end" : "bg-slate-300 justify-start"
                     }`}
                   >
-                    <div className="w-4 h-4 rounded-full bg-white shadow-xs" />
+                    <div className="w-5 h-5 rounded-full bg-white shadow-xs" />
                   </button>
                 </div>
 
-                <div className="p-3 rounded-md border border-slate-200/80 bg-slate-50 flex items-center justify-between">
-                  <span className="text-xs font-medium text-slate-700">Moto Propia</span>
+                <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-bold text-slate-800 block">Moto Propia</span>
+                    <span className="text-[11px] text-slate-500">Para cargos móviles o supervisión</span>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setHasMotorcycle(!hasMotorcycle)}
-                    className={`w-10 h-5 rounded-full p-0.5 transition-colors flex items-center ${
-                      hasMotorcycle ? "bg-amber-500 justify-end" : "bg-slate-300 justify-start"
+                    className={`w-11 h-6 rounded-full p-0.5 transition-colors flex items-center shrink-0 ${
+                      hasMotorcycle ? "bg-[#005DA4] justify-end" : "bg-slate-300 justify-start"
                     }`}
                   >
-                    <div className="w-4 h-4 rounded-full bg-white shadow-xs" />
+                    <div className="w-5 h-5 rounded-full bg-white shadow-xs" />
                   </button>
                 </div>
               </div>
@@ -650,21 +682,24 @@ export default function PerfilGuardaPage() {
           </div>
 
           {/* Section 3: Document Repository */}
-          <div className="bg-white border border-slate-200/90 rounded-lg p-6 shadow-subtle space-y-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Archivos y Documentos Almacenados
-            </h3>
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+              <FileText className="w-4 h-4 text-[#005DA4]" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                Archivos y Documentos Almacenados
+              </h3>
+            </div>
 
             {resumeUrl ? (
               <div className="space-y-3 text-xs">
-                <div className="p-3.5 rounded-lg border border-slate-200/80 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-md bg-white border border-slate-200/90 flex items-center justify-center text-slate-700 shrink-0">
-                      <FileText className="w-4 h-4 text-slate-700" strokeWidth={1.75} />
+                <div className="p-4 rounded-xl border border-[#D5E6F5] bg-[#EAF3FA]/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-white border border-[#D5E6F5] flex items-center justify-center text-[#0B3B70] shrink-0 shadow-2xs">
+                      <FileCheck className="w-5 h-5 text-[#005DA4]" strokeWidth={2} />
                     </div>
                     <div>
-                      <strong className="text-slate-900 font-semibold block">Hoja de Vida Adjunta (PDF)</strong>
-                      <span className="text-[11px] text-slate-500">Documento activo consultable por reclutadores</span>
+                      <strong className="text-slate-900 font-bold block text-sm">Hoja de Vida Adjunta (PDF)</strong>
+                      <span className="text-xs text-slate-500">Documento activo consultable por empresas de seguridad</span>
                     </div>
                   </div>
 
@@ -672,7 +707,7 @@ export default function PerfilGuardaPage() {
                     href={resumeUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn-secondary text-xs h-8 px-3 font-semibold text-emerald-700 hover:text-emerald-900 border-emerald-200 bg-emerald-50/60 hover:bg-emerald-100/70 inline-flex items-center justify-center gap-1.5 transition-colors shrink-0"
+                    className="rounded-full text-xs h-9 px-4 font-semibold text-[#005DA4] hover:text-[#0B3B70] border border-[#D5E6F5] bg-white hover:bg-slate-50 inline-flex items-center justify-center gap-1.5 transition-all shrink-0 shadow-2xs"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                     Ver / Descargar Hoja de Vida cargada
@@ -680,24 +715,25 @@ export default function PerfilGuardaPage() {
                 </div>
               </div>
             ) : (
-              <div className="p-4 rounded-lg border border-dashed border-slate-200 text-center text-slate-400 text-xs">
-                <FileText className="w-6 h-6 mx-auto mb-1 text-slate-300" />
-                <p>Aún no has adjuntado tu Hoja de Vida en PDF.</p>
+              <div className="p-6 rounded-2xl border border-dashed border-slate-300 text-center text-slate-400 text-xs bg-slate-50/50">
+                <FileText className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                <p className="font-semibold text-slate-700 text-sm">Aún no has adjuntado tu Hoja de Vida en PDF</p>
+                <p className="text-xs text-slate-500 mt-0.5">Sube tu documento para que las empresas verifiquen tu trayectoria completa.</p>
               </div>
             )}
 
             {/* Error visible si falla la subida */}
             {uploadCvError && (
-              <div className="p-3 rounded-md bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2">
+              <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2.5">
                 <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                <p>{uploadCvError}</p>
+                <p className="font-medium">{uploadCvError}</p>
               </div>
             )}
 
             {/* Botón directo para subir o actualizar Hoja de Vida */}
-            <div className="pt-1 flex flex-col sm:flex-row items-center gap-3">
-              <label className="w-full sm:w-auto inline-flex items-center justify-center gap-2 btn-secondary text-xs cursor-pointer h-9 px-3.5">
-                <Upload className="w-3.5 h-3.5 text-slate-600" strokeWidth={1.75} />
+            <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
+              <label className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-xs font-semibold cursor-pointer h-10 px-5 transition-all shadow-2xs">
+                <Upload className="w-4 h-4 text-[#005DA4]" strokeWidth={2} />
                 <span>
                   {uploadingCv
                     ? "Subiendo archivo a Storage..."
@@ -716,7 +752,7 @@ export default function PerfilGuardaPage() {
 
               <Link
                 href="/guarda/onboarding"
-                className="text-xs text-slate-600 hover:text-slate-900 hover:underline"
+                className="text-xs text-[#005DA4] hover:text-[#0B3B70] hover:underline font-semibold"
               >
                 o configurar en el Asistente de Onboarding →
               </Link>
@@ -728,7 +764,7 @@ export default function PerfilGuardaPage() {
         <div className="lg:col-span-5 sticky top-20 space-y-5">
           {/* SEMAPHORE CARD */}
           <div className="space-y-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
               Estado de Credencial SuperVigilancia
             </span>
             <CourseSemaphoreBanner
@@ -738,42 +774,56 @@ export default function PerfilGuardaPage() {
             />
           </div>
 
-          {/* DIGITAL CARD */}
-          <div className="rounded-lg bg-slate-900 text-white p-5 shadow-card border border-slate-800 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          {/* DIGITAL CARD ESTILO FUERZAVERIFICADA CORPORATIVA */}
+          <div className="rounded-2xl bg-gradient-to-br from-[#0B3B70] to-[#082B54] text-white p-6 shadow-md border border-[#082B54] space-y-5">
+            <div className="flex items-center justify-between pb-3.5 border-b border-white/10">
               <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-emerald-400" strokeWidth={1.75} />
-                <span className="text-xs font-semibold tracking-tight text-white">
-                  Fuerza<span className="text-emerald-400">Verificada</span>
+                <Shield className="w-5 h-5 text-[#FFE066]" strokeWidth={2} />
+                <span className="text-sm font-bold tracking-tight text-white">
+                  Fuerza<span className="text-[#FFE066]">Verificada</span>
                 </span>
               </div>
-              <span className="badge-emerald text-[9px] py-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                Auditado
+              <span className="inline-flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Auditado SuperVigilancia
               </span>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-md bg-slate-800 border border-slate-700 flex items-center justify-center font-semibold text-emerald-400 text-base">
-                {fullName ? fullName.charAt(0).toUpperCase() : <User className="w-5 h-5 text-slate-400" />}
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center font-bold text-white text-lg shrink-0">
+                {fullName ? fullName.charAt(0).toUpperCase() : <User className="w-6 h-6 text-white/70" />}
               </div>
-              <div>
-                <h4 className="text-sm font-semibold text-white tracking-tight">
+              <div className="min-w-0">
+                <h4 className="text-base font-bold text-white tracking-tight truncate">
                   {fullName || "Nombre del Aspirante"}
                 </h4>
-                <div className="text-xs text-emerald-400 font-mono mt-0.5">
+                <div className="text-xs text-[#FFE066] font-semibold mt-0.5">
                   {formatSecurityRoleLabel(primaryRole)}
                 </div>
-                <div className="text-[11px] text-slate-400 font-mono tabular-nums">
-                  {nationalId ? `C.C. ${nationalId}` : "Sin Cédula"} • {city}
+                <div className="text-[11px] text-white/70 font-mono tabular-nums mt-0.5">
+                  {nationalId ? `C.C. ${nationalId}` : "Sin Cédula registrada"} • {city}
                 </div>
               </div>
             </div>
 
-            <div className="pt-2 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between tabular-nums">
-              <span>Años de exp: <strong className="text-white font-semibold">{yearsExperience}</strong></span>
-              <span>Libreta: <strong className="text-white font-semibold">{hasMilitaryBooklet ? "Sí" : "No"}</strong></span>
-              <span>Moto: <strong className="text-white font-semibold">{hasMotorcycle ? `${motorcycleCc || 150}cc` : "No"}</strong></span>
+            <div className="pt-3 border-t border-white/10 text-xs text-white/80 grid grid-cols-3 gap-2 text-center tabular-nums">
+              <div className="bg-white/5 rounded-xl p-2 border border-white/10">
+                <span className="text-[10px] text-white/60 block">Experiencia</span>
+                <strong className="text-white font-bold text-sm">{yearsExperience} años</strong>
+              </div>
+              <div className="bg-white/5 rounded-xl p-2 border border-white/10">
+                <span className="text-[10px] text-white/60 block">Libreta</span>
+                <strong className="text-white font-bold text-sm">{hasMilitaryBooklet ? "Sí" : "No"}</strong>
+              </div>
+              <div className="bg-white/5 rounded-xl p-2 border border-white/10">
+                <span className="text-[10px] text-white/60 block">Moto</span>
+                <strong className="text-white font-bold text-sm">{hasMotorcycle ? `${motorcycleCc || 150}cc` : "No"}</strong>
+              </div>
+            </div>
+
+            <div className="pt-1 flex items-center justify-between text-[11px] text-white/60 border-t border-white/10">
+              <span>Identificador Seguro:</span>
+              <span className="font-mono text-white/80 font-semibold">FV-COL-OP</span>
             </div>
           </div>
         </div>
