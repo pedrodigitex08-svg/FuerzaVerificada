@@ -291,6 +291,61 @@ export default function PerfilGuardaPage() {
     }
   };
 
+  // Cálculo dinámico de completitud de Hoja de Vida (0% a 100%)
+  const hasPersonalInfo = Boolean(fullName?.trim().length >= 3 && phone?.trim().length >= 7);
+  const hasWorkProfile = Boolean(
+    primaryRole &&
+    city?.trim() &&
+    nationalId?.trim() &&
+    !nationalId.startsWith("TEMP-") &&
+    yearsExperience !== undefined
+  );
+  const hasCourse = Boolean(courseDate && courseDate.trim().length > 0);
+  const hasResume = Boolean(resumeUrl && resumeUrl.trim().length > 0);
+
+  const steps = [
+    {
+      id: "personal",
+      label: "Datos Personales",
+      desc: "Nombre completo y WhatsApp",
+      done: hasPersonalInfo,
+    },
+    {
+      id: "work",
+      label: "Perfil Operativo",
+      desc: "Cédula, ciudad y especialidad",
+      done: hasWorkProfile,
+    },
+    {
+      id: "course",
+      label: "Curso SuperVigilancia",
+      desc: "Acreditación y vigencia",
+      done: hasCourse,
+    },
+    {
+      id: "resume",
+      label: "Hoja de Vida en PDF",
+      desc: "Documento adjunto en PDF",
+      done: hasResume,
+    },
+  ];
+
+  const completedStepsCount = steps.filter((s) => s.done).length;
+  const completionPercentage = completedStepsCount * 25;
+
+  let nextPrompt = "";
+  if (completionPercentage === 100) {
+    nextPrompt = "¡Perfil 100% Completo! Tu hoja de vida cuenta con máxima visibilidad ante empresas de seguridad de Colombia.";
+  } else if (!hasPersonalInfo) {
+    nextPrompt = `Tu perfil está al ${completionPercentage}%. Completa tu nombre y WhatsApp para que las empresas puedan contactarte.`;
+  } else if (!hasWorkProfile) {
+    nextPrompt = `Tu perfil está al ${completionPercentage}%. Ingresa tu cédula y especialidad operativa para avanzar.`;
+  } else if (!hasCourse) {
+    nextPrompt = `Tu perfil está al ${completionPercentage}%. Registra la fecha de tu curso SuperVigilancia para validar tu credencial.`;
+  } else if (!hasResume) {
+    nextPrompt = `Tu perfil está al ${completionPercentage}%. Adjunta tu Hoja de Vida en PDF para alcanzar el 100% y ser contactado 3x más rápido.`;
+  }
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -328,6 +383,110 @@ export default function PerfilGuardaPage() {
               </>
             )}
           </button>
+        </div>
+      </div>
+
+      {/* EXECUTIVE COMPLETION PROGRESS BANNER (0% - 100%) */}
+      <div className="bg-white border border-slate-200/90 rounded-lg p-5 shadow-subtle space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div
+              className={`w-10 h-10 rounded-md flex items-center justify-center shrink-0 border ${
+                completionPercentage === 100
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                  : "bg-slate-900 border-slate-800 text-white"
+              }`}
+            >
+              {completionPercentage === 100 ? (
+                <CheckCircle2 className="w-5 h-5 text-emerald-600" strokeWidth={2} />
+              ) : (
+                <span className="text-xs font-mono font-bold tabular-nums">{completionPercentage}%</span>
+              )}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-semibold text-slate-900 tracking-tight">
+                  Nivel de Completitud de tu Hoja de Vida
+                </h2>
+                <span
+                  className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md tabular-nums ${
+                    completionPercentage === 100
+                      ? "bg-emerald-100/80 text-emerald-800 border border-emerald-200"
+                      : "bg-slate-100 text-slate-700 border border-slate-200"
+                  }`}
+                >
+                  {completionPercentage}% de 100%
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 mt-0.5">
+                {nextPrompt}
+              </p>
+            </div>
+          </div>
+
+          {completionPercentage < 100 && !hasResume && (
+            <label className="btn-emerald text-xs h-9 px-3.5 font-medium cursor-pointer inline-flex items-center gap-1.5 shrink-0 self-start sm:self-auto">
+              <Upload className="w-3.5 h-3.5" strokeWidth={2} />
+              <span>Subir Hoja de Vida (+25%)</span>
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx"
+                className="hidden"
+                disabled={uploadingCv}
+                onChange={handleDirectResumeUpload}
+              />
+            </label>
+          )}
+        </div>
+
+        {/* Progress Bar Container */}
+        <div className="space-y-1.5">
+          <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/60">
+            <div
+              className={`h-full transition-all duration-500 rounded-full ${
+                completionPercentage === 100
+                  ? "bg-emerald-600"
+                  : completionPercentage >= 75
+                  ? "bg-slate-900"
+                  : completionPercentage >= 50
+                  ? "bg-amber-500"
+                  : "bg-rose-500"
+              }`}
+              style={{ width: `${Math.max(completionPercentage, 5)}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Checklist Chips */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-1 border-t border-slate-100">
+          {steps.map((st) => (
+            <div
+              key={st.id}
+              className={`p-2.5 rounded-md border text-xs flex items-center gap-2.5 transition-colors ${
+                st.done
+                  ? "bg-emerald-50/70 border-emerald-200/70 text-emerald-900"
+                  : "bg-slate-50 border-slate-200/80 text-slate-500"
+              }`}
+            >
+              <div
+                className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold ${
+                  st.done
+                    ? "bg-emerald-600 text-white"
+                    : "bg-white border border-slate-300 text-slate-400"
+                }`}
+              >
+                {st.done ? <Check className="w-3 h-3" strokeWidth={2.5} /> : "+25%"}
+              </div>
+              <div className="min-w-0">
+                <div className="font-semibold truncate text-[11px] leading-tight text-slate-900">
+                  {st.label}
+                </div>
+                <div className="text-[10px] text-slate-500 truncate leading-tight">
+                  {st.desc}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
