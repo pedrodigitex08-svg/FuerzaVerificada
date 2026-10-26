@@ -4,6 +4,7 @@ import {
   JobPost,
   CourseSemaphore,
 } from "@/types/database";
+import { normalizeSecurityRole } from "@/lib/utils/roleNormalizer";
 
 export interface MatchResult {
   score: number; // 0 to 100
@@ -44,8 +45,8 @@ export function calculateMatchScore(
   let passedStrictRequirements = true;
 
   // 1. Role Match (Weight: 30%)
-  const jobRole = (job.role_required || "").toLowerCase().trim();
-  const candRole = (candidate.primary_role || "").toLowerCase().trim();
+  const jobRole = normalizeSecurityRole(job.role_required);
+  const candRole = normalizeSecurityRole(candidate.primary_role);
 
   const roleMatch =
     jobRole === candRole ||

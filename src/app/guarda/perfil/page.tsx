@@ -23,17 +23,12 @@ import {
 } from "lucide-react";
 import { CourseSemaphoreBanner } from "@/components/guarda/CourseSemaphoreBanner";
 import { SecurityRoleType } from "@/types/database";
+import {
+  SECURITY_ROLE_OPTIONS,
+  normalizeSecurityRole,
+  formatSecurityRoleLabel,
+} from "@/lib/utils/roleNormalizer";
 import { createClient } from "@/lib/supabase/client";
-
-const SECURITY_ROLES: SecurityRoleType[] = [
-  "Vigilante Fijo",
-  "Vigilante Móvil",
-  "Escolta VIP",
-  "Escolta Mercancía",
-  "Supervisor Motorizado",
-  "Operador Medios Tecnológicos",
-  "Manejador Canino",
-];
 
 export default function PerfilGuardaPage() {
   const [nationalId, setNationalId] = useState("");
@@ -41,7 +36,7 @@ export default function PerfilGuardaPage() {
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("Bogotá D.C.");
   const [locality, setLocality] = useState("");
-  const [primaryRole, setPrimaryRole] = useState<SecurityRoleType>("Vigilante Fijo");
+  const [primaryRole, setPrimaryRole] = useState<SecurityRoleType>("vigilante_fijo");
   const [yearsExperience, setYearsExperience] = useState(0);
   const [hasMilitaryBooklet, setHasMilitaryBooklet] = useState(false);
   const [hasMotorcycle, setHasMotorcycle] = useState(false);
@@ -99,7 +94,9 @@ export default function PerfilGuardaPage() {
             if (candProfile.locality_neighborhood || candProfile.locality) {
               setLocality(candProfile.locality_neighborhood || candProfile.locality);
             }
-            if (candProfile.primary_role) setPrimaryRole(candProfile.primary_role);
+            if (candProfile.primary_role) {
+              setPrimaryRole(normalizeSecurityRole(candProfile.primary_role));
+            }
             if (candProfile.years_experience !== undefined) setYearsExperience(candProfile.years_experience);
             if (candProfile.has_military_booklet !== undefined) setHasMilitaryBooklet(candProfile.has_military_booklet);
             if (candProfile.has_own_motorcycle !== undefined) setHasMotorcycle(candProfile.has_own_motorcycle);
@@ -124,6 +121,7 @@ export default function PerfilGuardaPage() {
   const handleSave = async () => {
     if (honeypot || isSaving) return;
     setIsSaving(true);
+    setUploadCvError(null);
     const supabase = createClient();
 
     try {
@@ -134,14 +132,21 @@ export default function PerfilGuardaPage() {
       if (user) {
         await supabase
           .from("profiles")
-          .update({
-            full_name: fullName,
-            phone_whatsapp: phone,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", user.id);
+          .upsert(
+            {
+              id: user.id,
+              role: "candidate",
+              full_name: fullName.trim() || user.user_metadata?.full_name || "Personal Operativo",
+              phone_whatsapp: phone.trim(),
+              email: user.email || "",
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "id" }
+          );
 
-        await supabase
+        const normalizedRole = normalizeSecurityRole(primaryRole);
+
+        const { error: candErr } = await supabase
           .from("candidate_profiles")
           .upsert(
             {
@@ -149,7 +154,7 @@ export default function PerfilGuardaPage() {
               national_id: nationalId.trim() || `TEMP-${user.id.slice(0, 8)}`,
               city,
               locality_neighborhood: locality,
-              primary_role: primaryRole,
+              primary_role: normalizedRole,
               years_experience: yearsExperience,
               has_military_booklet: hasMilitaryBooklet,
               has_own_motorcycle: hasMotorcycle,
@@ -158,12 +163,17 @@ export default function PerfilGuardaPage() {
             },
             { onConflict: "user_id" }
           );
+
+        if (candErr) {
+          throw new Error(`Error actualizando perfil: ${candErr.message}`);
+        }
       }
 
       setSavedNotice(true);
       setTimeout(() => setSavedNotice(false), 3000);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error saving profile:", err);
+      setUploadCvError(err.message || "Error al guardar los cambios del perfil.");
     } finally {
       setIsSaving(false);
     }
@@ -192,7 +202,7 @@ export default function PerfilGuardaPage() {
       const filePath = `cvs/${user.id}/${Date.now()}_${cleanFileName}`;
 
       // 2. Subir al bucket 'documents':
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from("documents")
         .upload(filePath, file, { upsert: true });
 
@@ -205,26 +215,57 @@ export default function PerfilGuardaPage() {
         data: { publicUrl },
       } = supabase.storage.from("documents").getPublicUrl(filePath);
 
-      // 4. Asegurar/actualizar candidate_profiles con resume_pdf_url
-      const { error: profileErr } = await supabase.from("candidate_profiles").upsert(
-        {
+      // 4. Desacoplar subida de PDF: si la fila en candidate_profiles ya existe,
+      // hacer únicamente update de resume_pdf_url y updated_at sin forzar primary_role.
+      const { data: existingCandProfile } = await supabase
+        .from("candidate_profiles")
+        .select("user_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (existingCandProfile) {
+        const { error: updateErr } = await supabase
+          .from("candidate_profiles")
+          .update({
+            resume_pdf_url: publicUrl,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("user_id", user.id);
+
+        if (updateErr) {
+          throw new Error(`Error actualizando URL de Hoja de Vida: ${updateErr.message}`);
+        }
+      } else {
+        // Garantizar primero la fila en public.profiles por llave foránea
+        await supabase.from("profiles").upsert(
+          {
+            id: user.id,
+            role: "candidate",
+            full_name: fullName.trim() || user.user_metadata?.full_name || "Personal Operativo",
+            phone_whatsapp: phone.trim() || user.user_metadata?.phone_whatsapp || "",
+            email: user.email || "",
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "id" }
+        );
+
+        const { error: insertErr } = await supabase.from("candidate_profiles").insert({
           user_id: user.id,
           national_id: nationalId.trim() || `TEMP-${user.id.slice(0, 8)}`,
-          city,
-          locality_neighborhood: locality,
-          primary_role: primaryRole,
+          city: city || "Bogotá D.C.",
+          locality_neighborhood: locality || "",
+          primary_role: normalizeSecurityRole(primaryRole),
           years_experience: yearsExperience,
           has_military_booklet: hasMilitaryBooklet,
           has_own_motorcycle: hasMotorcycle,
           motorcycle_cc: hasMotorcycle ? motorcycleCc : null,
           resume_pdf_url: publicUrl,
           updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id" }
-      );
+        });
 
-      if (profileErr) {
-        throw new Error(`Error actualizando perfil: ${profileErr.message}`);
+        if (insertErr) {
+          throw new Error(`Error creando perfil operativo: ${insertErr.message}`);
+        }
       }
 
       // 5. Registrar en candidate_documents
@@ -388,18 +429,18 @@ export default function PerfilGuardaPage() {
                   Especialidad Principal:
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {SECURITY_ROLES.map((role) => (
+                  {SECURITY_ROLE_OPTIONS.map((opt) => (
                     <button
-                      key={role}
+                      key={opt.value}
                       type="button"
-                      onClick={() => setPrimaryRole(role)}
+                      onClick={() => setPrimaryRole(opt.value)}
                       className={`p-2 rounded-md text-xs font-medium border text-left transition-colors ${
-                        primaryRole === role
+                        normalizeSecurityRole(primaryRole) === opt.value
                           ? "bg-slate-900 text-white border-slate-900"
                           : "bg-slate-50 text-slate-700 border-slate-200/90 hover:bg-slate-100"
                       }`}
                     >
-                      {role}
+                      {opt.label}
                     </button>
                   ))}
                 </div>
@@ -561,7 +602,9 @@ export default function PerfilGuardaPage() {
                 <h4 className="text-sm font-semibold text-white tracking-tight">
                   {fullName || "Nombre del Aspirante"}
                 </h4>
-                <div className="text-xs text-emerald-400 font-mono mt-0.5">{primaryRole}</div>
+                <div className="text-xs text-emerald-400 font-mono mt-0.5">
+                  {formatSecurityRoleLabel(primaryRole)}
+                </div>
                 <div className="text-[11px] text-slate-400 font-mono tabular-nums">
                   {nationalId ? `C.C. ${nationalId}` : "Sin Cédula"} • {city}
                 </div>

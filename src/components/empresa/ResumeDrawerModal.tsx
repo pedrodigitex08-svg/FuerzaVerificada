@@ -17,6 +17,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { CandidateWithCourseStatusView, SecurityRoleType } from "@/types/database";
+import { formatSecurityRoleLabel } from "@/lib/utils/roleNormalizer";
 import { openSecureDocument } from "@/lib/utils/storageSecurity";
 
 interface ResumeDrawerModalProps {
@@ -105,7 +106,7 @@ export function ResumeDrawerModal({
                     {candidate.full_name}
                   </h3>
                   <div className="text-xs font-medium text-emerald-400 font-mono mt-0.5">
-                    {candidate.primary_role}
+                    {formatSecurityRoleLabel(candidate.primary_role)}
                   </div>
                   <div className="text-[11px] text-slate-400 font-mono tabular-nums mt-0.5">
                     C.C. {candidate.national_id} • {candidate.city} {candidate.locality ? `(${candidate.locality})` : ""}

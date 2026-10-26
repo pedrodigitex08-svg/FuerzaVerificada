@@ -30,12 +30,22 @@ export type CourseSemaphore =
   | "VENCIDO";
 
 export type SecurityRoleType =
+  | "vigilante_fijo"
+  | "vigilante_movil"
+  | "escolta_vip"
+  | "escolta_mercancia"
+  | "supervisor_motorizado"
+  | "supervisor_zona"
+  | "operador_medios_tecnologicos"
+  | "manejador_canino"
   | "Vigilante Fijo"
   | "Vigilante Móvil"
   | "Escolta VIP"
   | "Escolta Mercancía"
   | "Supervisor Motorizado"
+  | "Supervisor de Zona"
   | "Operador Medios Tecnológicos"
+  | "Operador de Medios Tecnológicos"
   | "Manejador Canino"
   | "Inspector de Seguridad"
   | string;

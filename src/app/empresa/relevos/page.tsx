@@ -20,6 +20,10 @@ import {
 } from "lucide-react";
 import { ResumeDrawerModal } from "@/components/empresa/ResumeDrawerModal";
 import { SecurityRoleType } from "@/types/database";
+import {
+  normalizeSecurityRole,
+  formatSecurityRoleLabel,
+} from "@/lib/utils/roleNormalizer";
 import { createClient } from "@/lib/supabase/client";
 
 interface AvailableGuard {
@@ -147,7 +151,9 @@ export default function RadarRelevosPage() {
     const matchSearch =
       g.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       g.locality.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchRole = selectedRole === "Todos" || g.primary_role === selectedRole;
+    const matchRole =
+      selectedRole === "Todos" ||
+      normalizeSecurityRole(g.primary_role) === normalizeSecurityRole(selectedRole);
     const matchMoto = !onlyMotorcycle || g.has_own_motorcycle;
     const matchImmediate = !onlyImmediate || g.available_immediately;
     return matchSearch && matchRole && matchMoto && matchImmediate;
@@ -276,7 +282,7 @@ export default function RadarRelevosPage() {
                         {guard.full_name}
                       </h3>
                       <div className="text-xs font-medium text-slate-700 font-mono mt-0.5">
-                        {guard.primary_role}
+                        {formatSecurityRoleLabel(guard.primary_role)}
                       </div>
                       <div className="text-[11px] text-slate-500 font-mono tabular-nums mt-0.5">
                         C.C. {guard.national_id}

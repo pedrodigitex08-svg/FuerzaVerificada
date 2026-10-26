@@ -26,18 +26,12 @@ import {
 } from "lucide-react";
 import { CourseSemaphoreBanner } from "@/components/guarda/CourseSemaphoreBanner";
 import { SecurityRoleType, WorkExperienceItem } from "@/types/database";
+import {
+  SECURITY_ROLE_OPTIONS,
+  normalizeSecurityRole,
+  formatSecurityRoleLabel,
+} from "@/lib/utils/roleNormalizer";
 import { createClient } from "@/lib/supabase/client";
-
-const SECURITY_ROLES: SecurityRoleType[] = [
-  "Vigilante Fijo",
-  "Vigilante Móvil",
-  "Escolta VIP",
-  "Escolta Mercancía",
-  "Supervisor Motorizado",
-  "Operador Medios Tecnológicos",
-  "Manejador Canino",
-  "Inspector de Seguridad",
-];
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -52,7 +46,7 @@ export default function OnboardingPage() {
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("Bogotá D.C.");
   const [locality, setLocality] = useState("");
-  const [primaryRole, setPrimaryRole] = useState<SecurityRoleType>("Vigilante Fijo");
+  const [primaryRole, setPrimaryRole] = useState<SecurityRoleType>("vigilante_fijo");
   const [yearsExperience, setYearsExperience] = useState(0);
   const [hasMilitaryBooklet, setHasMilitaryBooklet] = useState(false);
   const [hasMotorcycle, setHasMotorcycle] = useState(false);
@@ -89,11 +83,7 @@ export default function OnboardingPage() {
           else if (user.user_metadata?.phone_whatsapp) setPhone(user.user_metadata.phone_whatsapp);
 
           if (user.user_metadata?.primary_role) {
-            const metaRole =
-              user.user_metadata.primary_role === "Operador de Medios Tecnológicos"
-                ? "Operador Medios Tecnológicos"
-                : user.user_metadata.primary_role;
-            setPrimaryRole(metaRole as SecurityRoleType);
+            setPrimaryRole(normalizeSecurityRole(user.user_metadata.primary_role));
           }
 
           if (user.user_metadata?.city) {
@@ -112,7 +102,9 @@ export default function OnboardingPage() {
             }
             if (candProfile.city) setCity(candProfile.city);
             if (candProfile.locality_neighborhood) setLocality(candProfile.locality_neighborhood);
-            if (candProfile.primary_role) setPrimaryRole(candProfile.primary_role);
+            if (candProfile.primary_role) {
+              setPrimaryRole(normalizeSecurityRole(candProfile.primary_role));
+            }
             if (candProfile.years_experience !== undefined) {
               setYearsExperience(candProfile.years_experience);
             }
@@ -226,16 +218,56 @@ export default function OnboardingPage() {
         uploadedCedulaUrl = await uploadDoc(cedulaFile, "id_cards");
       }
 
-      const validPrimaryRole =
-        primaryRole === "Operador de Medios Tecnológicos"
-          ? "Operador Medios Tecnológicos"
-          : primaryRole;
+      const validPrimaryRole = normalizeSecurityRole(primaryRole);
+      const roleLabel = formatSecurityRoleLabel(primaryRole);
 
       const finalResumeUrl = uploadedResumeUrl || existingResumeUrl || null;
 
-      // 3. Upsert en public.candidate_profiles asegurando la existencia y guardando resume_pdf_url
-      const { error: candProfileError } = await supabase.from("candidate_profiles").upsert(
-        {
+      // 3. Verificar si la fila en public.candidate_profiles ya existe:
+      const { data: existingCandProfile } = await supabase
+        .from("candidate_profiles")
+        .select("user_id")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (existingCandProfile) {
+        const { error: updateErr } = await supabase
+          .from("candidate_profiles")
+          .update({
+            national_id: nationalId.trim() || `CC-${userId.slice(0, 8)}`,
+            city,
+            locality_neighborhood: locality,
+            primary_role: validPrimaryRole,
+            years_experience: yearsExperience,
+            has_military_booklet: hasMilitaryBooklet,
+            has_own_motorcycle: hasMotorcycle,
+            motorcycle_cc: hasMotorcycle ? motorcycleCc : null,
+            available_immediately: true,
+            resume_pdf_url: finalResumeUrl,
+            work_experience_json: experiences as any,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("user_id", userId);
+
+        if (updateErr) {
+          // Respaldo desacoplado exclusivo para guardar resume_pdf_url sin forzar primary_role si hubiese restricción
+          if (finalResumeUrl) {
+            const { error: fallbackErr } = await supabase
+              .from("candidate_profiles")
+              .update({
+                resume_pdf_url: finalResumeUrl,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("user_id", userId);
+            if (fallbackErr) {
+              throw new Error(`Error guardando expediente del candidato: ${fallbackErr.message}`);
+            }
+          } else {
+            throw new Error(`Error guardando expediente del candidato: ${updateErr.message}`);
+          }
+        }
+      } else {
+        const { error: insertErr } = await supabase.from("candidate_profiles").insert({
           user_id: userId,
           national_id: nationalId.trim() || `CC-${userId.slice(0, 8)}`,
           city,
@@ -249,12 +281,11 @@ export default function OnboardingPage() {
           resume_pdf_url: finalResumeUrl,
           work_experience_json: experiences as any,
           updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id" }
-      );
+        });
 
-      if (candProfileError) {
-        throw new Error(`Error guardando expediente del candidato: ${candProfileError.message}`);
+        if (insertErr) {
+          throw new Error(`Error guardando expediente del candidato: ${insertErr.message}`);
+        }
       }
 
       // 4. Insert/update candidate_courses si se proporcionó fecha de curso
@@ -265,7 +296,7 @@ export default function OnboardingPage() {
 
         const { error: courseError } = await supabase.from("candidate_courses").insert({
           candidate_id: userId,
-          course_name: `Reentrenamiento - ${validPrimaryRole}`,
+          course_name: `Reentrenamiento - ${roleLabel}`,
           academy_name: courseAcademy.trim() || "Academia Autorizada SuperVigilancia",
           completion_date: courseCompletionDate,
           expiration_date: computedExpirationDate,
@@ -448,20 +479,20 @@ export default function OnboardingPage() {
                     Especialidad Principal en Seguridad Privada:
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {SECURITY_ROLES.map((role) => {
-                      const isSel = primaryRole === role;
+                    {SECURITY_ROLE_OPTIONS.map((opt) => {
+                      const isSel = normalizeSecurityRole(primaryRole) === opt.value;
                       return (
                         <button
-                          key={role}
+                          key={opt.value}
                           type="button"
-                          onClick={() => setPrimaryRole(role)}
+                          onClick={() => setPrimaryRole(opt.value)}
                           className={`p-2 rounded-md text-xs font-medium border text-left transition-colors ${
                             isSel
                               ? "bg-slate-900 text-white border-slate-900 shadow-xs"
                               : "bg-slate-50 text-slate-700 border-slate-200/90 hover:bg-slate-100"
                           }`}
                         >
-                          {role}
+                          {opt.label}
                         </button>
                       );
                     })}
@@ -575,7 +606,7 @@ export default function OnboardingPage() {
                     completionDate={courseCompletionDate}
                     candidateName={fullName}
                     city={city}
-                    courseName={`Curso de ${primaryRole}`}
+                    courseName={`Curso de ${formatSecurityRoleLabel(primaryRole)}`}
                   />
                 </div>
 
@@ -824,7 +855,7 @@ export default function OnboardingPage() {
                   {fullName}
                 </h4>
                 <div className="text-xs font-medium text-emerald-400 font-mono mt-0.5">
-                  {primaryRole}
+                  {formatSecurityRoleLabel(primaryRole)}
                 </div>
                 <div className="text-[11px] text-slate-400 font-mono tabular-nums mt-0.5">
                   C.C. {nationalId} • {city}

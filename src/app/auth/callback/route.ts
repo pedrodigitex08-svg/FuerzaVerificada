@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { EmailOtpType } from "@supabase/supabase-js";
+import { normalizeSecurityRole } from "@/lib/utils/roleNormalizer";
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
@@ -162,10 +163,7 @@ export async function GET(request: Request) {
         intent === "register"
       ) {
         if (!candidateProfile) {
-          const validRole =
-            meta.primary_role === "Operador de Medios Tecnológicos"
-              ? "Operador Medios Tecnológicos"
-              : meta.primary_role || "Vigilante Fijo";
+          const validRole = normalizeSecurityRole(meta.primary_role);
 
           await supabase.from("candidate_profiles").upsert(
             {

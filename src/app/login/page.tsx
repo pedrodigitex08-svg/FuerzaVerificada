@@ -21,6 +21,10 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { UserRole } from "@/types/database";
+import {
+  SECURITY_ROLE_OPTIONS,
+  normalizeSecurityRole,
+} from "@/lib/utils/roleNormalizer";
 
 function GoogleIcon() {
   return (
@@ -63,7 +67,7 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const [primaryRole, setPrimaryRole] = useState("Vigilante Fijo");
+  const [primaryRole, setPrimaryRole] = useState("vigilante_fijo");
   const [companyName, setCompanyName] = useState("");
   const [companyNit, setCompanyNit] = useState("");
   const [city, setCity] = useState("Bogotá D.C.");
@@ -494,17 +498,14 @@ function LoginForm() {
         .maybeSingle();
 
       if (!existingCand) {
-        const validRole =
-          params.primaryRole === "Operador de Medios Tecnológicos"
-            ? "Operador Medios Tecnológicos"
-            : params.primaryRole || "Vigilante Fijo";
+        const validRole = normalizeSecurityRole(params.primaryRole);
 
         const { error: candError } = await supabase.from("candidate_profiles").upsert(
           {
             user_id: params.userId,
             national_id: `CC-${params.userId.slice(0, 8)}`,
             city: cleanCity,
-            primary_role: validRole as any,
+            primary_role: validRole,
             years_experience: 0,
             has_military_booklet: false,
             has_own_motorcycle: false,
@@ -724,10 +725,7 @@ function LoginForm() {
             ? window.location.origin
             : process.env.NEXT_PUBLIC_SITE_URL || "";
 
-        const validPrimaryRole =
-          primaryRole === "Operador de Medios Tecnológicos"
-            ? "Operador Medios Tecnológicos"
-            : primaryRole;
+        const validPrimaryRole = normalizeSecurityRole(primaryRole);
 
         const { data, error } = await supabase.auth.signUp({
           email: cleanEmail,
@@ -757,7 +755,7 @@ function LoginForm() {
               p_full_name: fullName.trim(),
               p_phone: phone.trim(),
               p_city: city || "Bogotá D.C.",
-              p_primary_role: selectedRole === "candidate" ? validPrimaryRole : "Vigilante Fijo",
+              p_primary_role: selectedRole === "candidate" ? validPrimaryRole : "vigilante_fijo",
               p_company_name: selectedRole === "company" ? companyName.trim() : null,
               p_company_nit: selectedRole === "company" ? companyNit.trim() : null,
             });
@@ -1465,14 +1463,11 @@ function LoginForm() {
                       onChange={(e) => setPrimaryRole(e.target.value)}
                       className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
                     >
-                      <option value="Vigilante Fijo">Vigilante Fijo</option>
-                      <option value="Vigilante Móvil">Vigilante Móvil</option>
-                      <option value="Escolta VIP">Escolta VIP</option>
-                      <option value="Escolta Mercancía">Escolta Mercancía</option>
-                      <option value="Supervisor Motorizado">Supervisor Motorizado</option>
-                      <option value="Operador Medios Tecnológicos">Operador de Medios Tecnológicos</option>
-                      <option value="Manejador Canino">Manejador Canino</option>
-                      <option value="Inspector de Seguridad">Inspector de Seguridad</option>
+                      {SECURITY_ROLE_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
                     </select>
                   </div>
 

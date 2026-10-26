@@ -21,17 +21,12 @@ import {
   Calendar,
 } from "lucide-react";
 import { SecurityRoleType } from "@/types/database";
+import {
+  SECURITY_ROLE_OPTIONS,
+  normalizeSecurityRole,
+  formatSecurityRoleLabel,
+} from "@/lib/utils/roleNormalizer";
 import { createClient } from "@/lib/supabase/client";
-
-const ROLES: SecurityRoleType[] = [
-  "Vigilante Fijo",
-  "Vigilante Móvil",
-  "Escolta VIP",
-  "Escolta Mercancía",
-  "Supervisor Motorizado",
-  "Operador Medios Tecnológicos",
-  "Manejador Canino",
-];
 
 const SHIFTS = [
   "2x2x2 (2 Día, 2 Noche, 2 Descanso)",
@@ -52,7 +47,7 @@ export default function NuevaVacantePage() {
 
   // Form Fields
   const [title, setTitle] = useState("");
-  const [roleRequired, setRoleRequired] = useState<SecurityRoleType>("Vigilante Fijo");
+  const [roleRequired, setRoleRequired] = useState<SecurityRoleType>("vigilante_fijo");
   const [city, setCity] = useState("Bogotá D.C.");
   const [zone, setZone] = useState("");
   const [shift, setShift] = useState(SHIFTS[0]);
@@ -165,10 +160,13 @@ export default function NuevaVacantePage() {
         }
       }
 
+      const normalizedRoleRequired = normalizeSecurityRole(roleRequired);
+      const roleLabel = formatSecurityRoleLabel(roleRequired);
+
       const payload = {
         company_id: resolvedCompanyId,
-        title: title.trim() || `${roleRequired} - ${city}`,
-        role_required: roleRequired,
+        title: title.trim() || `${roleLabel} - ${city}`,
+        role_required: normalizedRoleRequired,
         city,
         zone_neighborhood: zone.trim() || "Zona Principal",
         shift,
@@ -277,18 +275,18 @@ export default function NuevaVacantePage() {
                 Cargo Operativo Requerido:
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {ROLES.map((role) => (
+                {SECURITY_ROLE_OPTIONS.map((opt) => (
                   <button
-                    key={role}
+                    key={opt.value}
                     type="button"
-                    onClick={() => setRoleRequired(role)}
+                    onClick={() => setRoleRequired(opt.value)}
                     className={`p-2 rounded-md text-xs font-medium border text-left transition-all ${
-                      roleRequired === role
+                      normalizeSecurityRole(roleRequired) === opt.value
                         ? "bg-slate-900 text-white border-slate-900"
                         : "bg-slate-50/70 text-slate-700 border-slate-200/90 hover:bg-slate-100"
                     }`}
                   >
-                    {role}
+                    {opt.label}
                   </button>
                 ))}
               </div>
@@ -553,7 +551,7 @@ export default function NuevaVacantePage() {
                 </span>
               </div>
               <h3 className="text-base font-semibold tracking-tight text-slate-900 mt-0.5">
-                {title || `${roleRequired} - ${city}`}
+                {title || `${formatSecurityRoleLabel(roleRequired)} - ${city}`}
               </h3>
             </div>
 

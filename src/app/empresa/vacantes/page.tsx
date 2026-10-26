@@ -14,6 +14,7 @@ import {
   Search,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { formatSecurityRoleLabel } from "@/lib/utils/roleNormalizer";
 
 interface VacancyItem {
   id: string;
@@ -71,7 +72,7 @@ export default function EmpresaVacantesListPage() {
             data.map((j: any) => ({
               id: j.id,
               title: j.title,
-              role: j.role_required || "Seguridad",
+              role: formatSecurityRoleLabel(j.role_required),
               shift: j.shift || "Turno rotativo",
               salary: j.salary_monthly || 0,
               zone: j.zone_neighborhood || j.city || "Colombia",

@@ -28,6 +28,10 @@ import {
 import { ReliefToggle } from "@/components/guarda/ReliefToggle";
 import { CityAutocompleteInput } from "@/components/ui/CityAutocompleteInput";
 import { calculateMatchScore } from "@/lib/utils/matchCalculator";
+import {
+  normalizeSecurityRole,
+  formatSecurityRoleLabel,
+} from "@/lib/utils/roleNormalizer";
 import { JobPost, CourseSemaphore } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/supabase/useAuth";
@@ -255,7 +259,8 @@ function VacantesContent() {
       (j.zone_neighborhood || "").toLowerCase().includes(locationFilter.toLowerCase().trim());
 
     const matchesRole =
-      selectedRoleFilter === "Todos" || j.role_required === selectedRoleFilter;
+      selectedRoleFilter === "Todos" ||
+      normalizeSecurityRole(j.role_required) === normalizeSecurityRole(selectedRoleFilter);
 
     const matchesShift =
       selectedShiftFilter === "Todos" || j.shift.includes(selectedShiftFilter);
@@ -753,7 +758,7 @@ function VacantesContent() {
                   </h4>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="p-2.5 rounded-md border border-slate-200/80 bg-slate-50 flex items-center justify-between">
-                      <span className="text-slate-600">Cargo ({selectedJob.role_required}):</span>
+                      <span className="text-slate-600">Cargo ({formatSecurityRoleLabel(selectedJob.role_required)}):</span>
                       {selectedMatch.breakdown.roleMatch ? (
                         <span className="text-emerald-700 font-medium flex items-center gap-1">
                           <Check className="w-3.5 h-3.5" strokeWidth={2.5} /> Coincide
