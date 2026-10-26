@@ -19,6 +19,8 @@ import {
   Building2,
   Check,
   Calendar,
+  Radio,
+  FileCheck,
 } from "lucide-react";
 import { SecurityRoleType } from "@/types/database";
 import {
@@ -36,6 +38,68 @@ const SHIFTS = [
   "12x12 Rotativo",
 ];
 
+// 4 PLANTILLAS RÁPIDAS DEL SECTOR SEGURIDAD
+const QUICK_TEMPLATES = [
+  {
+    name: "Vigilante Fijo (2x2x2)",
+    icon: Shield,
+    role: "vigilante_fijo" as SecurityRoleType,
+    title: "Vigilante Fijo - Control de Accesos 2x2x2",
+    shift: "2x2x2 (2 Día, 2 Noche, 2 Descanso)",
+    salary: 1950000,
+    requiresCourse: true,
+    requiresMilitaryBooklet: true,
+    requiresMotorcycle: false,
+    minExperienceYears: 1,
+    description:
+      "Control estricto de accesos peatonales y vehiculares, registro de visitantes y contratistas, rondas perimétricas de verificación física, custodia de activos y reporte oportuno en minuta electrónica según protocolos de la Superintendencia de Vigilancia y Seguridad Privada.",
+  },
+  {
+    name: "Escolta Motorizado",
+    icon: Bike,
+    role: "escolta_motorizado" as SecurityRoleType,
+    title: "Escolta Motorizado - Protección de Personas y Mercancías",
+    shift: "12x12 Rotativo",
+    salary: 2850000,
+    requiresCourse: true,
+    requiresMilitaryBooklet: true,
+    requiresMotorcycle: true,
+    minMotorcycleCc: 200,
+    minExperienceYears: 2,
+    description:
+      "Custodia y protección armada en desplazamientos urbanos e intermunicipales, evaluación preventiva de rutas críticas, técnicas de manejo defensivo y evasivo en motocicleta de alto cilindraje y reacción inmediata ante contingencias de seguridad.",
+  },
+  {
+    name: "Operador CCTV / Medios",
+    icon: Radio,
+    role: "operador_cctv" as SecurityRoleType,
+    title: "Operador de Medios Tecnológicos - Centro de Control CCTV",
+    shift: "2x2x2 (2 Día, 2 Noche, 2 Descanso)",
+    salary: 2200000,
+    requiresCourse: true,
+    requiresMilitaryBooklet: false,
+    requiresMotorcycle: false,
+    minExperienceYears: 1,
+    description:
+      "Monitoreo constante de cámaras de seguridad y circuito cerrado de televisión (CCTV), control perimétrico digital, recepción y despacho de alarmas, coordinación radial con cuadrantes y personal operativo, y elaboración de bitácoras de incidencias.",
+  },
+  {
+    name: "Supervisor de Patrulla / Zona",
+    icon: Briefcase,
+    role: "supervisor_puesto" as SecurityRoleType,
+    title: "Supervisor de Puestos y Patrulla Operativa",
+    shift: "4x2 Rotativo",
+    salary: 2600000,
+    requiresCourse: true,
+    requiresMilitaryBooklet: true,
+    requiresMotorcycle: true,
+    minMotorcycleCc: 150,
+    minExperienceYears: 3,
+    description:
+      "Supervisión táctica y disciplinaria de puestos asignados en la zona, revista de armamento y minutas de servicio, atención y relevo oportuno de contingencias, instrucción de consignas del cliente y control estricto de dotación reglamentaria.",
+  },
+];
+
 export default function NuevaVacantePage() {
   const router = useRouter();
   const supabase = createClient();
@@ -44,6 +108,7 @@ export default function NuevaVacantePage() {
   const [successToast, setSuccessToast] = useState(false);
   const [companyName, setCompanyName] = useState("Empresa de Seguridad");
   const [honeypot, setHoneypot] = useState("");
+  const [activeTemplateName, setActiveTemplateName] = useState<string | null>(null);
 
   // Form Fields
   const [title, setTitle] = useState("");
@@ -97,6 +162,21 @@ export default function NuevaVacantePage() {
     loadCompanyInfo();
   }, [supabase]);
 
+  // Aplicar plantilla rápida en 1 clic
+  const handleApplyTemplate = (tmpl: (typeof QUICK_TEMPLATES)[0]) => {
+    setActiveTemplateName(tmpl.name);
+    setTitle(tmpl.title);
+    setRoleRequired(tmpl.role);
+    setShift(tmpl.shift);
+    setSalaryMonthly(tmpl.salary);
+    setRequiresCourse(tmpl.requiresCourse);
+    setRequiresMilitaryBooklet(tmpl.requiresMilitaryBooklet);
+    setRequiresMotorcycle(tmpl.requiresMotorcycle);
+    if (tmpl.minMotorcycleCc) setMinMotorcycleCc(tmpl.minMotorcycleCc);
+    setMinExperienceYears(tmpl.minExperienceYears);
+    setDescription(tmpl.description);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (honeypot) return;
@@ -125,7 +205,7 @@ export default function NuevaVacantePage() {
         resolvedCompanyName = existingComp.company_name || companyName;
         resolvedVerified = Boolean(existingComp.is_verified_company);
       } else {
-        // Auto-create company record if company user does not have one yet
+        // Auto-crear registro de empresa si el usuario aún no lo tiene
         const { data: prof } = await supabase
           .from("profiles")
           .select("full_name, phone_whatsapp")
@@ -133,7 +213,12 @@ export default function NuevaVacantePage() {
           .maybeSingle();
 
         const meta = authData.user?.user_metadata || {};
-        const cleanCompName = companyName || meta.company_name || prof?.full_name || authData.user?.email?.split("@")[0] || "Empresa de Seguridad";
+        const cleanCompName =
+          companyName ||
+          meta.company_name ||
+          prof?.full_name ||
+          authData.user?.email?.split("@")[0] ||
+          "Empresa de Seguridad";
         const cleanNit = meta.nit || "";
         const cleanPhone = prof?.phone_whatsapp || meta.phone_whatsapp || "";
 
@@ -216,28 +301,93 @@ export default function NuevaVacantePage() {
             Publicador Táctico de Vacantes
           </h1>
           <p className="text-xs text-slate-600 font-normal">
-            Configure requerimientos técnicos y filtros excluyentes para recibir candidatos calificados.
+            Configure requerimientos operativos y filtros excluyentes para recibir candidatos idóneos en minutos.
           </p>
         </div>
 
-        <Link href="/empresa/vacantes" className="btn-secondary text-xs h-9 px-3.5">
+        <Link href="/empresa/vacantes" className="btn-secondary text-xs h-9 px-3.5 inline-flex items-center gap-1.5">
           <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.75} />
-          Volver a Mis Vacantes
+          <span>Volver a Mis Vacantes</span>
         </Link>
       </div>
 
       {successToast && (
         <div className="p-3.5 rounded-md bg-emerald-600 text-white text-xs font-medium flex items-center gap-2 shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
           <CheckCircle2 className="w-4 h-4" strokeWidth={2} />
-          ¡Vacante publicada con éxito! Redirigiendo a tu bandeja de gestión...
+          <span>¡Vacante publicada con éxito! Redirigiendo a tu bandeja ATS...</span>
         </div>
       )}
 
+      {/* PLANTILLAS RÁPIDAS DEL SECTOR SEGURIDAD (1 CLIC) */}
+      <div className="bg-white border border-slate-200/90 rounded-lg p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-6 rounded-md bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center font-bold text-xs">
+              ⚡
+            </span>
+            <span className="text-xs font-semibold text-slate-900 tracking-tight">
+              Plantillas Rápidas del Sector Seguridad (Publicación en 30 Segundos)
+            </span>
+          </div>
+          <span className="text-[11px] text-slate-500">
+            Haz clic en una plantilla para pre-llenar funciones, requisitos y turnos oficiales:
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+          {QUICK_TEMPLATES.map((tmpl) => {
+            const Icon = tmpl.icon;
+            const isSelected = activeTemplateName === tmpl.name;
+
+            return (
+              <button
+                key={tmpl.name}
+                type="button"
+                onClick={() => handleApplyTemplate(tmpl)}
+                className={`p-3 rounded-lg border text-left transition-all ${
+                  isSelected
+                    ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                    : "bg-slate-50/70 border-slate-200/90 text-slate-700 hover:border-slate-400 hover:bg-slate-100"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <div
+                    className={`w-7 h-7 rounded-md flex items-center justify-center ${
+                      isSelected ? "bg-slate-800 text-amber-400" : "bg-white border border-slate-200 text-slate-700"
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" strokeWidth={1.75} />
+                  </div>
+                  {isSelected && (
+                    <span className="text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">
+                      Aplicada ✓
+                    </span>
+                  )}
+                </div>
+
+                <div className="font-semibold text-xs leading-tight">
+                  {tmpl.name}
+                </div>
+                <div
+                  className={`text-[11px] font-mono tabular-nums mt-0.5 ${
+                    isSelected ? "text-slate-300" : "text-slate-500"
+                  }`}
+                >
+                  ${(tmpl.salary / 1000000).toFixed(2)}M • {tmpl.shift.split(" ")[0]}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* 2-COLUMN WORKSPACE: FORM (7 cols) + LIVE CARD PREVIEW (5 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
         {/* LEFT COLUMN: STRUCTURED FORM */}
-        <form onSubmit={handleSubmit} className="lg:col-span-7 bg-white border border-slate-200/90 rounded-lg p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)] space-y-6">
+        <form
+          onSubmit={handleSubmit}
+          className="lg:col-span-7 bg-white border border-slate-200/90 rounded-lg p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)] space-y-6"
+        >
           {/* Anti-Spam Honeypot */}
           <div className="hidden" aria-hidden="true" tabIndex={-1}>
             <input
@@ -249,7 +399,7 @@ export default function NuevaVacantePage() {
               autoComplete="off"
             />
           </div>
-          
+
           {/* Section 1: General Info */}
           <div className="space-y-4">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -307,6 +457,8 @@ export default function NuevaVacantePage() {
                   <option value="Cali">Cali</option>
                   <option value="Barranquilla">Barranquilla</option>
                   <option value="Bucaramanga">Bucaramanga</option>
+                  <option value="Cartagena">Cartagena</option>
+                  <option value="Pereira">Pereira</option>
                 </select>
               </div>
 
@@ -319,7 +471,7 @@ export default function NuevaVacantePage() {
                   required
                   value={zone}
                   onChange={(e) => setZone(e.target.value)}
-                  placeholder="Ej: Chicó Norte, Fontibón"
+                  placeholder="Ej: Chicó Norte, Fontibón, Suba"
                   className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
                 />
               </div>
@@ -412,10 +564,10 @@ export default function NuevaVacantePage() {
               <div className="p-3 rounded-md border border-slate-200/90 bg-slate-50/70 flex items-center justify-between">
                 <div>
                   <strong className="text-xs text-slate-900 block font-semibold">
-                    Curso SuperVigilancia Vigente Obligatorio (&gt;30 días)
+                    Curso SuperVigilancia Vigente Obligatorio
                   </strong>
                   <span className="text-[11px] text-slate-500">
-                    Descarta automáticamente hojas de vida con curso vencido
+                    Descarta automáticamente hojas de vida sin credencial vigente
                   </span>
                 </div>
                 <button
@@ -435,7 +587,7 @@ export default function NuevaVacantePage() {
                     Libreta Militar al Día Requerida
                   </strong>
                   <span className="text-[11px] text-slate-500">
-                    Indispensable para armamento y puestos de alto riesgo
+                    Indispensable para puestos con armamento
                   </span>
                 </div>
                 <button
@@ -456,7 +608,7 @@ export default function NuevaVacantePage() {
                       Requiere Motocicleta Propia
                     </strong>
                     <span className="text-[11px] text-slate-500">
-                      Excluyente para Supervisores y Rondines
+                      Excluyente para Escoltas y Supervisores de patrulla
                     </span>
                   </div>
                   <button
@@ -487,14 +639,37 @@ export default function NuevaVacantePage() {
                 )}
               </div>
 
-              {/* Urgent relief flag */}
+              {/* Años mínimos */}
+              <div className="p-3 rounded-md border border-slate-200/90 bg-slate-50/70 flex items-center justify-between">
+                <div>
+                  <strong className="text-xs text-slate-900 block font-semibold">
+                    Experiencia Mínima en Seguridad
+                  </strong>
+                  <span className="text-[11px] text-slate-500">
+                    Años de servicio comprobables en el sector
+                  </span>
+                </div>
+                <select
+                  value={minExperienceYears}
+                  onChange={(e) => setMinExperienceYears(Number(e.target.value))}
+                  className="h-8 bg-white border border-slate-200/90 rounded-md px-2.5 text-xs text-slate-900 font-mono tabular-nums"
+                >
+                  <option value={0}>Sin experiencia</option>
+                  <option value={1}>1 año o más</option>
+                  <option value={2}>2 años o más</option>
+                  <option value={3}>3 años o más</option>
+                  <option value={5}>5 años o más</option>
+                </select>
+              </div>
+
+              {/* Relevo urgente */}
               <div className="p-3 rounded-md border border-amber-200/80 bg-amber-50/60 flex items-center justify-between">
                 <div>
                   <strong className="text-xs text-amber-900 block font-semibold">
                     Marcar como &quot;Relevo Urgente&quot;
                   </strong>
                   <span className="text-[11px] text-amber-700">
-                    Aparece con distintivo de prioridad y alerta a guardas con disponibilidad hoy
+                    Aparece con distintivo de prioridad y alerta a candidatos con disponibilidad inmediata
                   </span>
                 </div>
                 <button
@@ -514,14 +689,14 @@ export default function NuevaVacantePage() {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full text-xs font-medium h-10"
+              className="btn-primary w-full text-xs font-medium h-10 inline-flex items-center justify-center gap-2"
             >
               {loading ? (
                 "Publicando oferta..."
               ) : (
                 <>
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" strokeWidth={2} />
-                  Publicar Vacante Inmediatamente
+                  <span>Publicar Vacante Inmediatamente</span>
                 </>
               )}
             </button>
@@ -531,7 +706,7 @@ export default function NuevaVacantePage() {
         {/* RIGHT COLUMN: LIVE OFFER PREVIEW (5 cols - Sticky) */}
         <div className="lg:col-span-5 sticky top-24 space-y-3">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block">
-            Vista Previa en Vivo (Como la verá el Guarda)
+            Vista Previa en Vivo (Como la verá el Candidato)
           </span>
 
           <div className="bg-white border border-slate-900 rounded-lg p-5 space-y-4 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
@@ -567,14 +742,18 @@ export default function NuevaVacantePage() {
               </div>
               <div className="text-right">
                 <span className="text-[10px] text-slate-400 block uppercase">Turno</span>
-                <span className="text-xs font-semibold text-amber-400 font-mono tabular-nums">{shift}</span>
+                <span className="text-xs font-semibold text-amber-400 font-mono tabular-nums">
+                  {shift}
+                </span>
               </div>
             </div>
 
             <div className="text-xs text-slate-600 space-y-1">
               <div className="flex items-center gap-1.5 text-slate-500">
                 <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                <span>{city} • {zone}</span>
+                <span>
+                  {city} • {zone || "Zona Principal"}
+                </span>
               </div>
               {requiresMotorcycle && (
                 <div className="flex items-center gap-1.5 text-amber-800 font-medium tabular-nums">
@@ -597,7 +776,6 @@ export default function NuevaVacantePage() {
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );
