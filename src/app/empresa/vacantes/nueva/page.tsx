@@ -155,8 +155,13 @@ export default function NuevaVacantePage() {
           .select("full_name")
           .eq("id", user.id)
           .maybeSingle();
-        if (prof?.full_name) setCompanyName(prof.full_name);
-      } catch {}
+
+        if (prof?.full_name) {
+          setCompanyName(prof.full_name);
+        }
+      } catch (err) {
+        console.error("Error loading company info:", err);
+      }
     }
 
     loadCompanyInfo();
@@ -165,8 +170,8 @@ export default function NuevaVacantePage() {
   // Aplicar plantilla rápida en 1 clic
   const handleApplyTemplate = (tmpl: (typeof QUICK_TEMPLATES)[0]) => {
     setActiveTemplateName(tmpl.name);
-    setTitle(tmpl.title);
     setRoleRequired(tmpl.role);
+    setTitle(tmpl.title);
     setShift(tmpl.shift);
     setSalaryMonthly(tmpl.salary);
     setRequiresCourse(tmpl.requiresCourse);
@@ -183,70 +188,37 @@ export default function NuevaVacantePage() {
     setLoading(true);
 
     try {
-      const { data: authData } = await supabase.auth.getUser();
-      const userId = authData?.user?.id;
-      if (!userId) {
-        router.push("/login?error=unauthorized_company");
-        return;
-      }
+      let resolvedCompanyId: string | null = null;
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      let resolvedCompanyId = userId;
-      let resolvedCompanyName = companyName;
-      let resolvedVerified = false;
-
-      const { data: existingComp } = await supabase
-        .from("companies")
-        .select("id, company_name, is_verified_company")
-        .eq("owner_id", userId)
-        .maybeSingle();
-
-      if (existingComp) {
-        resolvedCompanyId = existingComp.id;
-        resolvedCompanyName = existingComp.company_name || companyName;
-        resolvedVerified = Boolean(existingComp.is_verified_company);
-      } else {
-        // Auto-crear registro de empresa si el usuario aún no lo tiene
-        const { data: prof } = await supabase
-          .from("profiles")
-          .select("full_name, phone_whatsapp")
-          .eq("id", userId)
-          .maybeSingle();
-
-        const meta = authData.user?.user_metadata || {};
-        const cleanCompName =
-          companyName ||
-          meta.company_name ||
-          prof?.full_name ||
-          authData.user?.email?.split("@")[0] ||
-          "Empresa de Seguridad";
-        const cleanNit = meta.nit || "";
-        const cleanPhone = prof?.phone_whatsapp || meta.phone_whatsapp || "";
-
-        const { data: createdComp } = await supabase
+      if (user) {
+        let { data: comp } = await supabase
           .from("companies")
-          .insert({
-            owner_id: userId,
-            company_name: cleanCompName,
-            nit: cleanNit,
-            city,
-            contact_person: prof?.full_name || "Contacto Principal",
-            contact_phone: cleanPhone,
-            is_verified_company: false,
-            plan_name: "basico",
-            credits_security_studies: 0,
-          })
-          .select("id, company_name, is_verified_company")
+          .select("id")
+          .eq("owner_id", user.id)
           .maybeSingle();
 
-        if (createdComp) {
-          resolvedCompanyId = createdComp.id;
-          resolvedCompanyName = createdComp.company_name;
-          resolvedVerified = Boolean(createdComp.is_verified_company);
+        if (!comp) {
+          const { data: createdComp } = await supabase
+            .from("companies")
+            .insert({
+              owner_id: user.id,
+              company_name: companyName || "Empresa de Seguridad",
+              city,
+            })
+            .select("id")
+            .maybeSingle();
+
+          if (createdComp) comp = createdComp;
         }
+
+        if (comp) resolvedCompanyId = comp.id;
       }
 
       const normalizedRoleRequired = normalizeSecurityRole(roleRequired);
-      const roleLabel = formatSecurityRoleLabel(roleRequired);
+      const roleLabel = formatSecurityRoleLabel(normalizedRoleRequired);
 
       const payload = {
         company_id: resolvedCompanyId,
@@ -294,47 +266,53 @@ export default function NuevaVacantePage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200/80">
+      {/* Page Header Estilo Computrabajo Empresas */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 tracking-tight">
-            Publicador Táctico de Vacantes
-          </h1>
-          <p className="text-xs text-slate-600 font-normal">
-            Configure requerimientos operativos y filtros excluyentes para recibir candidatos idóneos en minutos.
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+              Publicador Táctico de Vacantes
+            </h1>
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#005DA4] bg-[#EAF3FA] px-2.5 py-0.5 rounded-full border border-[#D5E6F5]">
+              <Sparkles className="w-3 h-3 text-[#005DA4]" />
+              Formulario B2B
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Configura requerimientos operativos y filtros excluyentes para recibir aspirantes verificados en minutos.
           </p>
         </div>
 
-        <Link href="/empresa/vacantes" className="btn-secondary text-xs h-9 px-3.5 inline-flex items-center gap-1.5">
-          <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.75} />
+        <Link href="/empresa/vacantes" className="rounded-full bg-[#EAF3FA] hover:bg-[#D5E6F5] text-[#0B3B70] border border-[#D5E6F5] text-xs h-10 px-5 font-semibold inline-flex items-center gap-2 transition-colors shadow-2xs shrink-0">
+          <ArrowLeft className="w-3.5 h-3.5" strokeWidth={2} />
           <span>Volver a Mis Vacantes</span>
         </Link>
       </div>
 
       {successToast && (
-        <div className="p-3.5 rounded-md bg-emerald-600 text-white text-xs font-medium flex items-center gap-2 shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
-          <CheckCircle2 className="w-4 h-4" strokeWidth={2} />
+        <div className="p-4 rounded-2xl bg-emerald-600 text-white text-xs font-semibold flex items-center gap-2.5 shadow-md">
+          <CheckCircle2 className="w-4 h-4 text-white" strokeWidth={2.5} />
           <span>¡Vacante publicada con éxito! Redirigiendo a tu bandeja ATS...</span>
         </div>
       )}
 
       {/* PLANTILLAS RÁPIDAS DEL SECTOR SEGURIDAD (1 CLIC) */}
-      <div className="bg-white border border-slate-200/90 rounded-lg p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] space-y-3">
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs space-y-3.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
           <div className="flex items-center gap-2">
-            <span className="w-6 h-6 rounded-md bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center font-bold text-xs">
+            <span className="w-7 h-7 rounded-xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center font-bold text-xs">
               ⚡
             </span>
-            <span className="text-xs font-semibold text-slate-900 tracking-tight">
+            <span className="text-sm font-bold text-slate-900 tracking-tight">
               Plantillas Rápidas del Sector Seguridad (Publicación en 30 Segundos)
             </span>
           </div>
-          <span className="text-[11px] text-slate-500">
-            Haz clic en una plantilla para pre-llenar funciones, requisitos y turnos oficiales:
+          <span className="text-xs text-slate-500">
+            Haz clic en una plantilla para pre-llenar funciones, requisitos y turnos:
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {QUICK_TEMPLATES.map((tmpl) => {
             const Icon = tmpl.icon;
             const isSelected = activeTemplateName === tmpl.name;
@@ -344,33 +322,33 @@ export default function NuevaVacantePage() {
                 key={tmpl.name}
                 type="button"
                 onClick={() => handleApplyTemplate(tmpl)}
-                className={`p-3 rounded-lg border text-left transition-all ${
+                className={`p-3.5 rounded-2xl border text-left transition-all ${
                   isSelected
-                    ? "bg-slate-900 text-white border-slate-900 shadow-xs"
-                    : "bg-slate-50/70 border-slate-200/90 text-slate-700 hover:border-slate-400 hover:bg-slate-100"
+                    ? "bg-[#0B3B70] text-white border-[#0B3B70] shadow-xs"
+                    : "bg-white border-slate-200 text-slate-700 hover:border-[#005DA4] hover:bg-[#EAF3FA]/30 shadow-2xs"
                 }`}
               >
-                <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center justify-between mb-2">
                   <div
-                    className={`w-7 h-7 rounded-md flex items-center justify-center ${
-                      isSelected ? "bg-slate-800 text-amber-400" : "bg-white border border-slate-200 text-slate-700"
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                      isSelected ? "bg-white/10 text-[#FFE066]" : "bg-[#EAF3FA] border border-[#D5E6F5] text-[#005DA4]"
                     }`}
                   >
-                    <Icon className="w-3.5 h-3.5" strokeWidth={1.75} />
+                    <Icon className="w-4 h-4" strokeWidth={2} />
                   </div>
                   {isSelected && (
-                    <span className="text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">
+                    <span className="text-[10px] font-bold text-[#FFE066] uppercase tracking-wider">
                       Aplicada ✓
                     </span>
                   )}
                 </div>
 
-                <div className="font-semibold text-xs leading-tight">
+                <div className="font-bold text-xs leading-tight">
                   {tmpl.name}
                 </div>
                 <div
-                  className={`text-[11px] font-mono tabular-nums mt-0.5 ${
-                    isSelected ? "text-slate-300" : "text-slate-500"
+                  className={`text-[11px] font-mono tabular-nums mt-1 ${
+                    isSelected ? "text-white/80" : "text-slate-500"
                   }`}
                 >
                   ${(tmpl.salary / 1000000).toFixed(2)}M • {tmpl.shift.split(" ")[0]}
@@ -386,7 +364,7 @@ export default function NuevaVacantePage() {
         {/* LEFT COLUMN: STRUCTURED FORM */}
         <form
           onSubmit={handleSubmit}
-          className="lg:col-span-7 bg-white border border-slate-200/90 rounded-lg p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)] space-y-6"
+          className="lg:col-span-7 bg-white border border-slate-200 rounded-2xl p-7 shadow-2xs space-y-6"
         >
           {/* Anti-Spam Honeypot */}
           <div className="hidden" aria-hidden="true" tabIndex={-1}>
@@ -402,12 +380,12 @@ export default function NuevaVacantePage() {
 
           {/* Section 1: General Info */}
           <div className="space-y-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 pb-2 border-b border-slate-100">
               Datos Principales del Puesto
             </h3>
 
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 Título Público de la Vacante
               </label>
               <input
@@ -416,12 +394,12 @@ export default function NuevaVacantePage() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Ej: Vigilante Fijo - Centro Empresarial Calle 100"
-                className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-2">
+              <label className="block text-xs font-semibold text-slate-700 mb-2">
                 Cargo Operativo Requerido:
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -430,10 +408,10 @@ export default function NuevaVacantePage() {
                     key={opt.value}
                     type="button"
                     onClick={() => setRoleRequired(opt.value)}
-                    className={`p-2 rounded-md text-xs font-medium border text-left transition-all ${
+                    className={`p-2.5 rounded-xl text-xs font-semibold border text-left transition-all ${
                       normalizeSecurityRole(roleRequired) === opt.value
-                        ? "bg-slate-900 text-white border-slate-900"
-                        : "bg-slate-50/70 text-slate-700 border-slate-200/90 hover:bg-slate-100"
+                        ? "bg-[#0B3B70] text-white border-[#0B3B70] shadow-xs"
+                        : "bg-white text-slate-700 border-slate-200 hover:border-[#005DA4] hover:bg-[#EAF3FA]/30"
                     }`}
                   >
                     {opt.label}
@@ -442,15 +420,15 @@ export default function NuevaVacantePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   Ciudad Sede
                 </label>
                 <select
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                  className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-sm font-medium text-slate-900 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all cursor-pointer"
                 >
                   <option value="Bogotá D.C.">Bogotá D.C.</option>
                   <option value="Medellín">Medellín</option>
@@ -463,316 +441,215 @@ export default function NuevaVacantePage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   Zona / Barrio / Localidad
                 </label>
                 <input
                   type="text"
-                  required
                   value={zone}
                   onChange={(e) => setZone(e.target.value)}
-                  placeholder="Ej: Chicó Norte, Fontibón, Suba"
-                  className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                  placeholder="Ej: Chapinero, Calle 100, Poblado"
+                  className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                Esquema de Turno Operativo
-              </label>
-              <select
-                value={shift}
-                onChange={(e) => setShift(e.target.value)}
-                className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 font-mono tabular-nums transition-colors"
-              >
-                {SHIFTS.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Salary & Surcharges */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                  Salario Mensual Básico (COP)
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Esquema / Turno
+                </label>
+                <select
+                  value={shift}
+                  onChange={(e) => setShift(e.target.value)}
+                  className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-sm font-medium text-slate-900 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all cursor-pointer"
+                >
+                  {SHIFTS.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Salario Mensual Ofrecido (COP)
                 </label>
                 <input
                   type="number"
-                  step={50000}
+                  step="50000"
+                  min="1300000"
                   value={salaryMonthly}
-                  onChange={(e) => setSalaryMonthly(Number(e.target.value))}
-                  className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 font-mono font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                  onChange={(e) => setSalaryMonthly(parseInt(e.target.value, 10) || 0)}
+                  className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-sm font-bold text-slate-900 font-mono tabular-nums focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all"
                 />
-              </div>
-
-              <div className="p-2.5 rounded-md border border-slate-200/90 bg-slate-50/70 flex items-center justify-between">
-                <div>
-                  <span className="text-xs font-medium text-slate-800 block">Recargos de Ley</span>
-                  <span className="text-[10px] text-slate-500">+ Nocturnos / Dominicales</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIncludesSurcharges(!includesSurcharges)}
-                  className={`w-10 h-5 rounded-full p-0.5 transition-colors flex items-center ${
-                    includesSurcharges ? "bg-emerald-600 justify-end" : "bg-slate-300 justify-start"
-                  }`}
-                >
-                  <div className="w-4 h-4 rounded-full bg-white shadow-xs" />
-                </button>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                Dirección Sede para Citación a Entrevista
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Dirección para Entrevista Presencial (Opcional)
               </label>
               <input
                 type="text"
-                required
                 value={interviewAddress}
                 onChange={(e) => setInterviewAddress(e.target.value)}
-                placeholder="Ej: Cra 15 # 98-42, Oficina 301, Bogotá"
-                className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                placeholder="Ej: Carrera 7 # 71-21 Torre A Oficina 502"
+                className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                Descripción del Servicio y Funciones
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Descripción y Funciones Principales
               </label>
               <textarea
-                rows={3}
-                required
+                rows={4}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full bg-white border border-slate-200/90 rounded-md p-3.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                placeholder="Detalla las funciones del puesto, consignas y protocolos de seguridad..."
+                className="w-full bg-white border border-slate-200 rounded-xl p-3.5 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all"
               />
             </div>
           </div>
 
-          {/* Section 2: Exclusions & Filters */}
-          <div className="space-y-4 pt-4 border-t border-slate-200/80">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Filtros Técnicos Excluyentes
+          {/* Section 2: Exclusions */}
+          <div className="space-y-4 pt-4 border-t border-slate-100">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              Requisitos y Filtros de Acreditación
             </h3>
 
-            <div className="space-y-2.5">
-              <div className="p-3 rounded-md border border-slate-200/90 bg-slate-50/70 flex items-center justify-between">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
                 <div>
-                  <strong className="text-xs text-slate-900 block font-semibold">
-                    Curso SuperVigilancia Vigente Obligatorio
-                  </strong>
-                  <span className="text-[11px] text-slate-500">
-                    Descarta automáticamente hojas de vida sin credencial vigente
-                  </span>
+                  <span className="text-xs font-bold text-slate-800 block">Curso SuperVigilancia Vigente</span>
+                  <span className="text-[11px] text-slate-500">Excluir cursos vencidos</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setRequiresCourse(!requiresCourse)}
-                  className={`w-10 h-5 rounded-full p-0.5 transition-colors flex items-center ${
-                    requiresCourse ? "bg-emerald-600 justify-end" : "bg-slate-300 justify-start"
+                  className={`w-11 h-6 rounded-full p-0.5 transition-colors flex items-center shrink-0 ${
+                    requiresCourse ? "bg-[#005DA4] justify-end" : "bg-slate-300 justify-start"
                   }`}
                 >
-                  <div className="w-4 h-4 rounded-full bg-white shadow-xs" />
+                  <div className="w-5 h-5 rounded-full bg-white shadow-xs" />
                 </button>
               </div>
 
-              <div className="p-3 rounded-md border border-slate-200/90 bg-slate-50/70 flex items-center justify-between">
+              <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
                 <div>
-                  <strong className="text-xs text-slate-900 block font-semibold">
-                    Libreta Militar al Día Requerida
-                  </strong>
-                  <span className="text-[11px] text-slate-500">
-                    Indispensable para puestos con armamento
-                  </span>
+                  <span className="text-xs font-bold text-slate-800 block">Libreta Militar al Día</span>
+                  <span className="text-[11px] text-slate-500">Primera o segunda clase</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setRequiresMilitaryBooklet(!requiresMilitaryBooklet)}
-                  className={`w-10 h-5 rounded-full p-0.5 transition-colors flex items-center ${
-                    requiresMilitaryBooklet ? "bg-emerald-600 justify-end" : "bg-slate-300 justify-start"
+                  className={`w-11 h-6 rounded-full p-0.5 transition-colors flex items-center shrink-0 ${
+                    requiresMilitaryBooklet ? "bg-[#005DA4] justify-end" : "bg-slate-300 justify-start"
                   }`}
                 >
-                  <div className="w-4 h-4 rounded-full bg-white shadow-xs" />
+                  <div className="w-5 h-5 rounded-full bg-white shadow-xs" />
                 </button>
               </div>
 
-              <div className="p-3 rounded-md border border-slate-200/90 bg-slate-50/70 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <strong className="text-xs text-slate-900 block font-semibold">
-                      Requiere Motocicleta Propia
-                    </strong>
-                    <span className="text-[11px] text-slate-500">
-                      Excluyente para Escoltas y Supervisores de patrulla
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setRequiresMotorcycle(!requiresMotorcycle)}
-                    className={`w-10 h-5 rounded-full p-0.5 transition-colors flex items-center ${
-                      requiresMotorcycle ? "bg-amber-500 justify-end" : "bg-slate-300 justify-start"
-                    }`}
-                  >
-                    <div className="w-4 h-4 rounded-full bg-white shadow-xs" />
-                  </button>
-                </div>
-
-                {requiresMotorcycle && (
-                  <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between text-xs">
-                    <span className="text-slate-600">Cilindraje Mínimo Requerido:</span>
-                    <select
-                      value={minMotorcycleCc}
-                      onChange={(e) => setMinMotorcycleCc(Number(e.target.value))}
-                      className="h-8 bg-white border border-slate-200/90 rounded-md px-2.5 text-xs text-slate-900 font-mono tabular-nums"
-                    >
-                      <option value={125}>≥ 125 cc</option>
-                      <option value={150}>≥ 150 cc</option>
-                      <option value={180}>≥ 180 cc</option>
-                      <option value={200}>≥ 200 cc</option>
-                    </select>
-                  </div>
-                )}
-              </div>
-
-              {/* Años mínimos */}
-              <div className="p-3 rounded-md border border-slate-200/90 bg-slate-50/70 flex items-center justify-between">
+              <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
                 <div>
-                  <strong className="text-xs text-slate-900 block font-semibold">
-                    Experiencia Mínima en Seguridad
-                  </strong>
-                  <span className="text-[11px] text-slate-500">
-                    Años de servicio comprobables en el sector
-                  </span>
+                  <span className="text-xs font-bold text-slate-800 block">Moto Propia Requerida</span>
+                  <span className="text-[11px] text-slate-500">Para patrullas o escoltas</span>
                 </div>
-                <select
-                  value={minExperienceYears}
-                  onChange={(e) => setMinExperienceYears(Number(e.target.value))}
-                  className="h-8 bg-white border border-slate-200/90 rounded-md px-2.5 text-xs text-slate-900 font-mono tabular-nums"
+                <button
+                  type="button"
+                  onClick={() => setRequiresMotorcycle(!requiresMotorcycle)}
+                  className={`w-11 h-6 rounded-full p-0.5 transition-colors flex items-center shrink-0 ${
+                    requiresMotorcycle ? "bg-[#005DA4] justify-end" : "bg-slate-300 justify-start"
+                  }`}
                 >
-                  <option value={0}>Sin experiencia</option>
-                  <option value={1}>1 año o más</option>
-                  <option value={2}>2 años o más</option>
-                  <option value={3}>3 años o más</option>
-                  <option value={5}>5 años o más</option>
-                </select>
+                  <div className="w-5 h-5 rounded-full bg-white shadow-xs" />
+                </button>
               </div>
 
-              {/* Relevo urgente */}
-              <div className="p-3 rounded-md border border-amber-200/80 bg-amber-50/60 flex items-center justify-between">
+              <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
                 <div>
-                  <strong className="text-xs text-amber-900 block font-semibold">
-                    Marcar como &quot;Relevo Urgente&quot;
-                  </strong>
-                  <span className="text-[11px] text-amber-700">
-                    Aparece con distintivo de prioridad y alerta a candidatos con disponibilidad inmediata
-                  </span>
+                  <span className="text-xs font-bold text-slate-800 block">Relevo Urgente</span>
+                  <span className="text-[11px] text-slate-500">Destacar en radar de personal</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsUrgentRelief(!isUrgentRelief)}
-                  className={`w-10 h-5 rounded-full p-0.5 transition-colors flex items-center ${
+                  className={`w-11 h-6 rounded-full p-0.5 transition-colors flex items-center shrink-0 ${
                     isUrgentRelief ? "bg-amber-500 justify-end" : "bg-slate-300 justify-start"
                   }`}
                 >
-                  <div className="w-4 h-4 rounded-full bg-white shadow-xs" />
+                  <div className="w-5 h-5 rounded-full bg-white shadow-xs" />
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-200/80">
+          <div className="pt-4">
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full text-xs font-medium h-10 inline-flex items-center justify-center gap-2"
+              className="w-full sm:w-auto rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs font-semibold h-11 px-8 inline-flex items-center justify-center gap-2 shadow-xs transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? (
-                "Publicando oferta..."
+                <span className="flex items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Publicando Vacante...
+                </span>
               ) : (
                 <>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" strokeWidth={2} />
-                  <span>Publicar Vacante Inmediatamente</span>
+                  <Check className="w-4 h-4" strokeWidth={2.5} />
+                  <span>Publicar Vacante & Activar ATS</span>
                 </>
               )}
             </button>
           </div>
         </form>
 
-        {/* RIGHT COLUMN: LIVE OFFER PREVIEW (5 cols - Sticky) */}
-        <div className="lg:col-span-5 sticky top-24 space-y-3">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block">
-            Vista Previa en Vivo (Como la verá el Candidato)
-          </span>
-
-          <div className="bg-white border border-slate-900 rounded-lg p-5 space-y-4 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-            {isUrgentRelief && (
-              <div className="flex items-center gap-1.5 text-[10px] font-medium text-amber-800 bg-amber-50/80 px-2 py-0.5 rounded-md border border-amber-200/70 w-fit">
-                <Zap className="w-3 h-3 fill-amber-500 text-amber-600" />
-                Relevo Urgente • Prioridad Operativa
-              </div>
-            )}
-
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-slate-500 font-medium">{companyName}</span>
-                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-800 bg-amber-50/80 px-1.5 py-0.5 rounded-md border border-amber-200/70">
-                  <Shield className="w-2.5 h-2.5 fill-amber-500/30" />
-                  Auditada
-                </span>
-              </div>
-              <h3 className="text-base font-semibold tracking-tight text-slate-900 mt-0.5">
-                {title || `${formatSecurityRoleLabel(roleRequired)} - ${city}`}
-              </h3>
-            </div>
-
-            <div className="p-3 rounded-md bg-slate-900 text-white flex items-center justify-between">
-              <div>
-                <span className="text-[10px] text-slate-400 block uppercase">Salario mensual</span>
-                <div className="text-lg font-semibold font-mono tabular-nums">
-                  ${salaryMonthly.toLocaleString("es-CO")} COP
-                </div>
-                {includesSurcharges && (
-                  <span className="text-[10px] text-emerald-400">+ Recargos de ley</span>
-                )}
-              </div>
-              <div className="text-right">
-                <span className="text-[10px] text-slate-400 block uppercase">Turno</span>
-                <span className="text-xs font-semibold text-amber-400 font-mono tabular-nums">
-                  {shift}
-                </span>
-              </div>
-            </div>
-
-            <div className="text-xs text-slate-600 space-y-1">
-              <div className="flex items-center gap-1.5 text-slate-500">
-                <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                <span>
-                  {city} • {zone || "Zona Principal"}
-                </span>
-              </div>
-              {requiresMotorcycle && (
-                <div className="flex items-center gap-1.5 text-amber-800 font-medium tabular-nums">
-                  <Bike className="w-3.5 h-3.5" />
-                  <span>Requiere Moto Propia (≥{minMotorcycleCc}cc)</span>
-                </div>
-              )}
-            </div>
-
-            <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
-              {description}
-            </p>
-
-            <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between text-xs text-slate-500">
-              <span className="text-emerald-700 font-medium flex items-center gap-1">
-                <Shield className="w-3 h-3" />
-                Garantía Cero Cobros
+        {/* RIGHT COLUMN: LIVE CARD PREVIEW (5 cols) */}
+        <div className="lg:col-span-5 sticky top-20 space-y-4">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Previsualización en el Portal
               </span>
-              <span>100% Gratuito</span>
+              <span className="text-[10px] font-bold text-[#005DA4] bg-[#EAF3FA] px-2.5 py-0.5 rounded-full border border-[#D5E6F5]">
+                Vista Previa
+              </span>
+            </div>
+
+            <div className="bg-white rounded-2xl p-5 border-[1.5px] border-[#005DA4] shadow-sm space-y-3">
+              <h3 className="text-lg font-bold text-slate-900 leading-snug">
+                {title || "Título de la vacante"}
+              </h3>
+
+              <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium">
+                <span className="text-amber-500 font-bold">4,8 ★</span>
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#005DA4] shrink-0" strokeWidth={2.5} />
+                <span className="text-[#005DA4] font-semibold">{companyName}</span>
+              </div>
+
+              <div className="text-sm text-slate-600 flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span>{city} {zone ? `• ${zone}` : ""}</span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="text-slate-600 font-medium">{shift}</span>
+                <span className="text-slate-300">•</span>
+                <span className="text-slate-900 font-bold font-mono tabular-nums">
+                  ${salaryMonthly.toLocaleString("es-CO")} COP
+                </span>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+                <span>Publicada hace un momento</span>
+                <span className="border border-slate-300 rounded-full px-3 py-0.5 text-slate-500 font-semibold">
+                  Vista
+                </span>
+              </div>
             </div>
           </div>
         </div>

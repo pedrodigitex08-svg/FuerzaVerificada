@@ -209,85 +209,91 @@ export default function EmpresaEstudiosPage() {
     <div className="space-y-6">
       {/* Toast Feedback */}
       {successToast && (
-        <div className="p-3.5 rounded-md bg-slate-900 text-white text-xs font-medium flex items-center justify-between shadow-[0_2px_6px_rgba(15,23,42,0.08)] border border-slate-700 animate-in fade-in duration-150">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" strokeWidth={2} />
+        <div className="p-4 rounded-2xl bg-[#0B3B70] text-white text-xs font-semibold flex items-center justify-between shadow-md border border-slate-700 animate-in fade-in duration-150">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" strokeWidth={2.5} />
             <span>{successToast}</span>
           </div>
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80">
+      {/* Header Estilo Computrabajo Empresas */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 tracking-tight">
-            Centro de Estudios de Seguridad & Poligrafía
-          </h1>
-          <p className="text-xs text-slate-600 font-normal">
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+              Centro de Estudios de Seguridad & Poligrafía
+            </h1>
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#005DA4] bg-[#EAF3FA] px-2.5 py-0.5 rounded-full border border-[#D5E6F5]">
+              <Shield className="w-3 h-3 text-[#005DA4]" />
+              Confiabilidad B2B
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
             Bandeja de dictámenes periciales: antecedentes judiciales, visitas domiciliarias y reportes de polígrafo.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-3 shrink-0">
           <button
             type="button"
             onClick={() => setIsModalOpen(true)}
-            className="btn-primary text-xs h-9 px-3.5 font-medium flex items-center gap-1.5"
+            className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs h-10 px-5 font-semibold flex items-center gap-2 transition-colors shadow-xs"
           >
-            <PlusCircle className="w-3.5 h-3.5" />
+            <PlusCircle className="w-4 h-4 text-white" strokeWidth={2} />
             <span>Solicitar Estudio / Polígrafo</span>
           </button>
 
           <Link
             href="/precios-empresas"
-            className="btn-amber text-xs h-9 px-3.5 font-medium flex items-center gap-1.5 tabular-nums"
+            className="rounded-full bg-[#EAF3FA] hover:bg-[#D5E6F5] text-[#0B3B70] border border-[#D5E6F5] text-xs h-10 px-4 font-semibold flex items-center gap-1.5 tabular-nums transition-colors shadow-2xs"
           >
-            <Shield className="w-3.5 h-3.5" strokeWidth={1.75} />
+            <Shield className="w-3.5 h-3.5 text-[#005DA4]" strokeWidth={2} />
             <span>Recargar Créditos ({credits} disp.)</span>
           </Link>
         </div>
       </div>
 
       {/* KPI BENTO STRIP */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-          <span className="text-[10px] uppercase font-medium tracking-wider text-slate-500 block">Total Evaluados</span>
-          <span className="text-2xl font-semibold tracking-tight font-mono text-slate-900 tabular-nums mt-1 block">{orders.length}</span>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs hover:border-[#005DA4] transition-all">
+          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Total Evaluados</span>
+          <span className="text-2xl font-bold tracking-tight font-mono text-slate-900 tabular-nums mt-1 block">{orders.length}</span>
         </div>
-        <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-          <span className="text-[10px] uppercase font-medium tracking-wider text-slate-500 block">En Proceso / Agendados</span>
-          <span className="text-2xl font-semibold tracking-tight font-mono text-amber-600 tabular-nums mt-1 block">
+        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs hover:border-[#005DA4] transition-all">
+          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">En Proceso / Agendados</span>
+          <span className="text-2xl font-bold tracking-tight font-mono text-amber-600 tabular-nums mt-1 block">
             {orders.filter((o) => o.status === "en_proceso" || o.status === "agendado" || o.status === "solicitado").length}
           </span>
         </div>
-        <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-          <span className="text-[10px] uppercase font-medium tracking-wider text-slate-500 block">Aprobados Sin Riesgo</span>
-          <span className="text-2xl font-semibold tracking-tight font-mono text-emerald-700 tabular-nums mt-1 block">
+        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs hover:border-[#005DA4] transition-all">
+          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Aprobados Sin Riesgo</span>
+          <span className="text-2xl font-bold tracking-tight font-mono text-emerald-700 tabular-nums mt-1 block">
             {orders.filter((o) => o.status === "aprobado").length}
           </span>
         </div>
-        <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-          <span className="text-[10px] uppercase font-medium tracking-wider text-slate-500 block">Riesgo Detectado</span>
-          <span className="text-2xl font-semibold tracking-tight font-mono text-rose-600 tabular-nums mt-1 block">
+        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs hover:border-[#005DA4] transition-all">
+          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Riesgo Detectado</span>
+          <span className="text-2xl font-bold tracking-tight font-mono text-rose-600 tabular-nums mt-1 block">
             {orders.filter((o) => o.status === "rechazado_riesgo").length}
           </span>
         </div>
       </div>
 
-      {/* FILTER & SEARCH */}
+      {/* FILTER & SEARCH EN PÍLDORA */}
       <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" strokeWidth={1.75} />
+          <Search className="w-4 h-4 text-slate-400 absolute left-4 top-3.5" strokeWidth={2} />
           <input
             type="text"
             placeholder="Buscar por aspirante o cédula..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-10 bg-white border border-slate-200/90 rounded-md pl-10 pr-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors"
+            className="w-full h-11 bg-white border border-slate-300 rounded-full pl-11 pr-4 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 shadow-2xs transition-all"
           />
         </div>
 
-        <div className="flex gap-1.5 overflow-x-auto w-full sm:w-auto">
+        <div className="flex gap-2 overflow-x-auto w-full sm:w-auto scrollbar-none">
           {[
             { key: "todos", label: "Todos" },
             { key: "aprobado", label: "Aprobados" },
@@ -298,10 +304,10 @@ export default function EmpresaEstudiosPage() {
               key={f.key}
               type="button"
               onClick={() => setSelectedFilter(f.key)}
-              className={`h-9 px-3 rounded-md text-xs font-medium whitespace-nowrap border transition-all ${
+              className={`h-10 px-4 rounded-full text-xs font-semibold whitespace-nowrap border transition-all ${
                 selectedFilter === f.key
-                  ? "bg-slate-900 text-white border-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.06)]"
-                  : "bg-white text-slate-600 border-slate-200/90 hover:bg-slate-50"
+                  ? "bg-[#0B3B70] text-white border-[#0B3B70] shadow-xs"
+                  : "bg-white text-slate-700 border-slate-200 hover:border-[#005DA4] hover:bg-[#EAF3FA]/30"
               }`}
             >
               {f.label}
@@ -311,10 +317,15 @@ export default function EmpresaEstudiosPage() {
       </div>
 
       {/* ORDERS LIST OR CLEAN EMPTY STATE */}
-      {filtered.length === 0 ? (
-        <div className="bg-white border border-slate-200/90 rounded-lg p-12 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+      {isLoading ? (
+        <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center shadow-2xs">
+          <div className="w-8 h-8 border-2 border-[#0B3B70] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-xs font-semibold text-slate-600">Cargando estudios periciales...</p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center shadow-2xs">
           <Shield className="w-10 h-10 mx-auto mb-3 text-slate-300" strokeWidth={1.5} />
-          <h3 className="text-base font-semibold tracking-tight text-slate-900">
+          <h3 className="text-base font-bold tracking-tight text-slate-900">
             {searchTerm || selectedFilter !== "todos"
               ? "No se encontraron evaluaciones con ese criterio"
               : "No has solicitado estudios de confiabilidad ni pruebas de poligrafía todavía"}
@@ -329,9 +340,9 @@ export default function EmpresaEstudiosPage() {
               <button
                 type="button"
                 onClick={() => setIsModalOpen(true)}
-                className="btn-primary text-xs h-9 px-4 inline-flex items-center gap-1.5"
+                className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs h-9 px-5 font-semibold inline-flex items-center gap-2 shadow-xs transition-colors"
               >
-                <PlusCircle className="w-3.5 h-3.5 text-slate-300" />
+                <PlusCircle className="w-3.5 h-3.5 text-white" />
                 <span>Solicitar mi primer estudio</span>
               </button>
             </div>
@@ -342,29 +353,29 @@ export default function EmpresaEstudiosPage() {
           {filtered.map((order) => (
             <div
               key={order.id}
-              className="bg-white border border-slate-200/90 rounded-lg p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] space-y-4 hover:border-slate-300 transition-all"
+              className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs space-y-4 hover:border-[#005DA4] transition-all"
             >
               {/* Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <div className="flex items-center gap-2.5">
-                    <h3 className="text-base font-semibold tracking-tight text-slate-900">
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h3 className="text-base font-bold tracking-tight text-slate-900">
                       {order.candidate_name}
                     </h3>
                     <span className="text-xs font-mono text-slate-500 tabular-nums">
                       C.C. {order.national_id}
                     </span>
                     <span
-                      className={`badge-${
+                      className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
                         order.status === "aprobado"
-                          ? "emerald"
+                          ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                           : order.status === "rechazado_riesgo"
-                          ? "rose"
-                          : "amber"
-                      } text-[11px]`}
+                          ? "bg-rose-50 text-rose-800 border-rose-200"
+                          : "bg-amber-50 text-amber-800 border-amber-200"
+                      }`}
                     >
                       <span
-                        className={`w-1.5 h-1.5 rounded-full ${
+                        className={`w-1.5 h-1.5 rounded-full inline-block mr-1.5 ${
                           order.status === "aprobado"
                             ? "bg-emerald-500"
                             : order.status === "rechazado_riesgo"
@@ -380,7 +391,7 @@ export default function EmpresaEstudiosPage() {
                     </span>
                   </div>
                   <div className="text-xs text-slate-500 mt-1 tabular-nums">
-                    Vacante: <strong className="text-slate-700 font-medium">{order.job_title}</strong> • Solicitud: {order.created_at}
+                    Vacante: <strong className="text-slate-800 font-semibold">{order.job_title}</strong> • Solicitud: {order.created_at}
                   </div>
                 </div>
 
@@ -388,20 +399,20 @@ export default function EmpresaEstudiosPage() {
                   <button
                     type="button"
                     onClick={() => openSecureDocument(order.report_pdf_url)}
-                    className="btn-secondary text-xs h-9 px-3.5 font-medium text-slate-800 hover:text-slate-900 self-start sm:self-auto"
+                    className="rounded-full bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 text-xs h-9 px-4 font-semibold self-start sm:self-auto inline-flex items-center gap-1.5 shadow-2xs transition-colors"
                   >
-                    <Download className="w-3.5 h-3.5 text-emerald-600" strokeWidth={1.75} />
-                    Descargar Informe Confidencial (PDF)
+                    <Download className="w-3.5 h-3.5 text-emerald-600" strokeWidth={2} />
+                    Descargar Dictamen (PDF)
                   </button>
                 )}
               </div>
 
               {/* Final Concept Box */}
-              <div className="p-4 rounded-md bg-slate-50/80 border border-slate-200/80 space-y-1.5 text-xs">
-                <span className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider block">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs">
+                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">
                   Dictamen Técnico del Analista:
                 </span>
-                <p className="text-slate-700 leading-relaxed font-normal">
+                <p className="text-slate-700 leading-relaxed font-medium">
                   {order.final_concept}
                 </p>
                 <div className="text-[11px] text-slate-500 pt-1 flex items-center gap-1.5">
@@ -411,7 +422,7 @@ export default function EmpresaEstudiosPage() {
               </div>
 
               {/* Checklist of sub-services completed */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1 border-t border-slate-200/70 text-slate-600">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1 border-t border-slate-100 text-slate-600 font-semibold">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                   <span>Antecedentes & SuperVigilancia</span>
@@ -433,18 +444,18 @@ export default function EmpresaEstudiosPage() {
       {/* MODAL SOLICITUD DE NUEVO ESTUDIO */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200/90 rounded-lg w-full max-w-lg shadow-[0_10px_25px_-5px_rgba(15,23,42,0.1)] p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-lg shadow-xl p-7 space-y-5 animate-in fade-in zoom-in-95 duration-150">
             {/* Header */}
-            <div className="flex items-start justify-between pb-3 border-b border-slate-200/80">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-md bg-slate-100 border border-slate-200/90 text-slate-900 flex items-center justify-center">
-                  <Shield className="w-4 h-4" strokeWidth={1.75} />
+            <div className="flex items-start justify-between pb-3.5 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#EAF3FA] border border-[#D5E6F5] text-[#0B3B70] flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-[#005DA4]" strokeWidth={2} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold tracking-tight text-slate-900">
+                  <h3 className="text-base font-bold tracking-tight text-slate-900">
                     Solicitar Estudio de Seguridad & Poligrafía
                   </h3>
-                  <p className="text-[11px] text-slate-500 tabular-nums">
+                  <p className="text-xs text-slate-500 tabular-nums">
                     {credits > 0
                       ? `Créditos disponibles: ${credits} estudio(s)`
                       : "Sin créditos disponibles • Se registrará en estado solicitado"}
@@ -454,17 +465,17 @@ export default function EmpresaEstudiosPage() {
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Form */}
             <form onSubmit={handleCreateOrder} className="space-y-4">
-              <div className="space-y-3">
+              <div className="space-y-3.5">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Nombre Completo del Evaluado *
                   </label>
                   <input
@@ -473,13 +484,13 @@ export default function EmpresaEstudiosPage() {
                     placeholder="Ej. Carlos Andrés Gómez"
                     value={formCandName}
                     onChange={(e) => setFormCandName(e.target.value)}
-                    className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                    className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                       Cédula de Ciudadanía *
                     </label>
                     <input
@@ -488,11 +499,11 @@ export default function EmpresaEstudiosPage() {
                       placeholder="Ej. 1020304050"
                       value={formNationalId}
                       onChange={(e) => setFormNationalId(e.target.value)}
-                      className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 font-mono tabular-nums transition-colors"
+                      className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 font-mono tabular-nums transition-all"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                       Teléfono / WhatsApp
                     </label>
                     <input
@@ -500,20 +511,20 @@ export default function EmpresaEstudiosPage() {
                       placeholder="Ej. 3101234567"
                       value={formPhone}
                       onChange={(e) => setFormPhone(e.target.value)}
-                      className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 font-mono tabular-nums transition-colors"
+                      className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 font-mono tabular-nums transition-all"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                       Tipo de Servicio
                     </label>
                     <select
                       value={formStudyType}
                       onChange={(e) => setFormStudyType(e.target.value)}
-                      className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                      className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-sm font-medium text-slate-900 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all cursor-pointer"
                     >
                       <option value="combo_integral_poligrafo_visita">
                         Combo Integral (Polígrafo + Visita + Antecedentes)
@@ -530,20 +541,20 @@ export default function EmpresaEstudiosPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                       Ciudad de Evaluación
                     </label>
                     <input
                       type="text"
                       value={formCity}
                       onChange={(e) => setFormCity(e.target.value)}
-                      className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                      className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-sm font-medium text-slate-900 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Observaciones o Puesto a Asignar
                   </label>
                   <textarea
@@ -551,41 +562,41 @@ export default function EmpresaEstudiosPage() {
                     placeholder="Ej. Vacante de guarda con moto en Suba. Urgente para asignación de puesto."
                     value={formNotes}
                     onChange={(e) => setFormNotes(e.target.value)}
-                    className="w-full bg-white border border-slate-200/90 rounded-md p-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                    className="w-full bg-white border border-slate-200 rounded-xl p-3.5 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all"
                   />
                 </div>
               </div>
 
               {credits <= 0 && (
-                <div className="p-3 rounded-md bg-amber-50/80 border border-amber-200/70 text-xs text-amber-900 flex items-center justify-between">
+                <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-center justify-between">
                   <span>Tu cuenta no tiene créditos prepagados activos.</span>
                   <Link
                     href="/precios-empresas"
-                    className="font-semibold underline text-amber-800 hover:text-amber-900 ml-2"
+                    className="font-bold underline text-amber-800 hover:text-amber-900 ml-2"
                   >
                     Ver Paquetes B2B
                   </Link>
                 </div>
               )}
 
-              <div className="pt-2 flex items-center justify-end gap-2.5 border-t border-slate-200/80">
+              <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="btn-secondary text-xs h-9 px-3.5"
+                  className="rounded-full bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs h-10 px-5 font-semibold transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={submittingOrder}
-                  className="btn-primary text-xs h-9 px-4 font-medium flex items-center gap-1.5"
+                  className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs h-10 px-6 font-semibold flex items-center gap-2 shadow-xs transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {submittingOrder ? (
                     <span>Registrando orden...</span>
                   ) : (
                     <>
-                      <Shield className="w-3.5 h-3.5" />
+                      <Shield className="w-4 h-4 text-[#FFE066]" />
                       <span>Confirmar y Enviar Orden</span>
                     </>
                   )}

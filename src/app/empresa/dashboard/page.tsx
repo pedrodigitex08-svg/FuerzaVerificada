@@ -203,123 +203,129 @@ export default function EmpresaDashboardPage() {
   }, []);
 
   return (
-    <div className="space-y-8">
-      {/* Page Title & Quick Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80">
+    <div className="space-y-6">
+      {/* Page Title & Quick Actions Estilo Computrabajo Empresas */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 tracking-tight">
-            Resumen de Operaciones y Selección
-          </h1>
-          <p className="text-xs text-slate-600 font-normal">
-            Panel de control B2B: vacantes activas, aspirantes evaluados y órdenes de confiabilidad.
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+              Panel de Control B2B & Reclutamiento
+            </h1>
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#005DA4] bg-[#EAF3FA] px-2.5 py-0.5 rounded-full border border-[#D5E6F5]">
+              <Shield className="w-3 h-3 text-[#005DA4]" />
+              SuperVigilancia
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Gestión integral de vacantes, aspirantes calificados por compatibilidad y estudios de confiabilidad.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 shrink-0">
           <Link
             href="/empresa/relevos"
-            className="btn-secondary text-xs h-9 px-3.5 font-medium"
+            className="rounded-full bg-[#EAF3FA] hover:bg-[#D5E6F5] text-[#0B3B70] border border-[#D5E6F5] text-xs h-10 px-4 font-semibold inline-flex items-center gap-1.5 transition-colors shadow-2xs"
           >
-            <Zap className="w-3.5 h-3.5 text-amber-600" strokeWidth={1.75} />
-            Radar de Relevos Hoy
+            <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
+            <span>Radar de Relevos</span>
           </Link>
           <Link
             href="/empresa/vacantes/nueva"
-            className="btn-primary text-xs h-9 px-3.5 font-medium"
+            className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs h-10 px-5 font-semibold inline-flex items-center gap-2 transition-colors shadow-xs"
           >
-            <PlusCircle className="w-3.5 h-3.5 text-slate-300" strokeWidth={1.75} />
-            Nueva Vacante
+            <PlusCircle className="w-4 h-4 text-white" strokeWidth={2} />
+            <span>Nueva Vacante</span>
           </Link>
         </div>
       </div>
 
       {/* BANNER INFORMATIVO SI LA EMPRESA NO ESTÁ VERIFICADA */}
       {!isVerifiedCompany && (
-        <div className="p-4 rounded-lg bg-amber-50/80 border border-amber-200/70 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-md bg-amber-100/80 border border-amber-200 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
-              <Shield className="w-4 h-4 text-amber-700" strokeWidth={1.5} />
+        <div className="p-5 rounded-2xl bg-amber-50/90 border border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-amber-100 border border-amber-200 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
+              <Shield className="w-5 h-5 text-amber-700" strokeWidth={2} />
             </div>
-            <div className="space-y-0.5">
+            <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-amber-900 uppercase tracking-wide">
+                <span className="text-xs font-bold text-amber-900 uppercase tracking-wide">
                   Cuenta en proceso de verificación por FuerzaVerificada
                 </span>
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-amber-200/70 text-amber-900 font-mono">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200/80 text-amber-900 font-mono">
                   VALIDACIÓN NIT
                 </span>
               </div>
-              <p className="text-xs text-amber-800 leading-relaxed font-normal">
-                Puedes configurar tus vacantes o solicitar tu paquete de Poligrafía/Visita, y tus ofertas serán visibles al público apenas validemos tu NIT con la Superintendencia de Vigilancia.
+              <p className="text-xs text-amber-800 leading-relaxed font-medium">
+                Puedes configurar tus vacantes y solicitar estudios de poligrafía/visita domiciliaria. Tus ofertas serán visibles al público en cuanto validemos tu personería jurídica ante la SuperVigilancia.
               </p>
             </div>
           </div>
 
           <Link
             href="/precios-empresas"
-            className="btn-secondary text-[11px] h-8 px-3 shrink-0 font-medium text-amber-900 border-amber-300 hover:bg-amber-100"
+            className="rounded-full text-xs h-9 px-4 shrink-0 font-semibold text-amber-900 bg-white border border-amber-300 hover:bg-amber-100 transition-colors shadow-2xs"
           >
-            Planes para Empresas
+            Planes Corporativos
           </Link>
         </div>
       )}
 
-      {/* 1. BENTO GRID: 4 OPERATIONAL KPIS */}
+      {/* 1. BENTO GRID: 4 OPERATIONAL KPIS ESTILO COMPUTRABAJO */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: Vacantes Activas */}
-        <div className="bg-white border border-slate-200/90 rounded-lg p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col justify-between">
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between hover:border-[#005DA4] transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
               Vacantes Activas
             </span>
-            <div className="w-7 h-7 rounded-md bg-slate-100 border border-slate-200/80 flex items-center justify-center text-slate-700">
-              <Briefcase className="w-3.5 h-3.5" strokeWidth={1.75} />
+            <div className="w-8 h-8 rounded-xl bg-[#EAF3FA] border border-[#D5E6F5] flex items-center justify-center text-[#0B3B70]">
+              <Briefcase className="w-4 h-4 text-[#005DA4]" strokeWidth={2} />
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-2xl font-semibold tracking-tight text-slate-900 font-mono tabular-nums">
+            <div className="text-2xl font-bold tracking-tight text-slate-900 font-mono tabular-nums">
               {activeVacanciesCount}
             </div>
             <span className="text-[11px] text-slate-500 mt-0.5 block">
               {activeVacanciesCount > 0
-                ? `${activeVacanciesCount} ofertas activas en la plataforma`
+                ? `${activeVacanciesCount} ofertas activas en portal`
                 : "Sin vacantes publicadas"}
             </span>
           </div>
         </div>
 
         {/* KPI 2: Candidatos Postulados */}
-        <div className="bg-white border border-slate-200/90 rounded-lg p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col justify-between">
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between hover:border-[#005DA4] transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
               Aspirantes en ATS
             </span>
-            <div className="w-7 h-7 rounded-md bg-emerald-50/80 border border-emerald-200/60 flex items-center justify-center text-emerald-700">
-              <Users className="w-3.5 h-3.5" strokeWidth={1.75} />
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700">
+              <Users className="w-4 h-4 text-emerald-600" strokeWidth={2} />
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-2xl font-semibold tracking-tight text-slate-900 font-mono tabular-nums">
+            <div className="text-2xl font-bold tracking-tight text-slate-900 font-mono tabular-nums">
               {totalApplicantsCount}
             </div>
             <span className="text-[11px] text-slate-500 mt-0.5 block">
-              Aspirantes postulados a tus procesos
+              Postulaciones recibidas en total
             </span>
           </div>
         </div>
 
         {/* KPI 3: Estudios & Polígrafos */}
-        <div className="bg-white border border-slate-200/90 rounded-lg p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col justify-between">
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between hover:border-[#005DA4] transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
               Estudios & Polígrafo
             </span>
-            <div className="w-7 h-7 rounded-md bg-amber-50/80 border border-amber-200/60 flex items-center justify-center text-amber-700">
-              <Shield className="w-3.5 h-3.5" strokeWidth={1.75} />
+            <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700">
+              <Shield className="w-4 h-4 text-amber-600" strokeWidth={2} />
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-2xl font-semibold tracking-tight text-slate-900 font-mono tabular-nums">
+            <div className="text-2xl font-bold tracking-tight text-slate-900 font-mono tabular-nums">
               {totalStudiesCount}
             </div>
             <span className="text-[11px] text-slate-500 mt-0.5 block tabular-nums">
@@ -331,17 +337,17 @@ export default function EmpresaDashboardPage() {
         </div>
 
         {/* KPI 4: Guardas Disponibles Relevo */}
-        <div className="bg-white border border-slate-200/90 rounded-lg p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col justify-between">
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between hover:border-[#005DA4] transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
               Disponibles para Relevo
             </span>
-            <div className="w-7 h-7 rounded-md bg-emerald-50/80 border border-emerald-200/60 flex items-center justify-center text-emerald-700">
-              <Zap className="w-3.5 h-3.5" strokeWidth={1.75} />
+            <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
+              <Zap className="w-4 h-4 fill-amber-500 text-amber-600" />
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-2xl font-semibold tracking-tight text-slate-900 font-mono tabular-nums">
+            <div className="text-2xl font-bold tracking-tight text-slate-900 font-mono tabular-nums">
               {reliefCount}
             </div>
             <span className="text-[11px] text-slate-500 mt-0.5 block">
@@ -352,19 +358,19 @@ export default function EmpresaDashboardPage() {
       </div>
 
       {/* 2. RECENT VACANCIES TABLE */}
-      <div className="bg-white border border-slate-200/90 rounded-lg p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)] space-y-4">
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold tracking-tight text-slate-900">
+            <h3 className="text-sm font-bold tracking-tight text-slate-900">
               Vacantes Publicadas & Filtro de Postulados
             </h3>
-            <p className="text-xs text-slate-500 font-normal">
-              Acceda a la bandeja de postulados ordenados por compatibilidad (% Match).
+            <p className="text-xs text-slate-500">
+              Accede a la bandeja de postulados con compatibilidad calculada (% Match).
             </p>
           </div>
           <Link
             href="/empresa/vacantes"
-            className="text-xs text-slate-700 hover:text-slate-900 font-medium flex items-center gap-1"
+            className="text-xs text-[#005DA4] hover:text-[#0B3B70] font-semibold flex items-center gap-1"
           >
             Ver todas las vacantes
             <ChevronRight className="w-4 h-4" />
@@ -374,64 +380,65 @@ export default function EmpresaDashboardPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-slate-200/80 text-slate-500 uppercase text-[10px] tracking-wider font-semibold">
-                <th className="pb-3 font-medium">Puesto / Vacante</th>
-                <th className="pb-3 font-medium">Turno</th>
-                <th className="pb-3 font-medium">Salario Base</th>
-                <th className="pb-3 font-medium">Postulados</th>
-                <th className="pb-3 font-medium">Promedio Match</th>
-                <th className="pb-3 text-right font-medium">Gestión ATS</th>
+              <tr className="border-b border-slate-200 text-slate-500 uppercase text-[10px] tracking-wider font-bold">
+                <th className="pb-3.5 font-bold">Puesto / Vacante</th>
+                <th className="pb-3.5 font-bold">Turno</th>
+                <th className="pb-3.5 font-bold">Salario Base</th>
+                <th className="pb-3.5 font-bold">Postulados</th>
+                <th className="pb-3.5 font-bold">Promedio Match</th>
+                <th className="pb-3.5 text-right font-bold">Gestión ATS</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {vacancies.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-400">
-                    <Briefcase className="w-7 h-7 mx-auto mb-2 text-slate-300" strokeWidth={1.5} />
-                    <p className="text-sm font-medium text-slate-700">Aún no tienes vacantes publicadas</p>
+                  <td colSpan={6} className="py-10 text-center text-slate-400">
+                    <Briefcase className="w-8 h-8 mx-auto mb-2 text-slate-300" strokeWidth={1.5} />
+                    <p className="text-sm font-bold text-slate-800">Aún no tienes vacantes publicadas</p>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Crea tu primera oferta laboral para empezar a recibir aspirantes calificados.
+                      Crea tu primera oferta laboral para recibir aspirantes verificados.
                     </p>
-                    <div className="mt-3">
-                      <Link href="/empresa/vacantes/nueva" className="btn-primary text-xs h-8 px-3 inline-flex">
-                        Publicar Vacante
+                    <div className="mt-3.5">
+                      <Link href="/empresa/vacantes/nueva" className="rounded-full bg-[#0B3B70] text-white text-xs font-semibold h-8 px-4 inline-flex items-center gap-1.5 shadow-xs">
+                        <PlusCircle className="w-3.5 h-3.5" />
+                        <span>Publicar Vacante</span>
                       </Link>
                     </div>
                   </td>
                 </tr>
               ) : (
                 vacancies.map((vac) => (
-                  <tr key={vac.id} className="hover:bg-slate-50/70 transition-colors">
+                  <tr key={vac.id} className="hover:bg-[#EAF3FA]/30 transition-colors">
                     <td className="py-3.5 pr-4">
-                      <div className="font-semibold text-slate-900">{vac.title}</div>
+                      <div className="font-bold text-slate-900">{vac.title}</div>
                       <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5 tabular-nums">
                         <MapPin className="w-3 h-3 text-slate-400" />
                         {vac.zone} • {vac.created_at}
                       </div>
                     </td>
-                    <td className="py-3.5 text-slate-700 font-mono text-xs tabular-nums">
+                    <td className="py-3.5 text-slate-700 font-mono text-xs tabular-nums font-medium">
                       {vac.shift}
                     </td>
-                    <td className="py-3.5 text-slate-900 font-mono font-semibold tabular-nums">
+                    <td className="py-3.5 text-slate-900 font-mono font-bold tabular-nums">
                       ${vac.salary ? vac.salary.toLocaleString("es-CO") : "0"} COP
                     </td>
                     <td className="py-3.5">
-                      <span className="text-xs font-medium text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md tabular-nums">
-                        {vac.applicants_count} guardas
+                      <span className="text-xs font-semibold text-[#0B3B70] bg-[#EAF3FA] border border-[#D5E6F5] px-2.5 py-1 rounded-full tabular-nums">
+                        {vac.applicants_count} aspirantes
                       </span>
                     </td>
                     <td className="py-3.5">
-                      <span className="badge-emerald text-[11px] font-mono tabular-nums">
+                      <span className="text-[11px] font-bold font-mono tabular-nums text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
                         {vac.avg_match}% Match
                       </span>
                     </td>
                     <td className="py-3.5 text-right">
                       <Link
                         href={`/empresa/vacantes/${vac.id}`}
-                        className="btn-primary text-xs h-8 px-3 font-medium inline-flex tabular-nums"
+                        className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs font-semibold h-8 px-3.5 inline-flex items-center gap-1.5 tabular-nums shadow-xs transition-colors"
                       >
-                        Ver ATS ({vac.applicants_count})
-                        <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+                        <span>Ver ATS ({vac.applicants_count})</span>
+                        <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
                       </Link>
                     </td>
                   </tr>
@@ -443,19 +450,19 @@ export default function EmpresaDashboardPage() {
       </div>
 
       {/* 3. RECENT SECURITY STUDY ORDERS WIDGET */}
-      <div className="bg-white border border-slate-200/90 rounded-lg p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)] space-y-4">
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold tracking-tight text-slate-900">
-              Últimas Evaluaciones de Confiabilidad & Poligrafía
+            <h3 className="text-sm font-bold tracking-tight text-slate-900">
+              Evaluaciones Recientes de Confiabilidad & Poligrafía
             </h3>
-            <p className="text-xs text-slate-500 font-normal">
-              Dictámenes de antecedentes, visitas domiciliarias y pruebas de polígrafo.
+            <p className="text-xs text-slate-500">
+              Dictámenes de antecedentes, visitas domiciliarias y pruebas de polígrafo autorizadas.
             </p>
           </div>
           <Link
             href="/empresa/estudios"
-            className="text-xs text-slate-700 hover:text-slate-900 font-medium flex items-center gap-1"
+            className="text-xs text-[#005DA4] hover:text-[#0B3B70] font-semibold flex items-center gap-1"
           >
             Ver historial completo
             <ChevronRight className="w-4 h-4" />
@@ -464,14 +471,14 @@ export default function EmpresaDashboardPage() {
 
         <div className="space-y-3">
           {recentStudies.length === 0 ? (
-            <div className="p-8 text-center rounded-lg border border-dashed border-slate-200 bg-slate-50/50">
-              <Shield className="w-7 h-7 mx-auto mb-2 text-slate-300" strokeWidth={1.5} />
-              <p className="text-sm font-medium text-slate-700">No has solicitado estudios de confiabilidad ni pruebas de poligrafía todavía</p>
+            <div className="p-8 text-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50">
+              <Shield className="w-8 h-8 mx-auto mb-2 text-slate-300" strokeWidth={1.5} />
+              <p className="text-sm font-bold text-slate-800">No has solicitado estudios de confiabilidad todavía</p>
               <p className="text-xs text-slate-500 mt-0.5">
-                Solicita investigaciones de antecedentes, verificación de domicilio o dictámenes de poligrafía para tus aspirantes.
+                Solicita validaciones de antecedentes, visitas domiciliarias o dictámenes de poligrafía para tus aspirantes.
               </p>
-              <div className="mt-3">
-                <Link href="/empresa/estudios" className="btn-secondary text-xs h-8 px-3 inline-flex">
+              <div className="mt-3.5">
+                <Link href="/empresa/estudios" className="rounded-full bg-[#EAF3FA] hover:bg-[#D5E6F5] text-[#0B3B70] border border-[#D5E6F5] text-xs font-semibold h-8 px-4 inline-flex items-center gap-1.5 transition-colors">
                   Solicitar mi primer estudio
                 </Link>
               </div>
@@ -480,28 +487,25 @@ export default function EmpresaDashboardPage() {
             recentStudies.map((study) => (
               <div
                 key={study.id}
-                className="p-4 rounded-lg border border-slate-200/90 bg-slate-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <strong className="text-slate-900 font-semibold text-sm">
+                    <strong className="text-slate-900 font-bold text-sm">
                       {study.candidate_name}
                     </strong>
                     <span className="text-slate-500 font-mono text-xs tabular-nums">C.C. {study.national_id}</span>
                     <span
-                      className={`badge-${
-                        study.status === "aprobado" ? "emerald" : "amber"
-                      } text-[10px] py-0.5`}
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                        study.status === "aprobado"
+                          ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                          : "bg-amber-50 text-amber-800 border-amber-200"
+                      }`}
                     >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          study.status === "aprobado" ? "bg-emerald-500" : "bg-amber-500"
-                        }`}
-                      />
                       {study.status === "aprobado" ? "Aprobado Sin Riesgo" : "En Proceso"}
                     </span>
                   </div>
-                  <p className="text-slate-600 text-xs">{study.concept}</p>
+                  <p className="text-slate-600 text-xs font-medium">{study.concept}</p>
                   <div className="text-[11px] text-slate-500 tabular-nums">
                     Vacante: {study.job_title} • Radicado el {study.date}
                   </div>
@@ -513,10 +517,10 @@ export default function EmpresaDashboardPage() {
                       href={study.report_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="btn-secondary text-xs h-8 px-3 font-medium text-slate-800 hover:text-slate-900"
+                      className="rounded-full bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 text-xs h-8 px-3.5 font-semibold inline-flex items-center gap-1.5 shadow-2xs transition-all"
                     >
-                      <FileCheck className="w-3.5 h-3.5 text-emerald-600" strokeWidth={1.75} />
-                      Descargar Dictamen Confidencial (PDF)
+                      <FileCheck className="w-3.5 h-3.5 text-emerald-600" strokeWidth={2} />
+                      Descargar Dictamen (PDF)
                     </a>
                   ) : (
                     <span className="text-xs text-slate-500 italic">

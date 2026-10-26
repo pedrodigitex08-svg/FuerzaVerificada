@@ -169,102 +169,111 @@ export default function EmpresaVacantesListPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200/80">
+      {/* Header Estilo Computrabajo Empresas */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 tracking-tight">
-            Mis Vacantes Publicadas & Bandejas ATS
-          </h1>
-          <p className="text-xs text-slate-600 font-normal">
-            Administre ofertas laborales, pause o reactive convocatorias y revise candidatos calificados en tiempo real.
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+              Mis Vacantes Publicadas & Bandejas ATS
+            </h1>
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#005DA4] bg-[#EAF3FA] px-2.5 py-0.5 rounded-full border border-[#D5E6F5]">
+              <Briefcase className="w-3 h-3 text-[#005DA4]" />
+              ATS Corporativo
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Administra tus ofertas laborales, pausa o reactiva convocatorias y gestiona aspirantes calificados en tiempo real.
           </p>
         </div>
 
         <Link
           href="/empresa/vacantes/nueva"
-          className="btn-primary text-xs h-9 px-3.5 font-medium inline-flex items-center gap-1.5"
+          className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs h-10 px-5 font-semibold inline-flex items-center gap-2 transition-colors shadow-xs shrink-0"
         >
-          <PlusCircle className="w-3.5 h-3.5 text-slate-300" strokeWidth={1.75} />
+          <PlusCircle className="w-4 h-4 text-white" strokeWidth={2} />
           <span>Publicar Nueva Vacante</span>
         </Link>
       </div>
 
       {toastMessage && (
-        <div className="p-3.5 rounded-md bg-slate-900 text-white text-xs font-medium flex items-center gap-2 border border-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.08)]">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" strokeWidth={2} />
+        <div className="p-4 rounded-2xl bg-[#0B3B70] text-white text-xs font-semibold flex items-center gap-2.5 shadow-md border border-slate-700">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" strokeWidth={2.5} />
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* KPI METRICS OVERVIEW */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white border border-slate-200/90 rounded-lg p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block">
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs hover:border-[#005DA4] transition-all">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
             Total Vacantes
           </span>
           <span className="text-2xl font-bold font-mono text-slate-900 tabular-nums">
             {vacancies.length}
           </span>
+          <span className="text-xs text-slate-500 mt-0.5 block">Historial registrado</span>
         </div>
 
-        <div className="bg-white border border-slate-200/90 rounded-lg p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block">
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs hover:border-[#005DA4] transition-all">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
             Vacantes Activas
           </span>
           <span className="text-2xl font-bold font-mono text-emerald-700 tabular-nums">
             {activeVacancies}
           </span>
+          <span className="text-xs text-slate-500 mt-0.5 block">Visibles en portal</span>
         </div>
 
-        <div className="bg-white border border-slate-200/90 rounded-lg p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block">
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs hover:border-[#005DA4] transition-all">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
             Aspirantes Postulados
           </span>
-          <span className="text-2xl font-bold font-mono text-slate-900 tabular-nums">
+          <span className="text-2xl font-bold font-mono text-[#0B3B70] tabular-nums">
             {totalApplicants}
           </span>
+          <span className="text-xs text-slate-500 mt-0.5 block">Pendientes y evaluados</span>
         </div>
       </div>
 
-      {/* Search Bar */}
+      {/* Search Bar en Píldora */}
       <div className="relative max-w-md">
-        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" strokeWidth={1.75} />
+        <Search className="w-4 h-4 text-slate-400 absolute left-4 top-3.5" strokeWidth={2} />
         <input
           type="text"
           placeholder="Buscar vacante por cargo o título..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full h-10 bg-white border border-slate-200/90 rounded-md pl-10 pr-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors"
+          className="w-full h-11 bg-white border border-slate-300 rounded-full pl-11 pr-4 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 shadow-2xs transition-all"
         />
       </div>
 
-      {/* Table */}
-      <div className="bg-white border border-slate-200/90 rounded-lg shadow-[0_1px_2px_rgba(15,23,42,0.04)] overflow-hidden">
+      {/* Table Estilo Computrabajo */}
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-slate-200/80 bg-slate-50/70 text-slate-500 uppercase text-[10px] tracking-wider font-semibold">
-                <th className="py-3 px-5 font-medium">Puesto / Vacante</th>
-                <th className="py-3 px-3 font-medium">Esquema</th>
-                <th className="py-3 px-3 font-medium">Salario</th>
-                <th className="py-3 px-3 font-medium">Postulados</th>
-                <th className="py-3 px-3 font-medium">Estado</th>
-                <th className="py-3 px-5 text-right font-medium">Gestión ATS</th>
+              <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-500 uppercase text-[10px] tracking-wider font-bold">
+                <th className="py-3.5 px-5 font-bold">Puesto / Vacante</th>
+                <th className="py-3.5 px-3 font-bold">Esquema</th>
+                <th className="py-3.5 px-3 font-bold">Salario</th>
+                <th className="py-3.5 px-3 font-bold">Postulados</th>
+                <th className="py-3.5 px-3 font-bold">Estado</th>
+                <th className="py-3.5 px-5 text-right font-bold">Gestión ATS</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-slate-400">
-                    <div className="w-6 h-6 border-2 border-slate-900 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                    <p className="text-xs text-slate-500">Cargando tus vacantes empresariales...</p>
+                    <div className="w-7 h-7 border-2 border-[#0B3B70] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                    <p className="text-xs text-slate-600 font-semibold">Cargando tus vacantes empresariales...</p>
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-slate-400">
                     <Briefcase className="w-9 h-9 mx-auto mb-3 text-slate-300" strokeWidth={1.5} />
-                    <p className="text-sm font-semibold text-slate-700">
+                    <p className="text-sm font-bold text-slate-800">
                       {searchTerm ? "No se encontraron vacantes con ese criterio" : "Aún no tienes vacantes publicadas"}
                     </p>
                     <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
@@ -276,9 +285,9 @@ export default function EmpresaVacantesListPage() {
                       <div className="mt-4">
                         <Link
                           href="/empresa/vacantes/nueva"
-                          className="btn-primary text-xs h-9 px-4 inline-flex items-center gap-1.5"
+                          className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs h-9 px-5 font-semibold inline-flex items-center gap-2 shadow-xs transition-colors"
                         >
-                          <PlusCircle className="w-3.5 h-3.5 text-slate-300" />
+                          <PlusCircle className="w-3.5 h-3.5 text-white" />
                           <span>Publicar mi primera vacante</span>
                         </Link>
                       </div>
@@ -287,17 +296,17 @@ export default function EmpresaVacantesListPage() {
                 </tr>
               ) : (
                 filtered.map((vac) => (
-                  <tr key={vac.id} className="hover:bg-slate-50/70 transition-colors">
+                  <tr key={vac.id} className="hover:bg-[#EAF3FA]/30 transition-colors">
                     <td className="py-4 px-5">
                       <div className="flex items-center gap-2">
                         <Link
                           href={`/empresa/vacantes/${vac.id}`}
-                          className="font-semibold text-slate-900 hover:text-slate-700 transition-colors"
+                          className="font-bold text-slate-900 hover:text-[#005DA4] transition-colors"
                         >
                           {vac.title}
                         </Link>
                         {vac.is_urgent && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-800 bg-amber-50/80 px-1.5 py-0.5 rounded-md border border-amber-200/70">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                             <Zap className="w-2.5 h-2.5 fill-amber-500 text-amber-600" />
                             Relevo Urgente
                           </span>
@@ -308,19 +317,19 @@ export default function EmpresaVacantesListPage() {
                         {vac.zone} • Publicada el {vac.date}
                       </div>
                     </td>
-                    <td className="py-4 px-3 font-mono text-slate-700 text-xs tabular-nums">
+                    <td className="py-4 px-3 font-mono text-slate-700 text-xs tabular-nums font-medium">
                       {vac.shift}
                     </td>
-                    <td className="py-4 px-3 font-mono font-semibold text-slate-900 tabular-nums">
+                    <td className="py-4 px-3 font-mono font-bold text-slate-900 tabular-nums">
                       ${vac.salary ? vac.salary.toLocaleString("es-CO") : "0"} COP
                     </td>
                     <td className="py-4 px-3">
                       <Link
                         href={`/empresa/vacantes/${vac.id}`}
-                        className="inline-flex items-center gap-1.5 font-medium text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 px-2.5 py-1 rounded-md tabular-nums transition-colors"
+                        className="inline-flex items-center gap-1.5 font-bold text-[#0B3B70] bg-[#EAF3FA] hover:bg-[#D5E6F5] border border-[#D5E6F5] px-3 py-1 rounded-full tabular-nums transition-colors"
                       >
-                        <Users className="w-3.5 h-3.5 text-slate-500" />
-                        <strong className="text-slate-900">{vac.applicants_count}</strong> postulados
+                        <Users className="w-3.5 h-3.5 text-[#005DA4]" />
+                        <span>{vac.applicants_count} postulados</span>
                       </Link>
                     </td>
                     <td className="py-4 px-3">
@@ -329,7 +338,7 @@ export default function EmpresaVacantesListPage() {
                         onClick={() => toggleVacancyStatus(vac.id, vac.isActive)}
                         disabled={statusUpdatingId === vac.id}
                         title={vac.isActive ? "Clic para pausar convocatoria" : "Clic para reactivar convocatoria"}
-                        className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-md border transition-all ${
+                        className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full border transition-all ${
                           vac.isActive
                             ? "bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100"
                             : "bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200"
@@ -351,10 +360,10 @@ export default function EmpresaVacantesListPage() {
                     <td className="py-4 px-5 text-right">
                       <Link
                         href={`/empresa/vacantes/${vac.id}`}
-                        className="btn-primary text-xs h-8 px-3 font-medium inline-flex items-center gap-1.5 tabular-nums"
+                        className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs h-8 px-4 font-semibold inline-flex items-center gap-1.5 tabular-nums shadow-xs transition-colors"
                       >
                         <span>Gestionar ATS</span>
-                        <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} />
+                        <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
                       </Link>
                     </td>
                   </tr>
