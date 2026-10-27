@@ -30,6 +30,11 @@ import {
   FileCheck,
   CreditCard,
   Building,
+  BadgeCheck,
+  MoreVertical,
+  ChevronDown,
+  ShieldAlert,
+  X,
 } from "lucide-react";
 import { ResumeDrawerModal } from "@/components/empresa/ResumeDrawerModal";
 import { OrderSecurityStudyModal } from "@/components/empresa/OrderSecurityStudyModal";
@@ -124,6 +129,24 @@ export default function ATSVacantePage() {
   const [notificationToast, setNotificationToast] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Filtros rápidos tipo píldora (SherlockHR Style)
+  const [compatibilityFilter, setCompatibilityFilter] = useState("todos");
+  const [courseFilter, setCourseFilter] = useState("todos");
+  const [pdfFilter, setPdfFilter] = useState("todos");
+  const [cityFilter, setCityFilter] = useState("");
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  // Cerrar dropdown al hacer click afuera
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (!(e.target as HTMLElement).closest(".filter-dropdown-container")) {
+        setOpenDropdown(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedCredits = localStorage.getItem("fv_company_credits");
@@ -155,7 +178,7 @@ export default function ATSVacantePage() {
 
       // 1. Cargar Datos Reales de la Vacante
       try {
-        const { data: job, error: jobErr } = await supabase
+        const { data: job } = await supabase
           .from("job_posts")
           .select("*")
           .eq("id", vacancyId)
@@ -375,7 +398,7 @@ export default function ATSVacantePage() {
     descartados: candidates.filter((c) => getCandidateCategory(c.status) === "descartados").length,
   };
 
-  // Filtro de lista
+  // Filtro de lista combinado (Pestaña + Búsqueda + Filtros Píldora)
   const filteredCandidates = candidates
     .filter((c) => {
       const matchSearch =
@@ -386,18 +409,55 @@ export default function ATSVacantePage() {
         c.city.toLowerCase().includes(searchTerm.toLowerCase());
 
       if (!matchSearch) return false;
-      if (activeTab === "todos") return true;
-      return getCandidateCategory(c.status) === activeTab;
+      if (activeTab !== "todos" && getCandidateCategory(c.status) !== activeTab) {
+        return false;
+      }
+
+      if (compatibilityFilter === "90" && c.match_score < 90) return false;
+      if (compatibilityFilter === "80" && c.match_score < 80) return false;
+
+      if (courseFilter === "vigente" && c.course_semaphore !== "VIGENTE") return false;
+      if (courseFilter === "proximo" && c.course_semaphore !== "PROXIMO_A_VENCER") return false;
+      if (courseFilter === "vencido" && c.course_semaphore !== "VENCIDO") return false;
+
+      if (pdfFilter === "con_pdf" && !c.resume_pdf_url) return false;
+      if (pdfFilter === "sin_pdf" && c.resume_pdf_url) return false;
+
+      if (cityFilter && !c.city.toLowerCase().includes(cityFilter.toLowerCase())) {
+        return false;
+      }
+
+      return true;
     })
     .sort((a, b) => b.match_score - a.match_score);
 
+  const hasActiveFilters = Boolean(
+    searchTerm ||
+    compatibilityFilter !== "todos" ||
+    courseFilter !== "todos" ||
+    pdfFilter !== "todos" ||
+    cityFilter
+  );
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setCompatibilityFilter("todos");
+    setCourseFilter("todos");
+    setPdfFilter("todos");
+    setCityFilter("");
+    setOpenDropdown(null);
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Top Breadcrumb & Vacancy Header Estilo Computrabajo Empresas */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs text-slate-500 mb-1.5">
-            <Link href="/empresa/vacantes" className="text-[#005DA4] hover:text-[#0B3B70] font-semibold flex items-center gap-1 transition-colors">
+            <Link
+              href="/empresa/vacantes"
+              className="text-[#005DA4] hover:text-[#0B3B70] font-semibold flex items-center gap-1 transition-colors"
+            >
               <ArrowLeft className="w-3.5 h-3.5" />
               Mis Vacantes
             </Link>
@@ -441,14 +501,14 @@ export default function ATSVacantePage() {
         </div>
       )}
 
-      {/* 1. BARRA DE PESTAÑAS DE EMBUDO (SHERLOCK HR FUNNEL TABS) CON CONTADORES EN VIVO ESTILO COMPUTRABAJO */}
-      <div className="bg-white border-b border-slate-200 px-6 pt-2 rounded-2xl shadow-2xs overflow-x-auto">
+      {/* 1. BARRA DE PESTAÑAS DE EMBUDO (SHERLOCK HR FUNNEL TABS) CON CONTADORES EN VIVO */}
+      <div className="bg-white border-b border-slate-200/90 px-6 pt-2 rounded-2xl shadow-2xs overflow-x-auto">
         <div className="flex items-center gap-6 min-w-max">
           {[
             { key: "todos" as FunnelTabKey, label: "Todos", count: counts.todos },
-            { key: "nuevos" as FunnelTabKey, label: "Nuevos / Sin Revisar", count: counts.nuevos },
-            { key: "revision" as FunnelTabKey, label: "En Revisión / CV Visto", count: counts.revision },
-            { key: "proceso" as FunnelTabKey, label: "En Proceso / Entrevista", count: counts.proceso },
+            { key: "nuevos" as FunnelTabKey, label: "Nuevos / Sin leer", count: counts.nuevos },
+            { key: "revision" as FunnelTabKey, label: "CV Visto / En revisión", count: counts.revision },
+            { key: "proceso" as FunnelTabKey, label: "Entrevista / Polígrafo", count: counts.proceso },
             { key: "contratados" as FunnelTabKey, label: "Contratados", count: counts.contratados },
             { key: "descartados" as FunnelTabKey, label: "Descartados", count: counts.descartados },
           ].map((tab) => {
@@ -460,15 +520,15 @@ export default function ATSVacantePage() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`pb-3.5 pt-2 text-xs font-semibold transition-all inline-flex items-center gap-2 border-b-[3px] ${
                   isActive
-                    ? "border-[#005DA4] text-[#0B3B70] font-bold"
+                    ? "border-[#0B3B70] text-[#0B3B70] font-bold"
                     : "border-transparent text-slate-500 hover:text-slate-800"
                 }`}
               >
                 <span>{tab.label}</span>
                 <span
-                  className={`text-[11px] font-mono font-bold tabular-nums px-2 py-0.5 rounded-full ${
+                  className={`text-[11px] font-mono font-bold tabular-nums px-2.5 py-0.5 rounded-full ${
                     isActive
-                      ? "bg-[#EAF3FA] text-[#0B3B70] border border-[#D5E6F5]"
+                      ? "bg-[#EAF3FA] text-[#005DA4] border border-[#D5E6F5]"
                       : "bg-slate-100 text-slate-600"
                   }`}
                 >
@@ -480,26 +540,230 @@ export default function ATSVacantePage() {
         </div>
       </div>
 
-      {/* Search Bar en Píldora */}
-      <div className="relative max-w-md">
-        <Search className="w-4 h-4 text-slate-400 absolute left-4 top-3.5" strokeWidth={2} />
-        <input
-          type="text"
-          placeholder="Buscar candidato por nombre, cédula o cargo..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full h-11 bg-white border border-slate-300 rounded-full pl-11 pr-4 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 shadow-2xs transition-all"
-        />
+      {/* 2. FILA DE FILTROS RÁPIDOS TIPO PÍLDORA (⌄) SOBRE FONDO #F2F5F8 */}
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1">
+        {/* Buscador Integrado en Píldora */}
+        <div className="relative w-72 shrink-0">
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-3" strokeWidth={2} />
+          <input
+            type="text"
+            placeholder="Buscar por nombre, cédula o cargo..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full h-9 bg-white border border-slate-300 rounded-full pl-9 pr-3 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 shadow-2xs transition-all"
+          />
+        </div>
+
+        {/* Filtro 1: Compatibilidad */}
+        <div className="relative filter-dropdown-container shrink-0">
+          <button
+            type="button"
+            onClick={() => setOpenDropdown(openDropdown === "compat" ? null : "compat")}
+            className={`border rounded-full px-4 py-1.5 text-xs font-medium flex items-center gap-1.5 shadow-2xs transition-all whitespace-nowrap cursor-pointer ${
+              compatibilityFilter !== "todos"
+                ? "border-[#005DA4] text-[#005DA4] font-bold bg-[#EAF3FA]"
+                : "border-slate-200/90 text-slate-700 bg-white hover:border-[#005DA4]"
+            }`}
+          >
+            <span>
+              {compatibilityFilter === "90"
+                ? "Compatibilidad: ≥ 90%"
+                : compatibilityFilter === "80"
+                ? "Compatibilidad: ≥ 80%"
+                : "Compatibilidad"}
+            </span>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+          </button>
+          {openDropdown === "compat" && (
+            <div className="absolute left-0 mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+              {[
+                { id: "todos", label: "Todas las compatibilidades" },
+                { id: "90", label: "Alta compatibilidad (≥ 90%)" },
+                { id: "80", label: "Buena compatibilidad (≥ 80%)" },
+              ].map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => {
+                    setCompatibilityFilter(c.id);
+                    setOpenDropdown(null);
+                  }}
+                  className={`w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                    compatibilityFilter === c.id
+                      ? "bg-[#EAF3FA] text-[#0B3B70] font-bold"
+                      : "hover:bg-slate-50 text-slate-700"
+                  }`}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Filtro 2: Curso SuperVigilancia */}
+        <div className="relative filter-dropdown-container shrink-0">
+          <button
+            type="button"
+            onClick={() => setOpenDropdown(openDropdown === "course" ? null : "course")}
+            className={`border rounded-full px-4 py-1.5 text-xs font-medium flex items-center gap-1.5 shadow-2xs transition-all whitespace-nowrap cursor-pointer ${
+              courseFilter !== "todos"
+                ? "border-[#005DA4] text-[#005DA4] font-bold bg-[#EAF3FA]"
+                : "border-slate-200/90 text-slate-700 bg-white hover:border-[#005DA4]"
+            }`}
+          >
+            <span>
+              {courseFilter === "vigente"
+                ? "Curso: Vigente"
+                : courseFilter === "proximo"
+                ? "Curso: Por Vencer"
+                : courseFilter === "vencido"
+                ? "Curso: Vencido"
+                : "Curso SuperVigilancia"}
+            </span>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+          </button>
+          {openDropdown === "course" && (
+            <div className="absolute left-0 mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+              {[
+                { id: "todos", label: "Todos los estados" },
+                { id: "vigente", label: "Solo Curso Vigente (✅)" },
+                { id: "proximo", label: "Próximo a Vencer (⚠️)" },
+                { id: "vencido", label: "Curso Vencido (❌)" },
+              ].map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => {
+                    setCourseFilter(c.id);
+                    setOpenDropdown(null);
+                  }}
+                  className={`w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                    courseFilter === c.id
+                      ? "bg-[#EAF3FA] text-[#0B3B70] font-bold"
+                      : "hover:bg-slate-50 text-slate-700"
+                  }`}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Filtro 3: Con Hoja de Vida PDF */}
+        <div className="relative filter-dropdown-container shrink-0">
+          <button
+            type="button"
+            onClick={() => setOpenDropdown(openDropdown === "pdf" ? null : "pdf")}
+            className={`border rounded-full px-4 py-1.5 text-xs font-medium flex items-center gap-1.5 shadow-2xs transition-all whitespace-nowrap cursor-pointer ${
+              pdfFilter !== "todos"
+                ? "border-[#005DA4] text-[#005DA4] font-bold bg-[#EAF3FA]"
+                : "border-slate-200/90 text-slate-700 bg-white hover:border-[#005DA4]"
+            }`}
+          >
+            <span>
+              {pdfFilter === "con_pdf"
+                ? "Con HV PDF: Sí"
+                : pdfFilter === "sin_pdf"
+                ? "Con HV PDF: Sin PDF"
+                : "Con Hoja de Vida PDF"}
+            </span>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+          </button>
+          {openDropdown === "pdf" && (
+            <div className="absolute left-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+              {[
+                { id: "todos", label: "Todos los candidatos" },
+                { id: "con_pdf", label: "Solo con HV PDF cargada" },
+                { id: "sin_pdf", label: "Sin archivo PDF" },
+              ].map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => {
+                    setPdfFilter(p.id);
+                    setOpenDropdown(null);
+                  }}
+                  className={`w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                    pdfFilter === p.id
+                      ? "bg-[#EAF3FA] text-[#0B3B70] font-bold"
+                      : "hover:bg-slate-50 text-slate-700"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Filtro 4: Ciudad */}
+        <div className="relative filter-dropdown-container shrink-0">
+          <button
+            type="button"
+            onClick={() => setOpenDropdown(openDropdown === "city" ? null : "city")}
+            className={`border rounded-full px-4 py-1.5 text-xs font-medium flex items-center gap-1.5 shadow-2xs transition-all whitespace-nowrap cursor-pointer ${
+              cityFilter
+                ? "border-[#005DA4] text-[#005DA4] font-bold bg-[#EAF3FA]"
+                : "border-slate-200/90 text-slate-700 bg-white hover:border-[#005DA4]"
+            }`}
+          >
+            <span>{cityFilter ? `Ciudad: ${cityFilter}` : "Ciudad"}</span>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+          </button>
+          {openDropdown === "city" && (
+            <div className="absolute left-0 mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+              {[
+                { id: "", label: "Todas las ciudades" },
+                { id: "Bogotá", label: "Bogotá D.C." },
+                { id: "Medellín", label: "Medellín" },
+                { id: "Cali", label: "Cali" },
+                { id: "Barranquilla", label: "Barranquilla" },
+                { id: "Santa Marta", label: "Santa Marta" },
+                { id: "Bucaramanga", label: "Bucaramanga" },
+              ].map((ct) => (
+                <button
+                  key={ct.id}
+                  type="button"
+                  onClick={() => {
+                    setCityFilter(ct.id);
+                    setOpenDropdown(null);
+                  }}
+                  className={`w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                    cityFilter === ct.id
+                      ? "bg-[#EAF3FA] text-[#0B3B70] font-bold"
+                      : "hover:bg-slate-50 text-slate-700"
+                  }`}
+                >
+                  {ct.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Botón Limpiar filtros cuando hay alguno activo */}
+        {hasActiveFilters && (
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-full px-3 py-1.5 text-xs font-semibold flex items-center gap-1 shadow-2xs whitespace-nowrap transition-colors shrink-0"
+          >
+            <X className="w-3.5 h-3.5" />
+            <span>Limpiar filtros</span>
+          </button>
+        )}
       </div>
 
-      {/* 2. VISOR DE RECLUTAMIENTO EN PANTALLA DIVIDIDA (MASTER-DETAIL) ESTILO COMPUTRABAJO */}
+      {/* 3. VISOR DE RECLUTAMIENTO EN PANTALLA DIVIDIDA (MASTER-DETAIL SHERLOCK HR) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* COLUMNA IZQUIERDA: LISTA DE CANDIDATOS (5 COLS) */}
         <div className="lg:col-span-5 space-y-3">
           {/* Caja superior de conteo */}
           <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs flex items-center justify-between">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-              Candidatos ({filteredCandidates.length})
+            <h2 className="text-sm font-bold text-slate-900">
+              {filteredCandidates.length} {filteredCandidates.length === 1 ? "Candidato" : "Candidatos"} en esta etapa
             </h2>
             <span className="text-xs text-[#005DA4] font-semibold">Ordenados por Match %</span>
           </div>
@@ -514,8 +778,8 @@ export default function ATSVacantePage() {
               <Users className="w-8 h-8 text-slate-300 mx-auto" strokeWidth={1.5} />
               <h4 className="text-xs font-bold text-slate-800">No hay candidatos en esta etapa</h4>
               <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
-                {searchTerm
-                  ? "Intenta con otro término de búsqueda o limpia el filtro."
+                {searchTerm || hasActiveFilters
+                  ? "Intenta con otro término o limpia los filtros activos."
                   : "Los aspirantes que se postulen aparecerán automáticamente en esta bandeja."}
               </p>
             </div>
@@ -526,36 +790,47 @@ export default function ATSVacantePage() {
                 const isCityMatch =
                   cand.city.toLowerCase().trim() === vacancyCity.toLowerCase().trim() ||
                   !vacancyCity;
+                const isNew = cand.status === "postulado";
 
                 return (
                   <div
                     key={cand.id}
                     onClick={() => handleSelectCandidate(cand)}
-                    className={`bg-white rounded-2xl p-4.5 text-left cursor-pointer transition-all ${
+                    className={`bg-white rounded-2xl p-5 text-left cursor-pointer transition-all relative ${
                       isSelected
-                        ? "border-[1.5px] border-[#005DA4] ring-1 ring-[#005DA4]/20 shadow-sm"
+                        ? "border-[1.5px] border-[#005DA4] ring-1 ring-[#005DA4]/15 shadow-sm"
                         : "border border-slate-200 hover:border-slate-300 shadow-2xs"
                     }`}
                   >
-                    {/* Header Row: Name & Match */}
-                    <div className="flex items-start justify-between gap-2">
+                    {/* Botón de tres puntos a la derecha */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectCandidate(cand);
+                      }}
+                      className="absolute right-4 top-4 text-slate-400 hover:text-slate-700 p-1"
+                      title="Opciones del candidato"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+
+                    {/* Fila 1: Nombre + Match */}
+                    <div className="flex items-start justify-between gap-2 pr-6">
                       <div>
-                        <div className="flex items-center gap-1.5">
-                          <h4 className="text-sm font-bold text-slate-900 tracking-tight hover:text-[#005DA4] transition-colors">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h4 className="text-base font-bold text-slate-900 tracking-tight hover:text-[#005DA4] transition-colors">
                             {cand.full_name}
                           </h4>
-                          {cand.status === "postulado" && (
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Nuevo candidato" />
-                          )}
                         </div>
-                        <div className="text-[11px] text-slate-500 font-mono tabular-nums mt-0.5">
+                        <div className="text-xs text-slate-500 font-mono tabular-nums mt-0.5">
                           C.C. {cand.national_id} • {cand.years_experience} años exp.
                         </div>
                       </div>
 
-                      <div className="text-right">
+                      <div className="text-right shrink-0">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono tabular-nums ${
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold font-mono tabular-nums ${
                             cand.match_score >= 85
                               ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
                               : "bg-amber-50 text-amber-800 border border-amber-200"
@@ -563,17 +838,23 @@ export default function ATSVacantePage() {
                         >
                           {cand.match_score}% Match
                         </span>
-                        <span className="text-[10px] text-slate-400 block mt-0.5">
-                          {formatRelativeDate(cand.applied_at)}
-                        </span>
                       </div>
                     </div>
 
-                    <div className="text-xs font-semibold text-slate-700 mt-1">
-                      {cand.primary_role}
+                    {/* Fila 2: Especialidad + Sello BadgeCheck */}
+                    <div className="flex items-center gap-1.5 text-xs text-slate-700 font-semibold mt-2">
+                      <span>{cand.primary_role}</span>
+                      <BadgeCheck className="w-4 h-4 text-[#005DA4] shrink-0" strokeWidth={2.5} />
+                      <span className="text-[11px] font-semibold text-[#005DA4]">Expediente Verificado</span>
                     </div>
 
-                    {/* SEMÁFORO DE COMPATIBILIDAD (KILLER CHECKS EN 2 SEGUNDOS) */}
+                    {/* Fila 3: Ciudad */}
+                    <div className="text-xs text-slate-500 flex items-center gap-1 mt-1">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span>{cand.city} {cand.locality ? `• ${cand.locality}` : ""}</span>
+                    </div>
+
+                    {/* Fila 4: SEMÁFORO DE COMPATIBILIDAD */}
                     <div className="flex flex-wrap items-center gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
                       {/* Check 1: Curso */}
                       {cand.course_semaphore === "VIGENTE" ? (
@@ -597,11 +878,11 @@ export default function ATSVacantePage() {
                       {cand.resume_pdf_url ? (
                         <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
                           <Check className="w-3 h-3 text-emerald-600" strokeWidth={3} />
-                          CV PDF Adjunto
+                          HV PDF
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
-                          Sin CV PDF
+                          Sin PDF
                         </span>
                       )}
 
@@ -617,6 +898,24 @@ export default function ATSVacantePage() {
                         </span>
                       )}
                     </div>
+
+                    {/* Fila 5: Pie con Fecha a la izquierda y Estado a la derecha */}
+                    <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+                      <span className="flex items-center gap-1 font-normal text-slate-400">
+                        <Clock className="w-3 h-3 text-slate-400" />
+                        <span>Postulado {formatRelativeDate(cand.applied_at)}</span>
+                      </span>
+
+                      {isNew ? (
+                        <span className="bg-rose-50 text-rose-600 border border-rose-200 rounded-full px-2.5 py-0.5 text-[10px] font-bold animate-pulse">
+                          Nuevo
+                        </span>
+                      ) : (
+                        <span className="border border-slate-300 rounded-full px-2.5 py-0.5 text-[10px] text-slate-500 font-semibold">
+                          CV Visto
+                        </span>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -624,46 +923,48 @@ export default function ATSVacantePage() {
           )}
         </div>
 
-        {/* COLUMNA DERECHA: EXPEDIENTE Y ACCIONES 1 CLIC (7 COLS - STICKY) */}
+        {/* COLUMNA DERECHA: EXPEDIENTE Y ACCIONES 1 CLIC (7 COLS - STICKY TOP-20) */}
         <div className="lg:col-span-7 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto space-y-4">
           {selectedCandidate ? (
-            <div className="bg-white border border-slate-200 rounded-2xl p-7 shadow-2xs space-y-6">
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-7 shadow-2xs space-y-6">
               {/* Expediente Header Estilo Computrabajo */}
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4 border-b border-slate-200">
-                <div className="flex items-start gap-3.5">
-                  <div className="w-14 h-14 rounded-2xl bg-[#EAF3FA] border border-[#D5E6F5] text-[#0B3B70] flex items-center justify-center font-extrabold text-lg shrink-0 shadow-2xs">
+                <div className="flex items-start gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-[#EAF3FA] border border-[#D5E6F5] text-[#0B3B70] flex items-center justify-center font-extrabold text-xl shrink-0 shadow-2xs">
                     {selectedCandidate.full_name.charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-xl font-bold text-slate-900 tracking-tight">
+                      <h3 className="text-2xl font-bold text-slate-900 tracking-tight">
                         {selectedCandidate.full_name}
                       </h3>
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                         <Check className="w-3 h-3 text-emerald-600" strokeWidth={3} />
                         Auditado
                       </span>
                     </div>
-                    <div className="text-xs text-slate-600 font-semibold mt-1">
+                    <div className="text-sm text-slate-700 font-bold mt-1">
                       {selectedCandidate.primary_role} • {selectedCandidate.years_experience} años de experiencia
                     </div>
                     <div className="text-xs text-slate-500 font-mono tabular-nums mt-1 flex items-center gap-2">
                       <span>C.C. {selectedCandidate.national_id}</span>
                       <span>•</span>
                       <span>{selectedCandidate.city} {selectedCandidate.locality ? `(${selectedCandidate.locality})` : ""}</span>
+                      <span>•</span>
+                      <span className="font-semibold text-slate-700">{selectedCandidate.phone_whatsapp}</span>
                     </div>
 
                     {/* Sello azul de verificación */}
                     <div className="pt-2">
                       <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#005DA4] bg-[#EAF3FA] px-3 py-1 rounded-full border border-[#D5E6F5]">
-                        <Shield className="w-3.5 h-3.5 text-[#005DA4]" strokeWidth={2} />
-                        <span>Acreditación SuperVigilancia</span>
+                        <BadgeCheck className="w-4 h-4 text-[#005DA4]" strokeWidth={2.5} />
+                        <span>Expediente Verificado • SuperVigilancia</span>
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-col items-start sm:items-end">
+                <div className="flex flex-col items-start sm:items-end shrink-0">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                     Fase del Embudo
                   </span>
@@ -672,7 +973,7 @@ export default function ATSVacantePage() {
                     onChange={(e) =>
                       handleStatusChange(selectedCandidate.id, e.target.value as ApplicationStatus)
                     }
-                    className="mt-1 rounded-full px-3.5 py-1.5 text-xs font-bold border border-slate-300 bg-white shadow-2xs focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/10 cursor-pointer"
+                    className="mt-1 rounded-full px-4 py-1.5 text-xs font-bold border border-slate-300 bg-white shadow-2xs focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/10 cursor-pointer"
                   >
                     <option value="postulado">Postulado (Sin revisar)</option>
                     <option value="preseleccionado">En Revisión / CV Visto</option>
@@ -684,23 +985,23 @@ export default function ATSVacantePage() {
                 </div>
               </div>
 
-              {/* BARRA DE ACCIÓN PRINCIPAL (BOTÓN PRINCIPAL PÍLDORA + ACCIONES EN AZUL HIELO #EAF3FA) */}
+              {/* BARRA DE ACCIÓN PRINCIPAL DEL RECLUTADOR (BOTÓN PÍLDORA #0B3B70 + BOTONES AZUL HIELO #EAF3FA) */}
               <div className="space-y-2.5">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                  Acciones Rápidas de Selección
+                  Acciones Rápidas del Reclutador
                 </span>
                 <div className="flex flex-wrap items-center gap-2.5">
-                  {/* Botón Principal: Mover a Entrevista */}
+                  {/* Botón Principal: Citar a Entrevista */}
                   <button
                     type="button"
                     onClick={() => handleStatusChange(selectedCandidate.id, "citado_entrevista")}
-                    className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs font-semibold px-5 py-2.5 inline-flex items-center gap-2 shadow-xs transition-colors"
+                    className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-sm font-semibold px-7 py-2.5 inline-flex items-center gap-2 shadow-xs transition-colors"
                   >
-                    <Calendar className="w-3.5 h-3.5 text-[#FFE066]" strokeWidth={2} />
-                    <span>Mover a Entrevista</span>
+                    <Calendar className="w-4 h-4 text-[#FFE066]" strokeWidth={2} />
+                    <span>Citar a Entrevista</span>
                   </button>
 
-                  {/* Botón en Azul Hielo: Citar por WhatsApp con Template */}
+                  {/* Botón en Azul Hielo: Citar por WhatsApp */}
                   <a
                     href={generateInterviewCitationLink({
                       phone: selectedCandidate.phone_whatsapp,
@@ -717,7 +1018,7 @@ export default function ATSVacantePage() {
                     className="rounded-full bg-[#EAF3FA] hover:bg-[#D5E6F5] text-[#0B3B70] border border-[#D5E6F5] text-xs font-semibold px-4 py-2.5 inline-flex items-center gap-2 shadow-2xs transition-colors"
                   >
                     <MessageCircle className="w-3.5 h-3.5 text-emerald-600" strokeWidth={2} />
-                    <span>Citar por WhatsApp</span>
+                    <span>WhatsApp</span>
                   </a>
 
                   {/* Botón en Azul Hielo: Solicitar Polígrafo B2B */}
@@ -726,7 +1027,7 @@ export default function ATSVacantePage() {
                     onClick={() => setSelectedCandidateForStudy(selectedCandidate)}
                     className="rounded-full bg-[#EAF3FA] hover:bg-[#D5E6F5] text-[#0B3B70] border border-[#D5E6F5] text-xs font-semibold px-4 py-2.5 inline-flex items-center gap-2 shadow-2xs transition-colors"
                   >
-                    <ShieldCheck className="w-3.5 h-3.5 text-[#005DA4]" strokeWidth={2} />
+                    <ShieldAlert className="w-3.5 h-3.5 text-[#005DA4]" strokeWidth={2} />
                     <span>Solicitar Polígrafo</span>
                   </button>
 
@@ -739,17 +1040,30 @@ export default function ATSVacantePage() {
                     <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={2.5} />
                     <span>Contratar</span>
                   </button>
+
+                  {/* Botón Descartar */}
+                  <button
+                    type="button"
+                    onClick={() => handleStatusChange(selectedCandidate.id, "descartado")}
+                    className="rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold px-3.5 py-2.5 inline-flex items-center gap-1 shadow-2xs transition-colors"
+                    title="Descartar candidato"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    <span>Descartar</span>
+                  </button>
                 </div>
               </div>
 
-              {/* SECCIÓN RESUMEN DEL CANDIDATO CON ICONOS LIMPIOS ESTILO COMPUTRABAJO */}
+              {/* LÍNEA DIVISORIA */}
+              <div className="border-t border-slate-200 my-6" />
+
+              {/* SECCIÓN RESUMEN OPERATIVO CON ICONOS LIMPIOS ESTILO COMPUTRABAJO */}
               <div className="space-y-3">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700 block">
-                  Resumen del Candidato
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <h3 className="text-base font-bold text-slate-900">Resumen Operativo</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm text-slate-700">
+                  {/* Item 1: Experiencia */}
                   <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-[#0B3B70] shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[#0B3B70] shrink-0">
                       <Briefcase className="w-4 h-4 text-[#005DA4]" />
                     </div>
                     <div>
@@ -758,20 +1072,24 @@ export default function ATSVacantePage() {
                     </div>
                   </div>
 
+                  {/* Item 2: Curso SuperVigilancia */}
                   <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-[#0B3B70] shrink-0">
-                      <Shield className="w-4 h-4 text-[#005DA4]" />
+                    <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[#0B3B70] shrink-0">
+                      <ShieldCheck className="w-4 h-4 text-[#005DA4]" />
                     </div>
                     <div>
                       <span className="text-[11px] text-slate-500 block">Curso SuperVigilancia:</span>
                       <strong className="text-xs font-bold text-slate-900">
-                        {selectedCandidate.course_semaphore === "VIGENTE" ? `Vigente (${selectedCandidate.days_remaining}d)` : "Por Vencer / Vencido"}
+                        {selectedCandidate.course_semaphore === "VIGENTE"
+                          ? `Vigente (${selectedCandidate.days_remaining}d)`
+                          : "Por Vencer / Vencido"}
                       </strong>
                     </div>
                   </div>
 
+                  {/* Item 3: Libreta Militar */}
                   <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-[#0B3B70] shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[#0B3B70] shrink-0">
                       <CreditCard className="w-4 h-4 text-[#005DA4]" />
                     </div>
                     <div>
@@ -782,8 +1100,9 @@ export default function ATSVacantePage() {
                     </div>
                   </div>
 
+                  {/* Item 4: Dotación de Moto */}
                   <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-[#0B3B70] shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[#0B3B70] shrink-0">
                       <Bike className="w-4 h-4 text-[#005DA4]" />
                     </div>
                     <div>
@@ -797,7 +1116,7 @@ export default function ATSVacantePage() {
               </div>
 
               {/* HOJA DE VIDA EN PDF & SOPORTES */}
-              <div className="p-4 rounded-xl bg-[#EAF3FA]/50 border border-[#D5E6F5] space-y-3">
+              <div className="p-4 rounded-2xl bg-[#EAF3FA]/50 border border-[#D5E6F5] space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-[#005DA4]" strokeWidth={2} />
@@ -806,7 +1125,7 @@ export default function ATSVacantePage() {
                     </span>
                   </div>
                   {selectedCandidate.resume_pdf_url ? (
-                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                       PDF Adjunto y Verificado
                     </span>
                   ) : (
@@ -841,20 +1160,6 @@ export default function ATSVacantePage() {
                     <span>Ver Expediente Completo</span>
                   </button>
                 </div>
-              </div>
-
-              {/* BOTÓN DESCARTAR RÁPIDO */}
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                <span className="text-[11px] text-slate-400">
-                  ¿El aspirante no cumple los requisitos del puesto?
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleStatusChange(selectedCandidate.id, "descartado")}
-                  className="text-xs text-rose-600 hover:text-rose-800 font-semibold px-3 py-1 rounded-full hover:bg-rose-50 transition-colors"
-                >
-                  Descartar Candidato
-                </button>
               </div>
             </div>
           ) : (
