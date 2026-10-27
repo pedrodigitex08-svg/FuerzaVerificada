@@ -73,6 +73,15 @@ function formatRelativeDate(dateString?: string): string {
   }
 }
 
+function normalizeFilterStr(str?: string | null): string {
+  if (!str) return "";
+  return str
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
 function VacantesContent() {
   const supabase = createClient();
   const searchParams = useSearchParams();
@@ -127,33 +136,96 @@ function VacantesContent() {
   useEffect(() => {
     async function fetchRealJobs() {
       try {
+        // 1. SELECT primario sobre public.job_posts filtrando estrictamente por is_active = true
         let { data, error } = await supabase
           .from("job_posts")
           .select("*, companies(company_name, is_verified_company)")
           .eq("is_active", true)
           .order("created_at", { ascending: false });
 
+        // Respaldo resiliente: si el JOIN con companies falla en PostgREST (ej. sin relación en cache),
+        // hacer SELECT plano directo sobre job_posts para asegurar que NUNCA se descarten las vacantes
+        if (error || !data) {
+          const direct = await supabase
+            .from("job_posts")
+            .select("*")
+            .eq("is_active", true)
+            .order("created_at", { ascending: false });
+
+          if (!direct.error && direct.data) {
+            data = direct.data;
+            error = null;
+          }
+        }
+
+        // Respaldo de compatibilidad histórica si la tabla de vacantes es 'jobs'
         if (error || !data || data.length === 0) {
           const fallback = await supabase
             .from("jobs")
             .select("*, companies(company_name, is_verified_company)")
             .eq("is_active", true)
             .order("created_at", { ascending: false });
+
           if (!fallback.error && fallback.data && fallback.data.length > 0) {
             data = fallback.data;
             error = null;
+          } else {
+            const fallbackDirect = await supabase
+              .from("jobs")
+              .select("*")
+              .eq("is_active", true)
+              .order("created_at", { ascending: false });
+            if (!fallbackDirect.error && fallbackDirect.data) {
+              data = fallbackDirect.data;
+              error = null;
+            }
           }
         }
 
         if (!error && data && data.length > 0) {
+          // Resolver nombres de empresa de forma segura si no vinieron por join relacional
+          const missingCompanyIds = Array.from(
+            new Set(
+              data
+                .filter((j: any) => !j.companies?.company_name && j.company_id)
+                .map((j: any) => j.company_id)
+            )
+          );
+
+          let companyMap: Record<string, { company_name: string; is_verified_company: boolean }> = {};
+          if (missingCompanyIds.length > 0) {
+            try {
+              const { data: compData } = await supabase
+                .from("companies")
+                .select("id, company_name, is_verified_company")
+                .in("id", missingCompanyIds);
+
+              if (compData) {
+                compData.forEach((c: any) => {
+                  companyMap[c.id] = {
+                    company_name: c.company_name,
+                    is_verified_company: c.is_verified_company ?? true,
+                  };
+                });
+              }
+            } catch {}
+          }
+
           const mapped: JobPostWithCompany[] = data.map((j: any) => ({
             ...j,
-            company_name: j.companies?.company_name || "Empresa de Seguridad",
-            is_verified_company: j.companies?.is_verified_company ?? true,
+            company_name:
+              j.companies?.company_name ||
+              companyMap[j.company_id]?.company_name ||
+              "Empresa de Seguridad",
+            is_verified_company:
+              j.companies?.is_verified_company ??
+              companyMap[j.company_id]?.is_verified_company ??
+              true,
           }));
+
           setJobs(mapped);
           if (mapped.length > 0) {
-            setSelectedJobId(mapped[0].id);
+            setSelectedJobId((prev) => prev || mapped[0].id);
           }
           return;
         } else {
@@ -324,32 +396,32 @@ function VacantesContent() {
     .filter((j) => {
       if (hiddenJobIds[j.id]) return false;
 
-      const q = searchTerm.toLowerCase().trim();
+      const q = normalizeFilterStr(searchTerm);
       const matchesSearch =
         !q ||
-        j.title.toLowerCase().includes(q) ||
-        j.company_name.toLowerCase().includes(q) ||
-        (j.zone_neighborhood || "").toLowerCase().includes(q) ||
-        (j.description || "").toLowerCase().includes(q);
+        normalizeFilterStr(j.title).includes(q) ||
+        normalizeFilterStr(j.company_name).includes(q) ||
+        normalizeFilterStr(j.zone_neighborhood).includes(q) ||
+        normalizeFilterStr(j.description).includes(q);
 
-      const loc = locationFilter.toLowerCase().trim();
+      const loc = normalizeFilterStr(locationFilter);
       const matchesLocation =
         !loc ||
-        loc === "todo el país" ||
+        loc === "todo el pais" ||
         loc === "todas" ||
-        j.city.toLowerCase().includes(loc) ||
-        (j.zone_neighborhood || "").toLowerCase().includes(loc);
+        normalizeFilterStr(j.city).includes(loc) ||
+        normalizeFilterStr(j.zone_neighborhood).includes(loc);
 
       let matchesCategory = true;
       if (categoryFilter !== "todas") {
         const norm = normalizeSecurityRole(j.role_required);
-        const titleL = j.title.toLowerCase();
+        const titleL = normalizeFilterStr(j.title);
         if (categoryFilter === "vigilante") {
-          matchesCategory = norm === "vigilante_fijo" || titleL.includes("vigilante");
+          matchesCategory = norm.includes("vigilante") || titleL.includes("vigilante") || titleL.includes("guarda");
         } else if (categoryFilter === "escolta") {
           matchesCategory = norm.includes("escolta") || titleL.includes("escolta");
         } else if (categoryFilter === "cctv") {
-          matchesCategory = norm.includes("medios") || titleL.includes("cctv") || titleL.includes("operador");
+          matchesCategory = norm.includes("medios") || titleL.includes("cctv") || titleL.includes("operador") || titleL.includes("camaras");
         } else if (categoryFilter === "supervisor") {
           matchesCategory = norm.includes("supervisor") || titleL.includes("supervisor");
         }
@@ -382,14 +454,14 @@ function VacantesContent() {
 
       let matchesShift = true;
       if (shiftFilter !== "todos") {
-        const s = (j.shift || "").toLowerCase();
-        matchesShift = s.includes(shiftFilter.toLowerCase());
+        const s = normalizeFilterStr(j.shift);
+        matchesShift = s.includes(normalizeFilterStr(shiftFilter));
       }
 
       let matchesContract = true;
       if (contractFilter !== "todos") {
-        const desc = (j.description || "").toLowerCase();
-        matchesContract = desc.includes(contractFilter.toLowerCase());
+        const desc = normalizeFilterStr(j.description);
+        matchesContract = desc.includes(normalizeFilterStr(contractFilter));
       }
 
       return (
@@ -407,7 +479,9 @@ function VacantesContent() {
       if (sortBy === "salario") {
         return (b.salary_monthly || 0) - (a.salary_monthly || 0);
       }
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      return timeB - timeA;
     });
 
   const selectedJob =

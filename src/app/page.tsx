@@ -118,6 +118,19 @@ export default function HomePage() {
           .order("created_at", { ascending: false })
           .limit(3);
 
+        if (error || !data) {
+          const direct = await supabase
+            .from("job_posts")
+            .select("*")
+            .eq("is_active", true)
+            .order("created_at", { ascending: false })
+            .limit(3);
+          if (!direct.error && direct.data) {
+            data = direct.data;
+            error = null;
+          }
+        }
+
         if (error || !data || data.length === 0) {
           const fallback = await supabase
             .from("jobs")
@@ -128,6 +141,17 @@ export default function HomePage() {
           if (!fallback.error && fallback.data && fallback.data.length > 0) {
             data = fallback.data;
             error = null;
+          } else {
+            const fallbackDirect = await supabase
+              .from("jobs")
+              .select("*")
+              .eq("is_active", true)
+              .order("created_at", { ascending: false })
+              .limit(3);
+            if (!fallbackDirect.error && fallbackDirect.data) {
+              data = fallbackDirect.data;
+              error = null;
+            }
           }
         }
 
