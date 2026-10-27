@@ -1,7 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { Shield, Lock, FileCheck, CheckCircle, MapPin, Phone, Mail } from "lucide-react";
+import {
+  Shield,
+  Lock,
+  FileCheck,
+  CheckCircle,
+  MapPin,
+  Phone,
+  Mail,
+  ExternalLink,
+} from "lucide-react";
 import { useAuth } from "@/lib/supabase/useAuth";
 
 export function Footer() {
@@ -10,11 +19,41 @@ export function Footer() {
   const isCandidate = role === "candidate";
 
   return (
-    <footer className="bg-white text-[#4B5968] border-t border-[#E1E4E9] pt-12 pb-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <footer className="bg-white text-[#4B5968] border-t border-[#E1E4E9]">
+      {/* FRANJA BLANCA SUPERIOR CON RESPALDO NORMATIVO */}
+      <div className="bg-white border-b border-[#E1E4E9] py-3.5 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+          <div className="flex items-center gap-2 text-center md:text-left">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+            <p>
+              <strong className="font-semibold text-slate-800">
+                Respaldo Normativo y Habeas Data:
+              </strong>{" "}
+              Cumplimiento estricto de la Ley 1581 de 2012, directrices de la Superintendencia de Industria y Comercio (SIC) y control documental de la SuperVigilancia.
+            </p>
+          </div>
+          <div className="flex items-center gap-4 shrink-0 text-xs font-semibold">
+            <Link
+              href="/privacidad"
+              className="text-[#0B3B70] hover:text-[#005DA4] hover:underline"
+            >
+              Política de Privacidad
+            </Link>
+            <span className="text-slate-300">•</span>
+            <Link
+              href="/terminos"
+              className="text-[#0B3B70] hover:text-[#005DA4] hover:underline"
+            >
+              Términos de Uso
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
         {/* 4 COLUMNAS ESTILO COMPUTRABAJO */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pb-10 border-b border-[#E1E4E9]">
-          {/* Columna 1: Marca y Propósito */}
+          {/* Columna 1: Institucional */}
           <div className="space-y-3.5">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-[#0B3B70] flex items-center justify-center text-white">
@@ -26,7 +65,7 @@ export function Footer() {
             </Link>
 
             <p className="text-xs text-[#627384] leading-relaxed">
-              El portal de empleo especializado en seguridad privada en Colombia. Conectamos talento operativo auditado con las empresas líderes del sector.
+              El ecosistema de empleo y confiabilidad especializado en seguridad privada en Colombia. Conectamos personal operativo acreditado con las empresas líderes del sector.
             </p>
 
             <div className="inline-flex items-center gap-2 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-3 py-1.5 rounded-full font-semibold">
@@ -35,10 +74,10 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Columna 2: Personal Operativo */}
+          {/* Columna 2: Personas (Candidatos) */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold text-[#0B3B70] tracking-wider uppercase">
-              Personal Operativo
+              Personas (Candidatos)
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
@@ -48,7 +87,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href={isAuthenticated && isCandidate ? "/guarda/perfil" : "/login"}
+                  href={isAuthenticated && isCandidate ? "/mi-perfil" : "/login"}
                   className="hover:text-[#005DA4] transition-colors"
                 >
                   {isAuthenticated && isCandidate ? "Mi Hoja de Vida (PDF)" : "Registrar Hoja de Vida"}
@@ -81,10 +120,10 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Columna 3: Empresas de Seguridad */}
+          {/* Columna 3: Reclutadores (Empresas) */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold text-[#0B3B70] tracking-wider uppercase">
-              Empresas de Seguridad
+              Reclutadores (Empresas)
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
@@ -128,7 +167,7 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Columna 4: Normativa & Soporte */}
+          {/* Columna 4: Legalidad, Contacto & Redes */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold text-[#0B3B70] tracking-wider uppercase">
               Legalidad & Contacto
@@ -159,6 +198,55 @@ export function Footer() {
                 Sede Central: Barranquilla, Colombia
               </li>
             </ul>
+
+            {/* Iconos circulares de redes sociales estilo Computrabajo */}
+            <div className="pt-2">
+              <span className="text-[11px] font-semibold text-slate-400 block mb-2">
+                Conéctate con nosotros:
+              </span>
+              <div className="flex items-center gap-2">
+                <a
+                  href="https://facebook.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-[#0B3B70] hover:border-[#0B3B70] hover:bg-[#EAF3FA] transition-colors text-xs font-bold"
+                  aria-label="Facebook"
+                  title="Facebook"
+                >
+                  f
+                </a>
+                <a
+                  href="https://instagram.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-[#0B3B70] hover:border-[#0B3B70] hover:bg-[#EAF3FA] transition-colors text-xs font-bold"
+                  aria-label="Instagram"
+                  title="Instagram"
+                >
+                  ig
+                </a>
+                <a
+                  href="https://linkedin.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-[#0B3B70] hover:border-[#0B3B70] hover:bg-[#EAF3FA] transition-colors text-xs font-bold"
+                  aria-label="LinkedIn"
+                  title="LinkedIn"
+                >
+                  in
+                </a>
+                <a
+                  href="https://tiktok.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-[#0B3B70] hover:border-[#0B3B70] hover:bg-[#EAF3FA] transition-colors text-xs font-bold"
+                  aria-label="TikTok"
+                  title="TikTok"
+                >
+                  tk
+                </a>
+              </div>
+            </div>
           </div>
         </div>
 
