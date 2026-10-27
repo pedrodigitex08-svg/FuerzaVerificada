@@ -354,27 +354,33 @@ export default function OnboardingPage() {
   return (
     <div className="space-y-6">
       {/* Step Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200/80">
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-lg font-semibold text-slate-900 tracking-tight">
-            Configuración de Hoja de Vida y Credenciales
-          </h1>
-          <p className="text-xs text-slate-500 font-normal">
-            Complete sus datos operativos para activar la compatibilidad automática con empresas de seguridad.
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+              Configuración de Hoja de Vida y Credenciales
+            </h1>
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#005DA4] bg-[#EAF3FA] px-2.5 py-0.5 rounded-full border border-[#D5E6F5]">
+              <Sparkles className="w-3 h-3 text-[#005DA4]" />
+              Paso a Paso
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1 font-normal">
+            Complete sus datos operativos para activar la compatibilidad automática con empresas de seguridad en Colombia.
           </p>
         </div>
 
         {/* Progress Stepper Tabs */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {[1, 2, 3].map((s) => (
             <div
               key={s}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border tabular-nums ${
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold border tabular-nums transition-all ${
                 step === s
-                  ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                  ? "bg-[#0B3B70] text-white border-[#0B3B70] shadow-xs"
                   : step > s
-                  ? "bg-emerald-50/80 text-emerald-700 border-emerald-200/70"
-                  : "bg-white text-slate-400 border-slate-200/80"
+                  ? "bg-[#EAF3FA] text-[#005DA4] border-[#D5E6F5]"
+                  : "bg-white text-slate-400 border-slate-200"
               }`}
             >
               <span>{step > s ? "✓" : s}</span>
@@ -390,13 +396,13 @@ export default function OnboardingPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* LEFT COLUMN: STEPS */}
-        <div className="lg:col-span-7 bg-white border border-slate-200/90 rounded-lg p-6 shadow-subtle space-y-6">
+        <div className="lg:col-span-7 bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs space-y-6">
           
           {/* STEP 1: DATOS Y ROL */}
           {step === 1 && (
             <div className="space-y-5 animate-in fade-in duration-150">
               <div className="border-b border-slate-100 pb-3">
-                <h3 className="text-sm font-semibold text-slate-900 tracking-tight">
+                <h3 className="text-sm font-bold text-slate-900 tracking-tight">
                   Paso 1: Identificación y Perfil Operativo
                 </h3>
                 <p className="text-xs text-slate-500">
@@ -406,51 +412,51 @@ export default function OnboardingPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Nombre Completo (como en Cédula)
                   </label>
                   <input
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                    className="w-full h-11 bg-white border border-slate-300 rounded-xl px-3.5 text-sm text-slate-900 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all shadow-2xs"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
                       Cédula de Ciudadanía
                     </label>
                     <input
                       type="text"
                       value={nationalId}
                       onChange={(e) => setNationalId(e.target.value)}
-                      className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                      className="w-full h-11 bg-white border border-slate-300 rounded-xl px-3.5 text-sm text-slate-900 font-mono tabular-nums focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all shadow-2xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
                       WhatsApp de Contacto
                     </label>
                     <input
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                      className="w-full h-11 bg-white border border-slate-300 rounded-xl px-3.5 text-sm text-slate-900 font-mono tabular-nums focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all shadow-2xs"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
                       Ciudad Sede
                     </label>
                     <select
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                      className="w-full h-11 bg-white border border-slate-300 rounded-xl px-3 text-sm text-slate-900 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all shadow-2xs"
                     >
                       <option value="Bogotá D.C.">Bogotá D.C.</option>
                       <option value="Medellín">Medellín</option>
@@ -460,7 +466,7 @@ export default function OnboardingPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
                       Barrio / Localidad
                     </label>
                     <input
@@ -468,14 +474,14 @@ export default function OnboardingPage() {
                       value={locality}
                       onChange={(e) => setLocality(e.target.value)}
                       placeholder="Ej: Suba, Fontibón"
-                      className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                      className="w-full h-11 bg-white border border-slate-300 rounded-xl px-3.5 text-sm text-slate-900 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all shadow-2xs"
                     />
                   </div>
                 </div>
 
                 {/* ROLE CHIPS SELECTION */}
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-2">
+                  <label className="block text-xs font-semibold text-slate-700 mb-2">
                     Especialidad Principal en Seguridad Privada:
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -486,10 +492,10 @@ export default function OnboardingPage() {
                           key={opt.value}
                           type="button"
                           onClick={() => setPrimaryRole(opt.value)}
-                          className={`p-2 rounded-md text-xs font-medium border text-left transition-colors ${
+                          className={`p-2.5 rounded-xl text-xs font-semibold border text-left transition-all ${
                             isSel
-                              ? "bg-slate-900 text-white border-slate-900 shadow-xs"
-                              : "bg-slate-50 text-slate-700 border-slate-200/90 hover:bg-slate-100"
+                              ? "bg-[#0B3B70] text-white border-[#0B3B70] shadow-xs"
+                              : "bg-white text-slate-700 border-slate-200 hover:border-[#005DA4] hover:bg-[#EAF3FA]/30"
                           }`}
                         >
                           {opt.label}
@@ -501,9 +507,9 @@ export default function OnboardingPage() {
 
                 {/* Years Experience */}
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Años de Experiencia en el Sector:{" "}
-                    <strong className="text-slate-900 font-semibold font-mono tabular-nums">{yearsExperience} años</strong>
+                    <strong className="text-[#0B3B70] font-bold font-mono tabular-nums">{yearsExperience} años</strong>
                   </label>
                   <div className="grid grid-cols-5 gap-2">
                     {[0, 1, 2, 3, 5].map((val) => (
@@ -511,10 +517,10 @@ export default function OnboardingPage() {
                         key={val}
                         type="button"
                         onClick={() => setYearsExperience(val)}
-                        className={`py-2 rounded-md text-xs font-medium border tabular-nums transition-colors ${
+                        className={`py-2 rounded-xl text-xs font-semibold border tabular-nums transition-all ${
                           yearsExperience === val
-                            ? "bg-slate-900 text-white border-slate-900"
-                            : "bg-slate-50 text-slate-600 border-slate-200/90 hover:bg-slate-100"
+                            ? "bg-[#0B3B70] text-white border-[#0B3B70] shadow-xs"
+                            : "bg-white text-slate-700 border-slate-200 hover:border-[#005DA4]"
                         }`}
                       >
                         {val === 5 ? "5+ años" : `${val} a`}
@@ -525,35 +531,35 @@ export default function OnboardingPage() {
 
                 {/* Military booklet & motorcycle switches */}
                 <div className="grid grid-cols-2 gap-3 pt-2">
-                  <div className="p-3 rounded-lg border border-slate-200/80 bg-slate-50/60 flex items-center justify-between">
+                  <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
                     <div>
-                      <span className="text-xs font-semibold text-slate-800 block">Libreta Militar</span>
-                      <span className="text-[10px] text-slate-400">1ra o 2da clase</span>
+                      <span className="text-xs font-bold text-slate-800 block">Libreta Militar</span>
+                      <span className="text-[10px] text-slate-500">1ra o 2da clase</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setHasMilitaryBooklet(!hasMilitaryBooklet)}
-                      className={`w-10 h-5 rounded-full p-0.5 transition-colors flex items-center ${
-                        hasMilitaryBooklet ? "bg-emerald-600 justify-end" : "bg-slate-300 justify-start"
+                      className={`w-11 h-6 rounded-full p-0.5 transition-colors flex items-center ${
+                        hasMilitaryBooklet ? "bg-[#005DA4] justify-end" : "bg-slate-300 justify-start"
                       }`}
                     >
-                      <div className="w-4 h-4 rounded-full bg-white shadow-xs" />
+                      <div className="w-5 h-5 rounded-full bg-white shadow-xs" />
                     </button>
                   </div>
 
-                  <div className="p-3 rounded-lg border border-slate-200/80 bg-slate-50/60 flex items-center justify-between">
+                  <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
                     <div>
-                      <span className="text-xs font-semibold text-slate-800 block">Moto Propia</span>
-                      <span className="text-[10px] text-slate-400 tabular-nums">{hasMotorcycle ? `${motorcycleCc} cc` : "No"}</span>
+                      <span className="text-xs font-bold text-slate-800 block">Moto Propia</span>
+                      <span className="text-[10px] text-slate-500 tabular-nums">{hasMotorcycle ? `${motorcycleCc} cc` : "No"}</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setHasMotorcycle(!hasMotorcycle)}
-                      className={`w-10 h-5 rounded-full p-0.5 transition-colors flex items-center ${
+                      className={`w-11 h-6 rounded-full p-0.5 transition-colors flex items-center ${
                         hasMotorcycle ? "bg-amber-500 justify-end" : "bg-slate-300 justify-start"
                       }`}
                     >
-                      <div className="w-4 h-4 rounded-full bg-white shadow-xs" />
+                      <div className="w-5 h-5 rounded-full bg-white shadow-xs" />
                     </button>
                   </div>
                 </div>
@@ -563,10 +569,10 @@ export default function OnboardingPage() {
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="btn-primary w-full h-10 text-xs font-medium"
+                  className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs font-semibold h-11 px-6 w-full flex items-center justify-center gap-2 shadow-xs transition-colors"
                 >
-                  Continuar al Paso 2: Curso SuperVigilancia
-                  <ArrowRight className="w-4 h-4" strokeWidth={1.75} />
+                  <span>Continuar al Paso 2: Curso SuperVigilancia</span>
+                  <ArrowRight className="w-4 h-4" strokeWidth={2} />
                 </button>
               </div>
             </div>
@@ -576,7 +582,7 @@ export default function OnboardingPage() {
           {step === 2 && (
             <div className="space-y-5 animate-in fade-in duration-150">
               <div className="border-b border-slate-100 pb-3">
-                <h3 className="text-sm font-semibold text-slate-900 tracking-tight">
+                <h3 className="text-sm font-bold text-slate-900 tracking-tight">
                   Paso 2: Validación del Curso de Seguridad
                 </h3>
                 <p className="text-xs text-slate-500">
@@ -586,20 +592,20 @@ export default function OnboardingPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Fecha de Realización del Último Curso
                   </label>
                   <input
                     type="date"
                     value={courseCompletionDate}
                     onChange={(e) => setCourseCompletionDate(e.target.value)}
-                    className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 tabular-nums focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                    className="w-full h-11 bg-white border border-slate-300 rounded-xl px-3.5 text-sm text-slate-900 tabular-nums focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all shadow-2xs"
                   />
                 </div>
 
                 {/* Banner */}
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
                     Diagnóstico de Vigencia en Vivo:
                   </label>
                   <CourseSemaphoreBanner
@@ -611,7 +617,7 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Academia de Seguridad Emisora
                   </label>
                   <input
@@ -619,12 +625,12 @@ export default function OnboardingPage() {
                     value={courseAcademy}
                     onChange={(e) => setCourseAcademy(e.target.value)}
                     placeholder="Ej: Academia Nacional de Seguridad / Escovigil"
-                    className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                    className="w-full h-11 bg-white border border-slate-300 rounded-xl px-3.5 text-sm text-slate-900 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all shadow-2xs"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Número de Credencial SuperVigilancia (si ya fue expedida)
                   </label>
                   <input
@@ -632,7 +638,7 @@ export default function OnboardingPage() {
                     value={credencialSupervigilancia}
                     onChange={(e) => setCredencialSupervigilancia(e.target.value)}
                     placeholder="SV-89421"
-                    className="w-full h-10 bg-white border border-slate-200/90 rounded-md px-3.5 text-sm text-slate-900 font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                    className="w-full h-11 bg-white border border-slate-300 rounded-xl px-3.5 text-sm text-slate-900 font-mono tabular-nums focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all shadow-2xs"
                   />
                 </div>
               </div>
@@ -641,18 +647,18 @@ export default function OnboardingPage() {
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="btn-secondary w-1/3 h-10 text-xs"
+                  className="rounded-full bg-[#EAF3FA] hover:bg-[#D5E6F5] text-[#0B3B70] border border-[#D5E6F5] text-xs h-11 px-6 font-semibold w-1/3 flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
                 >
-                  <ArrowLeft className="w-4 h-4" strokeWidth={1.75} />
-                  Atrás
+                  <ArrowLeft className="w-4 h-4" strokeWidth={2} />
+                  <span>Atrás</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setStep(3)}
-                  className="btn-primary w-2/3 h-10 text-xs font-medium"
+                  className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs font-semibold h-11 px-6 w-2/3 flex items-center justify-center gap-2 shadow-xs transition-colors"
                 >
-                  Continuar al Paso 3: Hoja de Vida
-                  <ArrowRight className="w-4 h-4" strokeWidth={1.75} />
+                  <span>Continuar al Paso 3: Hoja de Vida</span>
+                  <ArrowRight className="w-4 h-4" strokeWidth={2} />
                 </button>
               </div>
             </div>
@@ -662,7 +668,7 @@ export default function OnboardingPage() {
           {step === 3 && (
             <div className="space-y-5 animate-in fade-in duration-150">
               <div className="border-b border-slate-100 pb-3">
-                <h3 className="text-sm font-semibold text-slate-900 tracking-tight">
+                <h3 className="text-sm font-bold text-slate-900 tracking-tight">
                   Paso 3: Soportes y Hoja de Vida Digital
                 </h3>
                 <p className="text-xs text-slate-500">
@@ -671,21 +677,21 @@ export default function OnboardingPage() {
               </div>
 
               {/* UPLOAD ZONE */}
-              <div className="p-6 rounded-lg border-2 border-dashed border-slate-300 hover:border-slate-400 text-center space-y-2 bg-slate-50/50 transition-colors">
-                <div className="w-9 h-9 rounded-md bg-slate-100 text-slate-600 flex items-center justify-center mx-auto">
-                  <Upload className="w-4 h-4" strokeWidth={1.75} />
+              <div className="p-6 rounded-2xl border-2 border-dashed border-slate-300 hover:border-[#005DA4] text-center space-y-2.5 bg-slate-50/50 transition-colors">
+                <div className="w-10 h-10 rounded-2xl bg-[#EAF3FA] text-[#0B3B70] flex items-center justify-center mx-auto border border-[#D5E6F5]">
+                  <Upload className="w-4 h-4 text-[#005DA4]" strokeWidth={2} />
                 </div>
                 <div>
-                  <h4 className="text-xs font-semibold text-slate-800">
+                  <h4 className="text-xs font-bold text-slate-800">
                     Subir Hoja de Vida (PDF o Word)
                   </h4>
                   <p className="text-[11px] text-slate-500">
                     Arrastre su archivo o selecciónelo de su dispositivo
                   </p>
                 </div>
-                <label className="inline-flex items-center gap-1.5 btn-secondary text-xs cursor-pointer h-9 px-3">
-                  <FileText className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
-                  {resumeFile ? resumeFile.name : "Seleccionar Archivo"}
+                <label className="inline-flex items-center gap-1.5 rounded-full bg-[#EAF3FA] hover:bg-[#D5E6F5] text-[#0B3B70] border border-[#D5E6F5] text-xs font-semibold cursor-pointer h-10 px-4 transition-colors shadow-2xs">
+                  <FileText className="w-3.5 h-3.5 text-[#005DA4]" strokeWidth={2} />
+                  <span>{resumeFile ? resumeFile.name : "Seleccionar Archivo"}</span>
                   <input
                     type="file"
                     accept=".pdf,.doc,.docx"
@@ -696,14 +702,14 @@ export default function OnboardingPage() {
                   />
                 </label>
                 {resumeFile && (
-                  <div className="text-[11px] text-emerald-700 font-medium flex items-center justify-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={2} />
-                    Archivo listo para carga: {resumeFile.name}
+                  <div className="text-[11px] text-emerald-700 font-semibold flex items-center justify-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" strokeWidth={2.5} />
+                    <span>Archivo listo para carga: {resumeFile.name}</span>
                   </div>
                 )}
                 {existingResumeUrl && !resumeFile && (
-                  <div className="p-2.5 rounded-md bg-emerald-50/80 border border-emerald-200/80 text-xs text-emerald-800 flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 font-medium">
+                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 font-semibold">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                       Hoja de Vida actual cargada en el sistema
                     </span>
@@ -711,7 +717,7 @@ export default function OnboardingPage() {
                       href={existingResumeUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-semibold underline hover:text-emerald-950 inline-flex items-center gap-1 text-[11px]"
+                      className="font-bold underline hover:text-emerald-950 inline-flex items-center gap-1 text-[11px]"
                     >
                       Ver / Descargar archivo <ExternalLink className="w-3 h-3" />
                     </a>
@@ -721,46 +727,46 @@ export default function OnboardingPage() {
 
               {/* EXPERIENCIAS */}
               <div className="space-y-3">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
                   Experiencia Laboral
                 </h4>
                 <div className="space-y-2">
                   {experiences.map((exp, idx) => (
                     <div
                       key={idx}
-                      className="p-3 rounded-md border border-slate-200/80 bg-slate-50 flex items-center justify-between text-xs"
+                      className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between text-xs"
                     >
                       <div>
-                        <strong className="text-slate-900 font-semibold block">{exp.company}</strong>
-                        <span className="text-slate-500">{exp.role} • {exp.startDate}</span>
+                        <strong className="text-slate-900 font-bold block">{exp.company}</strong>
+                        <span className="text-slate-500 font-medium">{exp.role} • {exp.startDate}</span>
                       </div>
                       <button
                         type="button"
                         onClick={() => handleRemoveExperience(idx)}
-                        className="text-slate-400 hover:text-rose-600 p-1"
+                        className="text-slate-400 hover:text-rose-600 p-1 transition-colors"
                       >
-                        <Trash2 className="w-4 h-4" strokeWidth={1.75} />
+                        <Trash2 className="w-4 h-4" strokeWidth={2} />
                       </button>
                     </div>
                   ))}
                 </div>
 
                 {/* Quick Add */}
-                <div className="p-3 rounded-lg border border-slate-200/90 bg-white space-y-2">
+                <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-2.5 shadow-2xs">
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <input
                       type="text"
                       placeholder="Empresa de Seguridad"
                       value={newCompany}
                       onChange={(e) => setNewCompany(e.target.value)}
-                      className="h-9 bg-slate-50 border border-slate-200/90 rounded-md px-3 text-xs text-slate-900 focus:outline-none focus:border-slate-900"
+                      className="h-10 bg-white border border-slate-300 rounded-xl px-3 text-xs text-slate-900 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15"
                     />
                     <input
                       type="text"
                       placeholder="Cargo (Ej: Escolta)"
                       value={newRole}
                       onChange={(e) => setNewRole(e.target.value)}
-                      className="h-9 bg-slate-50 border border-slate-200/90 rounded-md px-3 text-xs text-slate-900 focus:outline-none focus:border-slate-900"
+                      className="h-10 bg-white border border-slate-300 rounded-xl px-3 text-xs text-slate-900 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15"
                     />
                   </div>
                   <div className="flex gap-2">
@@ -769,12 +775,12 @@ export default function OnboardingPage() {
                       placeholder="Años (Ej: 2022 - 2024)"
                       value={newDates}
                       onChange={(e) => setNewDates(e.target.value)}
-                      className="w-2/3 h-9 bg-slate-50 border border-slate-200/90 rounded-md px-3 text-xs text-slate-900 tabular-nums focus:outline-none focus:border-slate-900"
+                      className="w-2/3 h-10 bg-white border border-slate-300 rounded-xl px-3 text-xs text-slate-900 tabular-nums focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15"
                     />
                     <button
                       type="button"
                       onClick={handleAddExperience}
-                      className="w-1/3 btn-secondary text-xs h-9"
+                      className="w-1/3 rounded-full bg-[#EAF3FA] hover:bg-[#D5E6F5] text-[#0B3B70] border border-[#D5E6F5] text-xs font-semibold h-10 transition-colors shadow-2xs"
                     >
                       + Agregar
                     </button>
@@ -784,10 +790,10 @@ export default function OnboardingPage() {
 
               {/* Mensaje de Error Visible si falla la subida o la base de datos */}
               {errorMsg && (
-                <div className="p-3.5 rounded-md bg-rose-50 border border-rose-200/90 text-xs text-rose-700 flex items-start gap-2.5 animate-in fade-in">
-                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" strokeWidth={1.75} />
+                <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2.5 animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" strokeWidth={2} />
                   <div className="space-y-1">
-                    <strong className="block font-semibold">No fue posible completar el guardado:</strong>
+                    <strong className="block font-bold">No fue posible completar el guardado:</strong>
                     <p className="leading-relaxed">{errorMsg}</p>
                   </div>
                 </div>
@@ -797,23 +803,26 @@ export default function OnboardingPage() {
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="btn-secondary w-1/3 h-10 text-xs"
+                  className="rounded-full bg-[#EAF3FA] hover:bg-[#D5E6F5] text-[#0B3B70] border border-[#D5E6F5] text-xs h-11 px-6 font-semibold w-1/3 flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
                 >
-                  <ArrowLeft className="w-4 h-4" strokeWidth={1.75} />
-                  Atrás
+                  <ArrowLeft className="w-4 h-4" strokeWidth={2} />
+                  <span>Atrás</span>
                 </button>
                 <button
                   type="button"
                   disabled={loading}
                   onClick={handleCompleteOnboarding}
-                  className="btn-emerald w-2/3 h-10 text-xs font-medium"
+                  className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs font-semibold h-11 px-6 w-2/3 flex items-center justify-center gap-2 shadow-xs transition-colors disabled:opacity-60"
                 >
                   {loading ? (
-                    "Guardando y subiendo archivo..."
+                    <span className="flex items-center gap-2">
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Guardando y subiendo archivo...
+                    </span>
                   ) : (
                     <>
-                      <CheckCircle2 className="w-4 h-4" strokeWidth={2} />
-                      Finalizar y Acceder al Feed
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" strokeWidth={2.5} />
+                      <span>Finalizar y Acceder al Feed</span>
                     </>
                   )}
                 </button>
@@ -825,68 +834,76 @@ export default function OnboardingPage() {
 
         {/* RIGHT COLUMN: LIVE DIGITAL CREDENTIAL & CV PREVIEW (5 cols - Sticky) */}
         <div className="lg:col-span-5 sticky top-20 space-y-4">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-            Vista Previa de Credencial Digital
-          </div>
-
-          {/* Precision Security Card Mockup */}
-          <div className="rounded-lg bg-slate-900 text-white p-6 shadow-card border border-slate-800 space-y-5 relative overflow-hidden">
-            {/* Top Badge */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-emerald-400" strokeWidth={1.75} />
-                <span className="text-xs font-semibold tracking-tight text-white">
-                  Fuerza<span className="text-emerald-400">Verificada</span>
-                </span>
-              </div>
-              <span className="badge-emerald text-[9px] py-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Vista Previa de Credencial Digital
+              </span>
+              <span className="text-[10px] font-bold text-[#005DA4] bg-[#EAF3FA] px-2.5 py-0.5 rounded-full border border-[#D5E6F5]">
                 Validada SuperVigilancia
               </span>
             </div>
 
-            {/* Officer Details */}
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-md bg-slate-800 border border-slate-700 flex items-center justify-center font-semibold text-emerald-400 text-lg shrink-0">
-                {fullName.charAt(0)}
-              </div>
-              <div>
-                <h4 className="text-base font-semibold text-white tracking-tight leading-tight">
-                  {fullName}
-                </h4>
-                <div className="text-xs font-medium text-emerald-400 font-mono mt-0.5">
-                  {formatSecurityRoleLabel(primaryRole)}
+            {/* Precision Security Card Mockup estilo Computrabajo */}
+            <div className="rounded-2xl bg-white p-5 border-[1.5px] border-[#005DA4] shadow-sm space-y-4">
+              {/* Brand Header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-[#0B3B70] flex items-center justify-center text-white">
+                    <Shield className="w-4 h-4 text-[#FFE066]" strokeWidth={2} />
+                  </div>
+                  <span className="text-xs font-bold tracking-tight text-[#0B3B70]">
+                    Fuerza<span className="text-[#005DA4]">Verificada</span>
+                  </span>
                 </div>
-                <div className="text-[11px] text-slate-400 font-mono tabular-nums mt-0.5">
-                  C.C. {nationalId} • {city}
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  ● Activo
+                </span>
+              </div>
+
+              {/* Officer Details */}
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-[#EAF3FA] border border-[#D5E6F5] text-[#0B3B70] font-bold text-lg flex items-center justify-center shrink-0">
+                  {fullName ? fullName.charAt(0) : "G"}
+                </div>
+                <div>
+                  <h4 className="text-base font-bold text-slate-900 tracking-tight leading-tight">
+                    {fullName || "Nombre del Guarda"}
+                  </h4>
+                  <div className="text-xs font-semibold text-[#005DA4] mt-0.5">
+                    {formatSecurityRoleLabel(primaryRole)}
+                  </div>
+                  <div className="text-[11px] text-slate-500 font-mono tabular-nums mt-0.5">
+                    C.C. {nationalId || "Pendiente"} • {city}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Operational Checklist */}
-            <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-800">
-              <div className="p-2 rounded-md bg-slate-950/60 border border-slate-800">
-                <span className="text-[10px] text-slate-400 block">Experiencia</span>
-                <span className="font-semibold text-white font-mono tabular-nums">{yearsExperience} años</span>
+              {/* Operational Checklist */}
+              <div className="grid grid-cols-2 gap-2 text-xs pt-3 border-t border-slate-100">
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Experiencia</span>
+                  <span className="font-bold text-slate-800 font-mono tabular-nums">{yearsExperience} años</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Libreta Militar</span>
+                  <span className="font-bold text-slate-800">{hasMilitaryBooklet ? "Al día" : "Pendiente"}</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Vehículo</span>
+                  <span className="font-bold text-slate-800 tabular-nums">{hasMotorcycle ? `Moto ${motorcycleCc || 150}cc` : "Sin vehículo"}</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Credencial SV</span>
+                  <span className="font-bold text-[#005DA4] font-mono tabular-nums truncate block">{credencialSupervigilancia || "Por registrar"}</span>
+                </div>
               </div>
-              <div className="p-2 rounded-md bg-slate-950/60 border border-slate-800">
-                <span className="text-[10px] text-slate-400 block">Libreta Militar</span>
-                <span className="font-semibold text-white">{hasMilitaryBooklet ? "Al día" : "Pendiente"}</span>
-              </div>
-              <div className="p-2 rounded-md bg-slate-950/60 border border-slate-800">
-                <span className="text-[10px] text-slate-400 block">Vehículo</span>
-                <span className="font-semibold text-white tabular-nums">{hasMotorcycle ? `Moto ${motorcycleCc}cc` : "Sin vehículo"}</span>
-              </div>
-              <div className="p-2 rounded-md bg-slate-950/60 border border-slate-800">
-                <span className="text-[10px] text-slate-400 block">Credencial SV</span>
-                <span className="font-semibold text-emerald-400 font-mono tabular-nums">{credencialSupervigilancia}</span>
-              </div>
-            </div>
 
-            {/* Security Guarantee Seal */}
-            <div className="pt-2 text-[10px] text-slate-400 text-center border-t border-slate-800 flex items-center justify-center gap-1.5">
-              <BadgeCheck className="w-3.5 h-3.5 text-emerald-400" strokeWidth={1.75} />
-              <span>Verificación de identidad bajo estándar Ley 1581</span>
+              {/* Security Guarantee Seal */}
+              <div className="pt-2 text-[11px] text-slate-500 text-center border-t border-slate-100 flex items-center justify-center gap-1.5 font-medium">
+                <BadgeCheck className="w-3.5 h-3.5 text-[#005DA4]" strokeWidth={2} />
+                <span>Verificación de identidad bajo estándar Ley 1581</span>
+              </div>
             </div>
           </div>
         </div>

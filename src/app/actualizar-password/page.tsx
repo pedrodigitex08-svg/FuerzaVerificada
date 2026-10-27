@@ -173,19 +173,19 @@ function ActualizarPasswordContent() {
   const passwordsMatch = newPassword.length >= 6 && newPassword === confirmPassword;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center items-center p-4 sm:p-6 lg:p-8 font-sans">
+    <div className="min-h-screen bg-[#F2F5F8] flex flex-col justify-center items-center p-4 sm:p-6 lg:p-8 font-sans">
       <div className="w-full max-w-md space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
           <Link href="/" className="inline-flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-md bg-slate-900 flex items-center justify-center text-white shadow-[0_1px_2px_rgba(15,23,42,0.08)] group-hover:bg-slate-800 transition-colors">
-              <Shield className="w-4 h-4 text-white" strokeWidth={1.75} />
+            <div className="w-10 h-10 rounded-2xl bg-[#0B3B70] flex items-center justify-center text-white shadow-sm group-hover:bg-[#082B54] transition-colors">
+              <Shield className="w-5 h-5 text-white" strokeWidth={1.75} />
             </div>
             <div className="text-left">
-              <span className="text-base font-semibold tracking-tight text-slate-900 block leading-none">
-                Fuerza<span className="text-slate-700 font-bold">Verificada</span>
+              <span className="text-lg font-bold tracking-tight text-[#0B3B70] block leading-none">
+                Fuerza<span className="text-slate-900">Verificada</span>
               </span>
-              <span className="text-[10px] uppercase tracking-wider text-slate-500 font-medium block mt-0.5">
+              <span className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold block mt-1">
                 Red Nacional de Seguridad
               </span>
             </div>
@@ -196,11 +196,11 @@ function ActualizarPasswordContent() {
         </div>
 
         {/* Main Card */}
-        <div className="bg-white border border-slate-200/90 rounded-lg p-6 sm:p-7 shadow-[0_1px_3px_rgba(15,23,42,0.05)] space-y-5">
+        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
           {isVerifying ? (
             /* Estado 1: Verificando enlace o sesión */
             <div className="py-8 text-center space-y-3">
-              <div className="w-7 h-7 border-2 border-slate-900 border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="w-7 h-7 border-2 border-[#0B3B70] border-t-transparent rounded-full animate-spin mx-auto" />
               <p className="text-xs text-slate-600 font-medium">
                 Verificando enlace de recuperación seguro...
               </p>
@@ -208,11 +208,11 @@ function ActualizarPasswordContent() {
           ) : !isSessionValid ? (
             /* Estado 2: Enlace expirado o inválido */
             <div className="py-4 text-center space-y-4">
-              <div className="w-11 h-11 rounded-lg bg-rose-50/80 border border-rose-200/70 text-rose-600 flex items-center justify-center mx-auto">
-                <AlertCircle className="w-5 h-5" strokeWidth={1.75} />
+              <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto">
+                <AlertCircle className="w-6 h-6" strokeWidth={1.75} />
               </div>
               <div className="space-y-1">
-                <h2 className="text-base font-semibold tracking-tight text-slate-900">
+                <h2 className="text-base font-bold tracking-tight text-slate-900">
                   Enlace inválido o expirado
                 </h2>
                 <p className="text-xs text-slate-600 max-w-xs mx-auto leading-relaxed">
@@ -223,7 +223,7 @@ function ActualizarPasswordContent() {
               <div className="pt-2">
                 <Link
                   href="/login"
-                  className="w-full h-10 bg-slate-900 hover:bg-slate-800 text-white rounded-md px-4 text-xs font-medium transition-all shadow-[0_1px_2px_rgba(15,23,42,0.08)] flex items-center justify-center gap-2"
+                  className="w-full h-11 bg-[#0B3B70] hover:bg-[#082B54] text-white rounded-full px-4 text-xs font-semibold transition-all shadow-sm flex items-center justify-center gap-2 active:scale-[0.99]"
                 >
                   <span>Solicitar nuevo enlace en Iniciar Sesión</span>
                   <ArrowRight className="w-4 h-4" />
@@ -234,11 +234,11 @@ function ActualizarPasswordContent() {
             /* Estado 3: Formulario de Nueva Contraseña */
             <div className="space-y-5">
               <div className="flex items-center gap-2.5 pb-2 border-b border-slate-200/80">
-                <div className="w-8 h-8 rounded-md bg-slate-100 border border-slate-200/90 flex items-center justify-center text-slate-900">
+                <div className="w-9 h-9 rounded-xl bg-[#EAF3FA] border border-[#005DA4]/20 flex items-center justify-center text-[#0B3B70]">
                   <KeyRound className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-semibold tracking-tight text-slate-900">
+                  <h2 className="text-sm font-bold tracking-tight text-slate-900">
                     Restablecer Contraseña
                   </h2>
                   <p className="text-[11px] text-slate-500">
@@ -248,14 +248,14 @@ function ActualizarPasswordContent() {
               </div>
 
               {errorMsg && (
-                <div className="p-3.5 rounded-md bg-rose-50/80 border border-rose-200/80 text-xs text-rose-800 flex items-start gap-2.5">
+                <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start gap-2.5">
                   <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" strokeWidth={1.75} />
                   <span className="leading-relaxed">{errorMsg}</span>
                 </div>
               )}
 
               {successMsg && (
-                <div className="p-3.5 rounded-md bg-emerald-50/80 border border-emerald-200/70 text-xs text-emerald-800 flex items-start gap-2.5">
+                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-start gap-2.5">
                   <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" strokeWidth={2} />
                   <span className="leading-relaxed font-medium">{successMsg}</span>
                 </div>
@@ -264,11 +264,11 @@ function ActualizarPasswordContent() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Campo 1: Nueva Contraseña */}
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Nueva Contraseña *
                   </label>
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" strokeWidth={1.5} />
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" strokeWidth={1.5} />
                     <input
                       type={showNewPassword ? "text" : "password"}
                       required
@@ -277,12 +277,12 @@ function ActualizarPasswordContent() {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Mínimo 6 caracteres"
-                      className="w-full h-10 bg-white border border-slate-200/90 rounded-md pl-9 pr-10 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                      className="w-full h-11 bg-white border border-slate-300 rounded-xl pl-9 pr-10 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#005DA4]/20 focus:border-[#005DA4] transition-colors"
                     />
                     <button
                       type="button"
                       onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-3 top-3 text-slate-400 hover:text-slate-700"
+                      className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-700"
                     >
                       {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -294,11 +294,11 @@ function ActualizarPasswordContent() {
 
                 {/* Campo 2: Confirmar Contraseña */}
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Confirmar Nueva Contraseña *
                   </label>
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" strokeWidth={1.5} />
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" strokeWidth={1.5} />
                     <input
                       type={showConfirmPassword ? "text" : "password"}
                       required
@@ -307,19 +307,19 @@ function ActualizarPasswordContent() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Repite tu nueva contraseña"
-                      className="w-full h-10 bg-white border border-slate-200/90 rounded-md pl-9 pr-10 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                      className="w-full h-11 bg-white border border-slate-300 rounded-xl pl-9 pr-10 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#005DA4]/20 focus:border-[#005DA4] transition-colors"
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-3 text-slate-400 hover:text-slate-700"
+                      className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-700"
                     >
                       {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                   {passwordsMatch && (
-                    <span className="text-[11px] text-emerald-700 font-medium mt-1 flex items-center gap-1">
-                      <Check className="w-3 h-3 text-emerald-600" strokeWidth={2.5} />
+                    <span className="text-[11px] text-emerald-700 font-semibold mt-1.5 flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5 text-emerald-600" strokeWidth={2.5} />
                       Las contraseñas coinciden
                     </span>
                   )}
@@ -329,7 +329,7 @@ function ActualizarPasswordContent() {
                 <button
                   type="submit"
                   disabled={loading || !!successMsg}
-                  className="w-full h-10 font-medium px-4 rounded-md flex items-center justify-center gap-2 text-xs transition-all shadow-[0_1px_2px_rgba(15,23,42,0.08)] bg-slate-900 hover:bg-slate-800 text-white disabled:opacity-75 disabled:cursor-not-allowed"
+                  className="w-full h-11 font-semibold px-4 rounded-full flex items-center justify-center gap-2 text-sm transition-all shadow-sm bg-[#0B3B70] hover:bg-[#082B54] text-white disabled:opacity-75 disabled:cursor-not-allowed active:scale-[0.99]"
                 >
                   {loading ? (
                     <span className="flex items-center gap-2">
@@ -339,7 +339,7 @@ function ActualizarPasswordContent() {
                   ) : (
                     <>
                       <span>Actualizar Contraseña</span>
-                      <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
+                      <ArrowRight className="w-4 h-4" strokeWidth={2} />
                     </>
                   )}
                 </button>
@@ -348,7 +348,7 @@ function ActualizarPasswordContent() {
               <div className="pt-2 text-center border-t border-slate-200/80">
                 <Link
                   href="/login"
-                  className="text-xs font-medium text-slate-600 hover:text-slate-900 transition-colors"
+                  className="text-xs font-bold text-[#005DA4] hover:underline transition-colors"
                 >
                   ← Regresar al Inicio de Sesión
                 </Link>
@@ -365,8 +365,8 @@ export default function ActualizarPasswordPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4">
-          <div className="w-7 h-7 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
+        <div className="min-h-screen bg-[#F2F5F8] flex items-center justify-center p-4">
+          <div className="w-7 h-7 border-2 border-[#0B3B70] border-t-transparent rounded-full animate-spin" />
         </div>
       }
     >
