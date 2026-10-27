@@ -234,18 +234,18 @@ ON CONFLICT (id) DO UPDATE SET
           <Link
             href="/precios-empresas"
             target="_blank"
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-slate-200/90 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors shadow-xs"
+            className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full border border-slate-300 bg-white text-xs font-semibold text-[#0B3B70] hover:bg-[#EAF3FA] transition-all shadow-xs active:scale-[0.99]"
           >
             <span>Ver Vista Pública (/precios-empresas)</span>
-            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+            <ExternalLink className="w-3.5 h-3.5 text-[#005DA4]" />
           </Link>
 
           <button
             type="button"
             onClick={() => openEditModal()}
-            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-md bg-slate-900 hover:bg-slate-800 text-xs font-medium text-white transition-colors shadow-xs"
+            className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-xs font-semibold text-white transition-all shadow-sm active:scale-[0.99]"
           >
-            <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
+            <Plus className="w-4 h-4" strokeWidth={2} />
             <span>Crear Plan</span>
           </button>
         </div>
@@ -255,25 +255,25 @@ ON CONFLICT (id) DO UPDATE SET
       <div className="flex border-b border-slate-200/80 gap-4">
         <Link
           href="/admin/configuracion"
-          className="pb-2.5 px-1 border-b-2 border-transparent text-xs font-medium text-slate-500 hover:text-slate-900 hover:border-slate-300 flex items-center gap-1.5 transition-colors"
+          className="pb-2.5 px-2 border-b-2 border-transparent text-xs font-semibold text-slate-500 hover:text-[#0B3B70] flex items-center gap-1.5 transition-colors"
         >
-          <Settings className="w-4 h-4 text-slate-400" strokeWidth={1.75} />
+          <Settings className="w-4 h-4 text-slate-400" strokeWidth={2} />
           <span>Canal WhatsApp Ventas</span>
         </Link>
         <Link
           href="/admin/planes"
-          className="pb-2.5 px-1 border-b-2 border-slate-900 text-xs font-semibold text-slate-900 flex items-center gap-1.5"
+          className="pb-2.5 px-2 border-b-2 border-[#0B3B70] text-xs font-bold text-[#0B3B70] flex items-center gap-1.5"
         >
-          <Coins className="w-4 h-4 text-slate-900" strokeWidth={1.75} />
+          <Coins className="w-4 h-4 text-[#005DA4]" strokeWidth={2} />
           <span>Planes & Tarifas B2B</span>
         </Link>
       </div>
 
       {/* FEEDBACK TOAST */}
       {savedSuccess && (
-        <div className="p-3.5 rounded-lg bg-emerald-50/80 border border-emerald-200/60 text-xs text-emerald-800 flex items-center gap-2.5 shadow-subtle animate-in fade-in duration-200">
+        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2.5 shadow-sm animate-in fade-in duration-200">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" strokeWidth={2} />
-          <span className="font-medium">
+          <span className="font-semibold">
             ¡Planes y tarifas actualizados con éxito en Supabase y disponibles en la web pública!
           </span>
         </div>
@@ -289,14 +289,14 @@ ON CONFLICT (id) DO UPDATE SET
           return (
             <div
               key={plan.id}
-              className={`rounded-lg bg-white border p-6 flex flex-col justify-between shadow-subtle relative transition-colors ${
+              className={`rounded-2xl bg-white border p-6 flex flex-col justify-between shadow-sm relative transition-all ${
                 plan.is_active
-                  ? "border-slate-200/90 hover:border-slate-300"
+                  ? "border-slate-200/90 hover:border-[#005DA4]/40"
                   : "border-slate-200/60 bg-slate-50 opacity-70"
               }`}
             >
               {plan.badge && (
-                <div className="absolute -top-2.5 left-4 px-2.5 py-0.5 bg-slate-900 text-white text-[10px] font-semibold rounded-md uppercase tracking-wider shadow-xs">
+                <div className="absolute -top-2.5 left-4 px-3 py-0.5 bg-[#0B3B70] text-white text-[10px] font-bold rounded-full uppercase tracking-wider shadow-xs">
                   {plan.badge}
                 </div>
               )}

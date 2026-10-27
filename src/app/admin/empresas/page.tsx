@@ -293,26 +293,26 @@ export default function AdminEmpresasPage() {
 
         <button
           onClick={() => setIsAddCompanyOpen(true)}
-          className="btn-primary text-xs h-9 px-3.5 flex items-center gap-1.5"
+          className="h-9 px-4 rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all active:scale-[0.99]"
         >
-          <Plus className="w-4 h-4" strokeWidth={1.75} />
+          <Plus className="w-4 h-4" strokeWidth={2} />
           <span>Registrar Empresa Cliente</span>
         </button>
       </div>
 
       {/* SEARCH AND FILTERS */}
-      <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle flex flex-col sm:flex-row gap-3 items-center justify-between">
+      <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div className="relative flex-1 w-full max-w-md">
           <Search
             className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"
-            strokeWidth={1.75}
+            strokeWidth={2}
           />
           <input
             type="text"
             placeholder="Buscar por Razón Social, NIT o Ciudad..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-10 pl-9 pr-3 text-sm rounded-md border border-slate-200/90 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+            className="w-full h-10 pl-9 pr-3 text-sm rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#005DA4]/20 focus:border-[#005DA4] transition-colors"
           />
         </div>
 
@@ -323,7 +323,7 @@ export default function AdminEmpresasPage() {
       </div>
 
       {/* COMPANIES TABLE */}
-      <div className="bg-white border border-slate-200/90 rounded-lg shadow-subtle overflow-hidden">
+      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50/80 border-b border-slate-200/90 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -446,15 +446,15 @@ export default function AdminEmpresasPage() {
       {/* RECHARGE CREDITS MODAL */}
       {selectedCompanyForRecharge && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200/90 rounded-lg w-full max-w-md shadow-elevated p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white border border-slate-200/90 rounded-2xl w-full max-w-md shadow-xl p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
             {/* Header */}
             <div className="flex items-start justify-between pb-3 border-b border-slate-200/80">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-md bg-slate-900 flex items-center justify-center text-white">
-                  <Coins className="w-4 h-4" strokeWidth={1.75} />
+                <div className="w-10 h-10 rounded-xl bg-[#EAF3FA] border border-[#005DA4]/20 flex items-center justify-center text-[#0B3B70]">
+                  <Coins className="w-5 h-5 text-[#005DA4]" strokeWidth={2} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-900 tracking-tight">
+                  <h3 className="text-sm font-bold text-slate-900 tracking-tight">
                     Recarga de Paquete B2B
                   </h3>
                   <p className="text-xs text-slate-500">
@@ -471,22 +471,22 @@ export default function AdminEmpresasPage() {
             </div>
 
             {/* Current Balance */}
-            <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
-              <span className="text-slate-500 font-medium">Saldo actual de la empresa:</span>
-              <span className="font-mono font-semibold text-slate-900 tabular-nums">
+            <div className="p-3.5 rounded-xl bg-[#F2F5F8] border border-slate-200 flex items-center justify-between text-xs">
+              <span className="text-slate-600 font-medium">Saldo actual de la empresa:</span>
+              <span className="font-mono font-bold text-[#0B3B70] tabular-nums">
                 {selectedCompanyForRecharge.credits_security_studies} Créditos
               </span>
             </div>
 
             {/* Plan Selection */}
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-700 block">
+              <label className="text-xs font-semibold text-slate-700 block">
                 Plan Comercial Facturado
               </label>
               <select
                 value={selectedPlan}
                 onChange={(e) => setSelectedPlan(e.target.value)}
-                className="w-full h-10 text-xs px-3 rounded-md border border-slate-200/90 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 font-medium"
+                className="w-full h-10 text-xs px-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#005DA4]/20 focus:border-[#005DA4] font-medium"
               >
                 <option value="pack_operativo">Paquete Contratación Segura x5 ($850.000 COP)</option>
                 <option value="pack_corporativo_vip">Paquete Blindaje Total x15 ($2.250.000 COP)</option>
@@ -497,7 +497,7 @@ export default function AdminEmpresasPage() {
 
             {/* Credits Amount Selector */}
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-700 block">
+              <label className="text-xs font-semibold text-slate-700 block">
                 Créditos a Sumar (Estudio + Visita + Polígrafo)
               </label>
               <div className="grid grid-cols-4 gap-2">
@@ -506,10 +506,10 @@ export default function AdminEmpresasPage() {
                     key={num}
                     type="button"
                     onClick={() => setCreditAmount(num)}
-                    className={`py-2 text-xs font-semibold rounded-md border tabular-nums transition-colors ${
+                    className={`py-2 text-xs font-bold rounded-xl border tabular-nums transition-colors ${
                       creditAmount === num
-                        ? "bg-slate-900 border-slate-900 text-white shadow-xs"
-                        : "bg-slate-50 border-slate-200/90 text-slate-700 hover:bg-slate-100"
+                        ? "bg-[#0B3B70] border-[#0B3B70] text-white shadow-xs"
+                        : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
                     }`}
                   >
                     +{num}
@@ -529,7 +529,7 @@ export default function AdminEmpresasPage() {
                 max="500"
                 value={creditAmount}
                 onChange={(e) => setCreditAmount(parseInt(e.target.value, 10) || 1)}
-                className="w-full h-10 text-xs font-mono font-semibold px-3.5 rounded-md border border-slate-200/90 tabular-nums focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
+                className="w-full h-10 text-xs font-mono font-bold px-3.5 rounded-xl border border-slate-300 tabular-nums focus:outline-none focus:ring-2 focus:ring-[#005DA4]/20 focus:border-[#005DA4]"
               />
             </div>
 
@@ -538,7 +538,7 @@ export default function AdminEmpresasPage() {
               <button
                 type="button"
                 onClick={() => setSelectedCompanyForRecharge(null)}
-                className="btn-secondary w-1/3 h-10 text-xs"
+                className="w-1/3 h-10 text-xs rounded-full border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold transition-all active:scale-[0.99]"
               >
                 Cancelar
               </button>
@@ -546,7 +546,7 @@ export default function AdminEmpresasPage() {
                 type="button"
                 disabled={isProcessing || creditAmount <= 0}
                 onClick={handleConfirmRecharge}
-                className="btn-primary w-2/3 h-10 text-xs font-medium tabular-nums"
+                className="w-2/3 h-10 text-xs font-semibold rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white tabular-nums shadow-sm transition-all active:scale-[0.99]"
               >
                 {isProcessing ? "Acreditando..." : `Confirmar +${creditAmount} Créditos`}
               </button>
@@ -560,12 +560,12 @@ export default function AdminEmpresasPage() {
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
           <form
             onSubmit={handleCreateCompany}
-            className="bg-white border border-slate-200/90 rounded-lg w-full max-w-lg shadow-elevated p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150"
+            className="bg-white border border-slate-200/90 rounded-2xl w-full max-w-lg shadow-xl p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150"
           >
             <div className="flex items-start justify-between pb-3 border-b border-slate-200/80">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-md bg-slate-900 text-white flex items-center justify-center">
-                  <Building2 className="w-4 h-4" />
+                <div className="w-10 h-10 rounded-xl bg-[#EAF3FA] border border-[#005DA4]/20 text-[#0B3B70] flex items-center justify-center">
+                  <Building2 className="w-5 h-5 text-[#005DA4]" />
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-slate-900 tracking-tight">

@@ -397,10 +397,10 @@ export default function AdminEstudiosPage() {
               setNotification("Bandeja operativa sincronizada con Supabase.");
               setTimeout(() => setNotification(null), 3000);
             }}
-            className="btn-secondary text-xs h-9 px-3 flex items-center gap-1.5"
+            className="h-9 px-4 rounded-full bg-white border border-slate-300 hover:bg-[#EAF3FA] text-[#0B3B70] text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs active:scale-[0.99]"
             title="Recargar órdenes y candidatos"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
+            <RefreshCw className="w-3.5 h-3.5 text-[#005DA4]" strokeWidth={2} />
             <span>Sincronizar</span>
           </button>
         </div>
@@ -411,15 +411,15 @@ export default function AdminEstudiosPage() {
         <button
           type="button"
           onClick={() => setActiveTab("ordenes")}
-          className={`pb-3 px-4 text-xs font-semibold transition-colors border-b-2 flex items-center gap-2 ${
+          className={`pb-3 px-4 text-xs font-bold transition-colors border-b-2 flex items-center gap-2 ${
             activeTab === "ordenes"
-              ? "border-slate-900 text-slate-900"
-              : "border-transparent text-slate-500 hover:text-slate-800"
+              ? "border-[#0B3B70] text-[#0B3B70]"
+              : "border-transparent text-slate-500 hover:text-[#0B3B70]"
           }`}
         >
-          <Shield className="w-4 h-4 text-slate-700" strokeWidth={1.75} />
+          <Shield className="w-4 h-4 text-[#005DA4]" strokeWidth={2} />
           <span>Órdenes de Poligrafía & Visitas</span>
-          <span className="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600">
+          <span className="text-[10px] font-mono tabular-nums px-2 py-0.5 rounded-full bg-[#EAF3FA] text-[#0B3B70] font-bold">
             {totalOrders}
           </span>
         </button>
@@ -427,15 +427,15 @@ export default function AdminEstudiosPage() {
         <button
           type="button"
           onClick={() => setActiveTab("candidatos")}
-          className={`pb-3 px-4 text-xs font-semibold transition-colors border-b-2 flex items-center gap-2 ${
+          className={`pb-3 px-4 text-xs font-bold transition-colors border-b-2 flex items-center gap-2 ${
             activeTab === "candidatos"
-              ? "border-slate-900 text-slate-900"
-              : "border-transparent text-slate-500 hover:text-slate-800"
+              ? "border-[#0B3B70] text-[#0B3B70]"
+              : "border-transparent text-slate-500 hover:text-[#0B3B70]"
           }`}
         >
-          <BadgeCheck className="w-4 h-4 text-emerald-600" strokeWidth={1.75} />
+          <BadgeCheck className="w-4 h-4 text-[#005DA4]" strokeWidth={2} />
           <span>Validación de Candidatos & Documentos</span>
-          <span className="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600">
+          <span className="text-[10px] font-mono tabular-nums px-2 py-0.5 rounded-full bg-[#EAF3FA] text-[#0B3B70] font-bold">
             {totalCandidates}
           </span>
         </button>
@@ -446,75 +446,75 @@ export default function AdminEstudiosPage() {
         <div className="space-y-6">
           {/* KPI BENTO GRID */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle">
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-500">Total Órdenes</span>
-                <span className="p-1.5 rounded-md bg-slate-100 text-slate-600">
-                  <FileCheck2 className="w-4 h-4" strokeWidth={1.75} />
+                <span className="text-xs font-semibold text-slate-500">Total Órdenes</span>
+                <span className="p-1.5 rounded-xl bg-[#EAF3FA] text-[#0B3B70]">
+                  <FileCheck2 className="w-4 h-4" strokeWidth={2} />
                 </span>
               </div>
-              <div className="mt-2 text-2xl font-semibold text-slate-900 tracking-tight tabular-nums">
+              <div className="mt-2 text-2xl font-bold text-[#0B3B70] tracking-tight tabular-nums">
                 {totalOrders}
               </div>
               <p className="mt-1 text-[11px] text-slate-400">Radicadas por empresas</p>
             </div>
 
-            <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle">
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-500">Por Agendar</span>
-                <span className="p-1.5 rounded-md bg-blue-50 text-blue-600">
-                  <Clock className="w-4 h-4" strokeWidth={1.75} />
+                <span className="text-xs font-semibold text-slate-500">Por Agendar</span>
+                <span className="p-1.5 rounded-xl bg-blue-50 text-blue-600">
+                  <Clock className="w-4 h-4" strokeWidth={2} />
                 </span>
               </div>
-              <div className="mt-2 text-2xl font-semibold text-blue-600 tracking-tight tabular-nums">
+              <div className="mt-2 text-2xl font-bold text-blue-600 tracking-tight tabular-nums">
                 {pendingScheduling}
               </div>
               <p className="mt-1 text-[11px] text-slate-400">Requieren cita inmediata</p>
             </div>
 
-            <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle">
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-500">En Evaluación</span>
-                <span className="p-1.5 rounded-md bg-amber-50 text-amber-600">
-                  <Shield className="w-4 h-4" strokeWidth={1.75} />
+                <span className="text-xs font-semibold text-slate-500">En Evaluación</span>
+                <span className="p-1.5 rounded-xl bg-amber-50 text-amber-600">
+                  <Shield className="w-4 h-4" strokeWidth={2} />
                 </span>
               </div>
-              <div className="mt-2 text-2xl font-semibold text-amber-600 tracking-tight tabular-nums">
+              <div className="mt-2 text-2xl font-bold text-amber-600 tracking-tight tabular-nums">
                 {inEvaluation}
               </div>
               <p className="mt-1 text-[11px] text-slate-400">En polígrafo o visita</p>
             </div>
 
-            <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle">
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-500">Dictámenes Listos</span>
-                <span className="p-1.5 rounded-md bg-emerald-50 text-emerald-600">
-                  <CheckCircle2 className="w-4 h-4" strokeWidth={1.75} />
+                <span className="text-xs font-semibold text-slate-500">Dictámenes Listos</span>
+                <span className="p-1.5 rounded-xl bg-emerald-50 text-emerald-600">
+                  <CheckCircle2 className="w-4 h-4" strokeWidth={2} />
                 </span>
               </div>
-              <div className="mt-2 text-2xl font-semibold text-emerald-600 tracking-tight tabular-nums">
+              <div className="mt-2 text-2xl font-bold text-emerald-600 tracking-tight tabular-nums">
                 {completedApproved}{" "}
-                <span className="text-xs font-normal text-rose-500">({completedRejected} no aptos)</span>
+                <span className="text-xs font-semibold text-rose-500">({completedRejected} no aptos)</span>
               </div>
               <p className="mt-1 text-[11px] text-slate-400">Informes emitidos</p>
             </div>
           </div>
 
           {/* FILTER & SEARCH BAR */}
-          <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle space-y-3">
+          <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm space-y-3">
             <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
               {/* Search Input */}
               <div className="relative flex-1 max-w-md">
                 <Search
                   className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"
-                  strokeWidth={1.75}
+                  strokeWidth={2}
                 />
                 <input
                   type="text"
                   placeholder="Buscar por candidato, cédula, empresa o cargo..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full h-10 pl-9 pr-3 text-sm rounded-md border border-slate-200/90 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                  className="w-full h-10 pl-9 pr-3 text-sm rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#005DA4]/20 focus:border-[#005DA4] transition-colors"
                 />
               </div>
 
@@ -533,16 +533,16 @@ export default function AdminEstudiosPage() {
                     <button
                       key={chip.id}
                       onClick={() => setSelectedFilter(chip.id)}
-                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors border ${
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all border active:scale-[0.98] ${
                         active
-                          ? "bg-slate-900 border-slate-900 text-white shadow-xs"
-                          : "bg-white border-slate-200/90 text-slate-600 hover:bg-slate-50"
+                          ? "bg-[#0B3B70] border-[#0B3B70] text-white shadow-xs"
+                          : "bg-white border-slate-200/90 text-slate-600 hover:bg-[#EAF3FA]/50 hover:text-[#0B3B70]"
                       }`}
                     >
                       <span>{chip.label}</span>
                       <span
-                        className={`ml-1.5 text-[10px] tabular-nums font-mono px-1.5 py-0.5 rounded-md ${
-                          active ? "bg-slate-800 text-emerald-300" : "bg-slate-100 text-slate-500"
+                        className={`ml-1.5 text-[10px] tabular-nums font-mono px-1.5 py-0.5 rounded-full ${
+                          active ? "bg-[#005DA4] text-white" : "bg-slate-100 text-slate-600"
                         }`}
                       >
                         {chip.count}
@@ -555,7 +555,7 @@ export default function AdminEstudiosPage() {
           </div>
 
           {/* HIGH DENSITY ORDERS TABLE */}
-          <div className="bg-white border border-slate-200/90 rounded-lg shadow-subtle overflow-hidden">
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50/80 border-b border-slate-200/90 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -676,53 +676,53 @@ export default function AdminEstudiosPage() {
         <div className="space-y-6">
           {/* CANDIDATES KPI BENTO GRID */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle">
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-500">Total Candidatos</span>
-                <span className="p-1.5 rounded-md bg-slate-100 text-slate-600">
-                  <User className="w-4 h-4" strokeWidth={1.75} />
+                <span className="text-xs font-semibold text-slate-500">Total Candidatos</span>
+                <span className="p-1.5 rounded-xl bg-[#EAF3FA] text-[#0B3B70]">
+                  <User className="w-4 h-4" strokeWidth={2} />
                 </span>
               </div>
-              <div className="mt-2 text-2xl font-semibold text-slate-900 tracking-tight tabular-nums">
+              <div className="mt-2 text-2xl font-bold text-[#0B3B70] tracking-tight tabular-nums">
                 {totalCandidates}
               </div>
               <p className="mt-1 text-[11px] text-slate-400">Registrados en la plataforma</p>
             </div>
 
-            <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle">
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-500">Perfiles Verificados</span>
-                <span className="p-1.5 rounded-md bg-emerald-50 text-emerald-600">
-                  <BadgeCheck className="w-4 h-4" strokeWidth={1.75} />
+                <span className="text-xs font-semibold text-slate-500">Perfiles Verificados</span>
+                <span className="p-1.5 rounded-xl bg-emerald-50 text-emerald-600">
+                  <BadgeCheck className="w-4 h-4" strokeWidth={2} />
                 </span>
               </div>
-              <div className="mt-2 text-2xl font-semibold text-emerald-600 tracking-tight tabular-nums">
+              <div className="mt-2 text-2xl font-bold text-emerald-600 tracking-tight tabular-nums">
                 {verifiedCandidates}
               </div>
               <p className="mt-1 text-[11px] text-slate-400">Con sello oficial activo</p>
             </div>
 
-            <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle">
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-500">Sin Validar</span>
-                <span className="p-1.5 rounded-md bg-amber-50 text-amber-600">
-                  <Clock className="w-4 h-4" strokeWidth={1.75} />
+                <span className="text-xs font-semibold text-slate-500">Sin Validar</span>
+                <span className="p-1.5 rounded-xl bg-amber-50 text-amber-600">
+                  <Clock className="w-4 h-4" strokeWidth={2} />
                 </span>
               </div>
-              <div className="mt-2 text-2xl font-semibold text-amber-600 tracking-tight tabular-nums">
+              <div className="mt-2 text-2xl font-bold text-amber-600 tracking-tight tabular-nums">
                 {unverifiedCandidates}
               </div>
               <p className="mt-1 text-[11px] text-slate-400">Pendientes de revisión</p>
             </div>
 
-            <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle">
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-500">Con Documentos</span>
-                <span className="p-1.5 rounded-md bg-blue-50 text-blue-600">
-                  <FileText className="w-4 h-4" strokeWidth={1.75} />
+                <span className="text-xs font-semibold text-slate-500">Con Documentos</span>
+                <span className="p-1.5 rounded-xl bg-blue-50 text-blue-600">
+                  <FileText className="w-4 h-4" strokeWidth={2} />
                 </span>
               </div>
-              <div className="mt-2 text-2xl font-semibold text-blue-600 tracking-tight tabular-nums">
+              <div className="mt-2 text-2xl font-bold text-blue-600 tracking-tight tabular-nums">
                 {candidatesWithDocs}
               </div>
               <p className="mt-1 text-[11px] text-slate-400">Archivos adjuntos cargados</p>
@@ -730,20 +730,20 @@ export default function AdminEstudiosPage() {
           </div>
 
           {/* CANDIDATES FILTER & SEARCH BAR */}
-          <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle space-y-3">
+          <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm space-y-3">
             <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
               {/* Search Input */}
               <div className="relative flex-1 max-w-md">
                 <Search
                   className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"
-                  strokeWidth={1.75}
+                  strokeWidth={2}
                 />
                 <input
                   type="text"
                   placeholder="Buscar por nombre, cédula, cargo o ciudad..."
                   value={candidateSearchTerm}
                   onChange={(e) => setCandidateSearchTerm(e.target.value)}
-                  className="w-full h-10 pl-9 pr-3 text-sm rounded-md border border-slate-200/90 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+                  className="w-full h-10 pl-9 pr-3 text-sm rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#005DA4]/20 focus:border-[#005DA4] transition-colors"
                 />
               </div>
 
@@ -759,16 +759,16 @@ export default function AdminEstudiosPage() {
                     <button
                       key={chip.id}
                       onClick={() => setCandidateFilter(chip.id as any)}
-                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors border ${
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all border active:scale-[0.98] ${
                         active
-                          ? "bg-slate-900 border-slate-900 text-white shadow-xs"
-                          : "bg-white border-slate-200/90 text-slate-600 hover:bg-slate-50"
+                          ? "bg-[#0B3B70] border-[#0B3B70] text-white shadow-xs"
+                          : "bg-white border-slate-200/90 text-slate-600 hover:bg-[#EAF3FA]/50 hover:text-[#0B3B70]"
                       }`}
                     >
                       <span>{chip.label}</span>
                       <span
-                        className={`ml-1.5 text-[10px] tabular-nums font-mono px-1.5 py-0.5 rounded-md ${
-                          active ? "bg-slate-800 text-emerald-300" : "bg-slate-100 text-slate-500"
+                        className={`ml-1.5 text-[10px] tabular-nums font-mono px-1.5 py-0.5 rounded-full ${
+                          active ? "bg-[#005DA4] text-white" : "bg-slate-100 text-slate-600"
                         }`}
                       >
                         {chip.count}
@@ -781,7 +781,7 @@ export default function AdminEstudiosPage() {
           </div>
 
           {/* CANDIDATES VERIFICATION TABLE */}
-          <div className="bg-white border border-slate-200/90 rounded-lg shadow-subtle overflow-hidden">
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50/80 border-b border-slate-200/90 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">

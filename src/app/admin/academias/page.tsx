@@ -241,62 +241,62 @@ export default function AdminAcademiasPage() {
 
         <button
           onClick={handleOpenCreate}
-          className="btn-primary text-xs h-9 px-3.5 flex items-center gap-1.5"
+          className="h-9 px-4 rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all active:scale-[0.99]"
         >
-          <Plus className="w-4 h-4" strokeWidth={1.75} />
+          <Plus className="w-4 h-4" strokeWidth={2} />
           <span>Añadir Academia Aliada</span>
         </button>
       </div>
 
       {/* KPI BENTO GRID */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-        <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Convenios Activos</span>
-            <span className="p-1.5 rounded-md bg-emerald-50 text-emerald-600">
-              <CheckCircle2 className="w-4 h-4" strokeWidth={1.75} />
+            <span className="text-xs font-semibold text-slate-500">Convenios Activos</span>
+            <span className="p-1.5 rounded-xl bg-emerald-50 text-emerald-600">
+              <CheckCircle2 className="w-4 h-4" strokeWidth={2} />
             </span>
           </div>
-          <div className="mt-2 text-2xl font-semibold text-slate-900 tracking-tight tabular-nums">
+          <div className="mt-2 text-2xl font-bold text-emerald-600 tracking-tight tabular-nums">
             {academies.filter((a) => a.is_active).length}
           </div>
           <p className="mt-1 text-[11px] text-slate-400">Recibiendo alumnos hoy</p>
         </div>
 
-        <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Ciudades Con Cobertura</span>
-            <span className="p-1.5 rounded-md bg-blue-50 text-blue-600">
-              <MapPin className="w-4 h-4" strokeWidth={1.75} />
+            <span className="text-xs font-semibold text-slate-500">Ciudades Con Cobertura</span>
+            <span className="p-1.5 rounded-xl bg-[#EAF3FA] text-[#0B3B70]">
+              <MapPin className="w-4 h-4 text-[#005DA4]" strokeWidth={2} />
             </span>
           </div>
-          <div className="mt-2 text-2xl font-semibold text-blue-600 tracking-tight tabular-nums">
+          <div className="mt-2 text-2xl font-bold text-[#0B3B70] tracking-tight tabular-nums">
             {new Set(academies.map((a) => a.city)).size} Ciudades
           </div>
           <p className="mt-1 text-[11px] text-slate-400">Red nacional autorizada</p>
         </div>
 
-        <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Descuento Promedio</span>
-            <span className="p-1.5 rounded-md bg-amber-50 text-amber-600">
-              <Tag className="w-4 h-4" strokeWidth={1.75} />
+            <span className="text-xs font-semibold text-slate-500">Descuento Promedio</span>
+            <span className="p-1.5 rounded-xl bg-amber-50 text-amber-600">
+              <Tag className="w-4 h-4" strokeWidth={2} />
             </span>
           </div>
-          <div className="mt-2 text-2xl font-semibold text-amber-600 tracking-tight tabular-nums">
+          <div className="mt-2 text-2xl font-bold text-amber-600 tracking-tight tabular-nums">
             15% - 20%
           </div>
           <p className="mt-1 text-[11px] text-slate-400">Ahorro para el guarda</p>
         </div>
 
-        <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Leads Derivados</span>
-            <span className="p-1.5 rounded-md bg-slate-100 text-slate-600">
-              <TrendingUp className="w-4 h-4" strokeWidth={1.75} />
+            <span className="text-xs font-semibold text-slate-500">Leads Derivados</span>
+            <span className="p-1.5 rounded-xl bg-slate-100 text-slate-600">
+              <TrendingUp className="w-4 h-4" strokeWidth={2} />
             </span>
           </div>
-          <div className="mt-2 text-2xl font-semibold text-slate-900 tracking-tight tabular-nums">
+          <div className="mt-2 text-2xl font-bold text-[#0B3B70] tracking-tight tabular-nums">
             0
           </div>
           <p className="mt-1 text-[11px] text-slate-400">Desde el Semáforo este mes</p>
@@ -304,18 +304,18 @@ export default function AdminAcademiasPage() {
       </div>
 
       {/* SEARCH AND FILTERS */}
-      <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle flex flex-col sm:flex-row gap-3 items-center justify-between">
+      <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div className="relative flex-1 w-full max-w-md">
           <Search
             className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"
-            strokeWidth={1.75}
+            strokeWidth={2}
           />
           <input
             type="text"
             placeholder="Buscar por Nombre de academia, Ciudad o Código..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-10 pl-9 pr-3 text-sm rounded-md border border-slate-200/90 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-colors"
+            className="w-full h-10 pl-9 pr-3 text-sm rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#005DA4]/20 focus:border-[#005DA4] transition-colors"
           />
         </div>
 

@@ -183,13 +183,13 @@ export default function AdminLayout({
   // Render unauthorized fallback while redirecting
   if (isAuthorized === false) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4">
-        <div className="bg-white border border-slate-200/90 p-6 rounded-lg max-w-sm text-center space-y-3 shadow-card">
-          <div className="w-10 h-10 rounded-md bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto">
+      <div className="min-h-screen bg-[#F2F5F8] flex items-center justify-center p-4">
+        <div className="bg-white border border-slate-200/90 p-6 rounded-2xl max-w-sm text-center space-y-3 shadow-sm">
+          <div className="w-11 h-11 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto">
             <Lock className="w-5 h-5" strokeWidth={1.75} />
           </div>
-          <h3 className="text-sm font-semibold text-slate-900 tracking-tight">Acceso Restringido a SuperAdmin</h3>
-          <p className="text-xs text-slate-500">
+          <h3 className="text-sm font-bold text-slate-900 tracking-tight">Acceso Restringido a SuperAdmin</h3>
+          <p className="text-xs text-slate-500 leading-relaxed">
             Esta sección requiere credenciales de Super Administrador con rol oficial en la base de datos. Redirigiendo...
           </p>
         </div>
@@ -197,294 +197,284 @@ export default function AdminLayout({
     );
   }
 
-  return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row text-slate-900 font-sans antialiased">
-      {/* DESKTOP FIXED SIDEBAR (260px) */}
-      <aside className="hidden md:flex flex-col w-[260px] bg-slate-950 text-white border-r border-slate-900 shrink-0 sticky top-0 h-screen z-40 select-none">
-        {/* Brand & Authority Badge */}
-        <div className="p-5 border-b border-slate-900">
-          <Link href="/admin/estudios" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-md bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 transition-colors">
-              <Shield className="w-4 h-4" strokeWidth={1.75} />
-            </div>
-            <div>
-              <div className="text-sm font-semibold tracking-tight text-white flex items-center gap-1.5">
-                FuerzaVerificada
-              </div>
-              <div className="text-[10px] text-slate-400 font-medium tracking-wide">
-                Mando Operativo & Poligrafía
-              </div>
-            </div>
-          </Link>
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await Promise.race([
+      supabase.auth.signOut().catch(() => {}),
+      new Promise((res) => setTimeout(res, 800)),
+    ]);
+    localStorage.removeItem("fv_demo_role");
+    localStorage.removeItem("fv_demo_user");
+    sessionStorage.clear();
+    window.location.href = "/login";
+  };
 
-          {/* Insignia SuperAdmin */}
-          <div className="mt-4 px-2.5 py-1.5 rounded-md bg-slate-900/90 border border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[11px] text-slate-300 font-semibold tracking-wide uppercase">
-                SuperAdmin B2B
+  return (
+    <div className="min-h-screen bg-[#F2F5F8] flex flex-col text-slate-900 font-sans antialiased">
+      {/* TOP ADMINISTRATIVE NAVBAR (ESTILO COMPUTRABAJO B2B) */}
+      <header className="bg-[#0B3B70] text-white sticky top-0 z-40 shadow-sm border-b border-[#082B54]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 gap-4">
+            {/* Left: Brand & Insignia */}
+            <div className="flex items-center gap-3 shrink-0">
+              <Link href="/admin/estudios" className="flex items-center gap-2.5 group">
+                <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center text-[#0B3B70] shadow-sm group-hover:scale-105 transition-transform">
+                  <Shield className="w-5 h-5 text-[#0B3B70]" strokeWidth={2} />
+                </div>
+                <div>
+                  <div className="text-base font-bold tracking-tight text-white flex items-center gap-1.5 leading-none">
+                    Fuerza<span className="text-[#EAF3FA]">Verificada</span>
+                  </div>
+                  <div className="text-[10px] text-sky-200 font-semibold tracking-wider uppercase mt-0.5">
+                    Mando Operativo B2B
+                  </div>
+                </div>
+              </Link>
+
+              <span className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#005DA4] text-[10px] font-bold text-[#EAF3FA] border border-sky-400/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                SuperAdmin
               </span>
             </div>
-            <span className="text-[10px] font-mono text-slate-500 tabular-nums">
-              {isDevOrDemo ? "DEV / DEMO" : "v1.0-LIVE"}
-            </span>
-          </div>
-        </div>
 
-        {/* Navigation Items */}
-        <nav className="flex-1 p-3.5 space-y-1 overflow-y-auto">
-          <div className="px-2.5 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-            Operaciones Centrales
-          </div>
-
-          {navigation.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex items-center justify-between px-3 py-2 rounded-md text-xs font-medium transition-colors ${
-                  isActive
-                    ? "bg-slate-800 text-white font-semibold shadow-xs border border-slate-700/80"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-900/80"
-                }`}
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <Icon
-                    className={`w-4 h-4 shrink-0 ${
-                      isActive ? "text-emerald-400" : "text-slate-400"
-                    }`}
-                    strokeWidth={1.75}
-                  />
-                  <span className="truncate">{item.name}</span>
-                </div>
-                {item.badge && (
-                  <span
-                    className={`text-[10px] tabular-nums font-mono px-1.5 py-0.5 rounded-md ${
+            {/* Center: Desktop Navigation Pills */}
+            <nav className="hidden lg:flex items-center gap-1.5 overflow-x-auto py-1">
+              {navigation.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold transition-all shrink-0 active:scale-[0.98] ${
                       isActive
-                        ? "bg-emerald-500/20 text-emerald-300 font-semibold"
-                        : "bg-slate-900 text-slate-500"
+                        ? "bg-[#005DA4] text-white shadow-sm ring-1 ring-white/20"
+                        : "text-sky-100 hover:text-white hover:bg-white/10"
                     }`}
                   >
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Director Profile / Bottom Card */}
-        <div className="p-3.5 border-t border-slate-900 bg-slate-950/60">
-          <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-900/80 border border-slate-800/80">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-md bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-semibold text-slate-300 shrink-0">
-                {adminName
-                  .split(" ")
-                  .map((w) => w[0])
-                  .slice(0, 2)
-                  .join("")
-                  .toUpperCase() || "SA"}
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-slate-200 truncate">
-                  {adminName}
-                </p>
-                <p className="text-[10px] text-slate-400 truncate">
-                  Dirección Operativa & Poligrafía
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={async () => {
-                const supabase = createClient();
-                await Promise.race([
-                  supabase.auth.signOut().catch(() => {}),
-                  new Promise((res) => setTimeout(res, 800)),
-                ]);
-                localStorage.removeItem("fv_demo_role");
-                localStorage.removeItem("fv_demo_user");
-                sessionStorage.clear();
-                window.location.href = "/login";
-              }}
-              title="Cerrar sesión"
-              className="text-slate-500 hover:text-slate-300 p-1.5 rounded-md hover:bg-slate-800 transition-colors"
-            >
-              <LogOut className="w-3.5 h-3.5" strokeWidth={1.75} />
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      {/* MOBILE HEADER */}
-      <header className="md:hidden bg-slate-950 text-white px-4 h-14 border-b border-slate-900 flex items-center justify-between sticky top-0 z-40">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-md bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-            <Shield className="w-3.5 h-3.5" strokeWidth={1.75} />
-          </div>
-          <div>
-            <span className="text-xs font-semibold text-white tracking-tight">
-              FuerzaVerificada
-            </span>
-            <span className="ml-2 text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-mono uppercase">
-              SuperAdmin
-            </span>
-          </div>
-        </div>
-
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-1.5 rounded-md bg-slate-900 text-slate-300 border border-slate-800"
-          aria-label="Abrir menú"
-        >
-          {mobileMenuOpen ? (
-            <X className="w-5 h-5" strokeWidth={1.75} />
-          ) : (
-            <Menu className="w-5 h-5" strokeWidth={1.75} />
-          )}
-        </button>
-      </header>
-
-      {/* MOBILE DRAWER */}
-      {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex flex-col">
-          <div className="bg-slate-950 border-b border-slate-800 p-4 flex items-center justify-between">
-            <span className="text-xs font-semibold text-white uppercase tracking-wider">
-              Menú SuperAdmin
-            </span>
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-slate-400 hover:text-white p-1"
-            >
-              <X className="w-5 h-5" strokeWidth={1.75} />
-            </button>
-          </div>
-          <nav className="p-4 space-y-1.5 bg-slate-950 flex-1">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center justify-between p-2.5 rounded-md text-xs font-medium ${
-                    isActive
-                      ? "bg-slate-800 text-white border border-slate-700"
-                      : "text-slate-300 hover:bg-slate-900"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon className="w-4 h-4 text-emerald-400" strokeWidth={1.75} />
+                    <Icon
+                      className={`w-4 h-4 shrink-0 ${
+                        isActive ? "text-[#EAF3FA]" : "text-sky-200"
+                      }`}
+                      strokeWidth={isActive ? 2.2 : 1.75}
+                    />
                     <span>{item.name}</span>
-                  </div>
-                  {item.badge && (
-                    <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded-md text-emerald-300 font-mono tabular-nums">
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-      )}
+                    {item.badge && (
+                      <span
+                        className={`text-[10px] tabular-nums font-mono px-2 py-0.5 rounded-full font-bold ${
+                          isActive
+                            ? "bg-[#EAF3FA] text-[#0B3B70]"
+                            : "bg-[#082B54] text-sky-200"
+                        }`}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </nav>
 
-      {/* MAIN CONTENT AREA */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* GLOBAL EXECUTIVE METRICS HEADER */}
-        <header className="sticky top-0 z-30 h-14 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 hidden md:flex items-center">
-          <div className="max-w-7xl mx-auto w-full flex items-center justify-between gap-4">
-            {/* Live KPI Tickers */}
-            <div className="flex items-center gap-6 overflow-x-auto text-xs">
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="p-1 rounded-md bg-emerald-50/80 border border-emerald-200/60 text-emerald-700">
-                  <TrendingUp className="w-3.5 h-3.5" strokeWidth={1.75} />
-                </div>
-                <div>
-                  <div className="text-[10px] text-slate-500 uppercase font-semibold tracking-wider">
-                    Empresas Registradas
-                  </div>
-                  <div className="text-xs font-semibold text-slate-900 tabular-nums">
-                    {companiesCount} Empresas{" "}
-                    <span className="text-[10px] text-emerald-700 font-medium">(B2B)</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="h-5 w-px bg-slate-200/80" />
-
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="p-1 rounded-md bg-amber-50/80 border border-amber-200/70 text-amber-700">
-                  <Clock className="w-3.5 h-3.5" strokeWidth={1.75} />
-                </div>
-                <div>
-                  <div className="text-[10px] text-slate-500 uppercase font-semibold tracking-wider">
-                    Órdenes de Estudio
-                  </div>
-                  <div className="text-xs font-semibold text-slate-900 tabular-nums">
-                    {activeStudiesCount} Órdenes{" "}
-                    <span className="text-[10px] text-amber-700 font-medium">(Polígrafo/Visita)</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="h-5 w-px bg-slate-200/80" />
-
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="p-1 rounded-md bg-slate-100 border border-slate-200/80 text-slate-700">
-                  <BadgeCheck className="w-3.5 h-3.5" strokeWidth={1.75} />
-                </div>
-                <div>
-                  <div className="text-[10px] text-slate-500 uppercase font-semibold tracking-wider">
-                    Empresas Verificadas
-                  </div>
-                  <div className="text-xs font-semibold text-slate-900 tabular-nums">
-                    {verifiedCompaniesCount} de {companiesCount}{" "}
-                    <span className="text-[10px] text-slate-500 font-normal">(SuperVigilancia)</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="h-5 w-px bg-slate-200/80" />
-
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="p-1 rounded-md bg-slate-100 border border-slate-200/80 text-slate-700">
-                  <Users className="w-3.5 h-3.5" strokeWidth={1.75} />
-                </div>
-                <div>
-                  <div className="text-[10px] text-slate-500 uppercase font-semibold tracking-wider">
-                    Perfiles Operativos
-                  </div>
-                  <div className="text-xs font-semibold text-slate-900 tabular-nums">
-                    {candidatesCount} <span className="text-[10px] text-slate-500 font-normal">Base Nacional</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Links */}
+            {/* Right: Actions, Vista Empresa & User Profile */}
             <div className="flex items-center gap-2.5 shrink-0">
               <Link
                 href="/empresa/dashboard"
                 target="_blank"
-                className="btn-secondary text-[11px] h-8 px-2.5"
-                title="Abrir vista de empresa cliente"
+                className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-semibold transition-colors active:scale-[0.99]"
+                title="Abrir panel corporativo en nueva pestaña"
               >
                 <span>Vista Empresa</span>
-                <ExternalLink className="w-3 h-3 text-slate-400" strokeWidth={1.75} />
+                <ExternalLink className="w-3.5 h-3.5 text-sky-200" strokeWidth={2} />
               </Link>
+
+              {/* User Pill */}
+              <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-white/15">
+                <div className="w-8 h-8 rounded-full bg-[#005DA4] border border-white/30 flex items-center justify-center text-xs font-bold text-white shadow-xs">
+                  {adminName
+                    .split(" ")
+                    .map((w) => w[0])
+                    .slice(0, 2)
+                    .join("")
+                    .toUpperCase() || "SA"}
+                </div>
+                <div className="hidden xl:block text-left">
+                  <p className="text-xs font-bold text-white leading-tight max-w-[120px] truncate">
+                    {adminName}
+                  </p>
+                  <p className="text-[10px] text-sky-200 leading-tight">Dirección General</p>
+                </div>
+              </div>
+
+              {/* Logout Button */}
+              <button
+                type="button"
+                onClick={handleSignOut}
+                title="Cerrar sesión de SuperAdmin"
+                className="p-2 rounded-full hover:bg-white/15 text-sky-200 hover:text-white transition-colors"
+              >
+                <LogOut className="w-4 h-4" strokeWidth={2} />
+              </button>
+
+              {/* Mobile Hamburger Toggle */}
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="lg:hidden p-2 rounded-full hover:bg-white/15 text-white"
+                aria-label="Abrir menú"
+              >
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
             </div>
           </div>
-        </header>
+        </div>
 
-        {/* Page Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
-          {children}
-        </main>
-      </div>
+        {/* MOBILE DRAWER */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden bg-[#082B54] border-t border-sky-900/60 p-4 space-y-2 animate-in slide-in-from-top-2 duration-200">
+            <nav className="space-y-1">
+              {navigation.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center justify-between p-3 rounded-xl text-xs font-semibold ${
+                      isActive
+                        ? "bg-[#005DA4] text-white"
+                        : "text-sky-100 hover:bg-white/10"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon className="w-4 h-4 text-sky-200" strokeWidth={2} />
+                      <span>{item.name}</span>
+                    </div>
+                    {item.badge && (
+                      <span className="text-[10px] bg-[#EAF3FA] text-[#0B3B70] px-2 py-0.5 rounded-full font-mono font-bold">
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <div className="pt-3 border-t border-white/10 flex items-center justify-between">
+              <Link
+                href="/empresa/dashboard"
+                target="_blank"
+                onClick={() => setMobileMenuOpen(false)}
+                className="inline-flex items-center gap-1.5 text-xs text-sky-200 font-semibold"
+              >
+                <span>Abrir Vista Empresa</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </Link>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="text-xs text-rose-300 font-semibold flex items-center gap-1"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Salir</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </header>
+
+      {/* SECONDARY LIVE KPI TICKER BAR */}
+      <section className="bg-white border-b border-slate-200/90 shadow-xs hidden md:block">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
+          <div className="flex items-center justify-between gap-4 overflow-x-auto text-xs">
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="p-1 rounded-lg bg-[#EAF3FA] border border-[#005DA4]/20 text-[#0B3B70]">
+                <TrendingUp className="w-3.5 h-3.5" strokeWidth={2} />
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block leading-none">
+                  Empresas Registradas
+                </span>
+                <span className="text-xs font-bold text-slate-900 tabular-nums">
+                  {companiesCount} Empresas{" "}
+                  <span className="text-[10px] text-[#005DA4] font-semibold">(B2B)</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="h-4 w-px bg-slate-200" />
+
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="p-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-700">
+                <Clock className="w-3.5 h-3.5" strokeWidth={2} />
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block leading-none">
+                  Órdenes de Estudio
+                </span>
+                <span className="text-xs font-bold text-slate-900 tabular-nums">
+                  {activeStudiesCount} Órdenes{" "}
+                  <span className="text-[10px] text-amber-700 font-semibold">(Polígrafo/Visita)</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="h-4 w-px bg-slate-200" />
+
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="p-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-700">
+                <BadgeCheck className="w-3.5 h-3.5" strokeWidth={2} />
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block leading-none">
+                  Empresas Verificadas
+                </span>
+                <span className="text-xs font-bold text-slate-900 tabular-nums">
+                  {verifiedCompaniesCount} de {companiesCount}{" "}
+                  <span className="text-[10px] text-slate-500 font-normal">(SuperVigilancia)</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="h-4 w-px bg-slate-200" />
+
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="p-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-700">
+                <Users className="w-3.5 h-3.5" strokeWidth={2} />
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block leading-none">
+                  Perfiles Operativos
+                </span>
+                <span className="text-xs font-bold text-slate-900 tabular-nums">
+                  {candidatesCount} <span className="text-[10px] text-slate-500 font-normal">Base Nacional</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="h-4 w-px bg-slate-200" />
+
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="p-1 rounded-lg bg-[#EAF3FA] border border-[#005DA4]/20 text-[#0B3B70]">
+                <GraduationCap className="w-3.5 h-3.5" strokeWidth={2} />
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block leading-none">
+                  Academias Aliadas
+                </span>
+                <span className="text-xs font-bold text-slate-900 tabular-nums">
+                  {academiesCount} Sedes Capacitación
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* MAIN CONTENT AREA */}
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        {children}
+      </main>
     </div>
   );
 }
