@@ -17,6 +17,7 @@ import {
   Building2,
   Eye,
   CheckCircle,
+  BadgeCheck,
 } from "lucide-react";
 import { ApplicationStatus } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
@@ -184,39 +185,45 @@ export default function PostulacionesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200/80">
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-lg font-semibold text-slate-900 tracking-tight">
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
             Seguimiento de Mis Postulaciones
           </h1>
-          <p className="text-xs text-slate-500 font-normal">
+          <p className="text-xs text-slate-500 font-normal mt-1">
             Rastreador en tiempo real del estado de tus procesos de selección con empresas de vigilancia y seguridad privada.
           </p>
         </div>
 
-        <Link href="/guarda/vacantes" className="btn-secondary text-xs h-9 px-3.5 inline-flex items-center gap-1.5">
-          <Briefcase className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
+        <Link
+          href="/guarda/vacantes"
+          className="rounded-full bg-[#EAF3FA] hover:bg-[#d8e8f6] text-[#0B3B70] border border-[#D5E6F5] text-xs h-10 px-5 font-semibold inline-flex items-center gap-2 transition-colors self-start sm:self-auto shadow-2xs"
+        >
+          <Briefcase className="w-3.5 h-3.5 text-[#005DA4]" strokeWidth={2} />
           <span>Explorar Más Vacantes</span>
         </Link>
       </div>
 
       {isLoading ? (
-        <div className="p-12 text-center bg-white border border-slate-200/90 rounded-lg space-y-3 shadow-subtle">
-          <div className="w-6 h-6 border-2 border-slate-900 border-t-transparent rounded-full animate-spin mx-auto" />
+        <div className="p-12 text-center bg-white border border-slate-200 rounded-2xl space-y-3 shadow-2xs">
+          <div className="w-6 h-6 border-2 border-[#0B3B70] border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="text-xs text-slate-500">Cargando tus postulaciones registradas...</p>
         </div>
       ) : applications.length === 0 ? (
-        <div className="p-12 text-center bg-white border border-slate-200/90 rounded-lg space-y-3 shadow-subtle">
+        <div className="p-12 text-center bg-white border border-slate-200 rounded-2xl space-y-3 shadow-2xs">
           <Briefcase className="w-10 h-10 text-slate-300 mx-auto" strokeWidth={1.5} />
-          <h4 className="text-sm font-semibold text-slate-900 tracking-tight">
+          <h4 className="text-sm font-bold text-slate-900 tracking-tight">
             Aún no tienes postulaciones activas
           </h4>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
             Explora las vacantes de seguridad disponibles en Bogotá y a nivel nacional con salario certificado y turno garantizado.
           </p>
-          <Link href="/guarda/vacantes" className="btn-emerald inline-flex text-xs h-9 px-4 font-medium">
+          <Link
+            href="/guarda/vacantes"
+            className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white inline-flex text-xs h-10 px-6 font-semibold items-center gap-2 shadow-xs transition-colors"
+          >
             Ver Vacantes Disponibles
-            <ArrowRight className="w-4 h-4" strokeWidth={1.75} />
+            <ArrowRight className="w-4 h-4" strokeWidth={2} />
           </Link>
         </div>
       ) : (
@@ -227,7 +234,7 @@ export default function PostulacionesPage() {
             return (
               <div
                 key={app.id}
-                className="bg-white border border-slate-200/90 rounded-lg p-5 space-y-5 shadow-subtle hover:border-slate-300 transition-colors"
+                className="bg-white border border-slate-200 rounded-2xl p-6 space-y-5 shadow-2xs hover:border-slate-300 transition-all"
               >
                 {/* Header row */}
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
@@ -237,8 +244,8 @@ export default function PostulacionesPage() {
                         <Building2 className="w-3.5 h-3.5 text-slate-500" strokeWidth={1.75} />
                         {app.company_name}
                       </span>
-                      <span className="badge-emerald text-[10px] py-0.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#005DA4] bg-[#EAF3FA] px-2.5 py-0.5 rounded-full border border-[#D5E6F5]">
+                        <BadgeCheck className="w-3.5 h-3.5 text-[#005DA4]" />
                         Empresa Verificada
                       </span>
                       <span className="text-[11px] text-slate-500 font-medium">
@@ -246,7 +253,7 @@ export default function PostulacionesPage() {
                       </span>
                     </div>
 
-                    <h3 className="text-base font-bold text-slate-900 tracking-tight mt-1">
+                    <h3 className="text-lg font-bold text-slate-900 tracking-tight mt-1.5">
                       {app.job_title}
                     </h3>
                   </div>
@@ -256,11 +263,11 @@ export default function PostulacionesPage() {
                       <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">
                         Salario mensual
                       </span>
-                      <span className="text-sm font-semibold font-mono text-slate-900 tabular-nums">
+                      <span className="text-sm font-bold font-mono text-slate-900 tabular-nums">
                         ${app.salary_monthly ? app.salary_monthly.toLocaleString("es-CO") : "0"} COP
                       </span>
                     </div>
-                    <span className="text-xs font-mono font-semibold text-slate-900 bg-slate-100 border border-slate-200/80 px-2.5 py-1 rounded-md tabular-nums">
+                    <span className="text-xs font-mono font-bold text-[#0B3B70] bg-[#EAF3FA] border border-[#D5E6F5] px-3 py-1 rounded-full tabular-nums">
                       {app.match_score}% Match
                     </span>
                   </div>
@@ -268,7 +275,7 @@ export default function PostulacionesPage() {
 
                 {/* CITACIÓN PRESENCIAL CALLOUT */}
                 {app.status === "citado_entrevista" && (
-                  <div className="p-4 rounded-lg bg-amber-50/70 border border-amber-200/80 space-y-2">
+                  <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-xs font-semibold text-amber-900">
                         <Calendar className="w-4 h-4 text-amber-700" strokeWidth={1.75} />
@@ -295,7 +302,7 @@ export default function PostulacionesPage() {
                         )}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="btn-emerald inline-flex text-xs h-9 px-3.5 font-medium"
+                        className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-9 px-4 font-semibold inline-flex items-center gap-2 shadow-xs transition-colors"
                       >
                         <MessageCircle className="w-3.5 h-3.5" strokeWidth={1.75} />
                         Confirmar Asistencia vía WhatsApp
@@ -306,13 +313,13 @@ export default function PostulacionesPage() {
 
                 {/* AVISO ESTUDIO DE SEGURIDAD EN CURSO */}
                 {app.status === "en_estudio_seguridad" && (
-                  <div className="p-4 rounded-lg bg-slate-900 text-white space-y-2">
+                  <div className="p-4 rounded-xl bg-slate-900 text-white space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-xs font-semibold text-amber-400">
                         <Shield className="w-4 h-4" strokeWidth={1.75} />
                         <span>Estudio de Seguridad y Poligrafía en Proceso</span>
                       </div>
-                      <span className="badge-amber text-[10px] py-0.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 bg-amber-950/60 border border-amber-800/60 px-2.5 py-0.5 rounded-full">
                         En curso
                       </span>
                     </div>
@@ -329,12 +336,12 @@ export default function PostulacionesPage() {
                       Progreso de la Postulación ({currentStageIndex + 1} de 4)
                     </span>
                     {isRejected ? (
-                      <span className="text-xs font-medium text-slate-500 bg-slate-100 border border-slate-200/80 px-2 py-0.5 rounded-md">
+                      <span className="text-xs font-medium text-slate-500 bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded-full">
                         Proceso Finalizado
                       </span>
                     ) : (
-                      <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-xs font-semibold text-[#005DA4] bg-[#EAF3FA] border border-[#D5E6F5] px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#005DA4] animate-pulse" />
                         {STAGES[currentStageIndex].title}
                       </span>
                     )}
@@ -347,7 +354,7 @@ export default function PostulacionesPage() {
                     {/* Active line */}
                     <div
                       className={`hidden sm:block absolute top-4 left-8 h-0.5 transition-all duration-500 -z-0 ${
-                        isRejected ? "bg-slate-400" : "bg-emerald-600"
+                        isRejected ? "bg-slate-400" : "bg-[#005DA4]"
                       }`}
                       style={{
                         width: `${(currentStageIndex / 3) * 100}%`,
@@ -361,15 +368,15 @@ export default function PostulacionesPage() {
                         const isCurrent = idx === currentStageIndex;
 
                         let circleStyle = "bg-white border-2 border-slate-300 text-slate-400";
-                        let cardStyle = "bg-slate-50/70 border-slate-200/80 text-slate-500";
+                        let cardStyle = "bg-slate-50/70 border-slate-200 text-slate-500";
 
                         if (isCurrent) {
                           if (isRejected && idx === 3) {
                             circleStyle = "bg-slate-700 border-2 border-slate-700 text-white shadow-xs";
                             cardStyle = "bg-slate-100 border-slate-300 text-slate-800 shadow-xs";
                           } else {
-                            circleStyle = "bg-slate-900 border-2 border-slate-900 text-white shadow-xs ring-4 ring-slate-100";
-                            cardStyle = "bg-slate-900 text-white border-slate-900 shadow-xs";
+                            circleStyle = "bg-[#0B3B70] border-2 border-[#0B3B70] text-white shadow-xs ring-4 ring-[#EAF3FA]";
+                            cardStyle = "bg-[#0B3B70] text-white border-[#0B3B70] shadow-xs";
                           }
                         } else if (isPast) {
                           circleStyle = "bg-emerald-600 border-2 border-emerald-600 text-white";
@@ -382,7 +389,7 @@ export default function PostulacionesPage() {
                         return (
                           <div
                             key={st.stage}
-                            className={`p-3 rounded-lg border transition-all ${cardStyle}`}
+                            className={`p-3 rounded-xl border transition-all ${cardStyle}`}
                           >
                             <div className="flex items-center gap-2 mb-1.5">
                               <div
@@ -417,15 +424,15 @@ export default function PostulacionesPage() {
 
                   {/* Active Stage Explanatory Box */}
                   <div
-                    className={`mt-3 p-3 rounded-md text-xs border ${
+                    className={`mt-3 p-3.5 rounded-xl text-xs border ${
                       isRejected
-                        ? "bg-slate-50 border-slate-200/80 text-slate-600"
+                        ? "bg-slate-50 border-slate-200 text-slate-600"
                         : currentStageIndex === 3
                         ? "bg-emerald-50/80 border-emerald-200 text-emerald-900"
-                        : "bg-slate-50 border-slate-200/80 text-slate-700"
+                        : "bg-[#EAF3FA] border-[#D5E6F5] text-[#0B3B70]"
                     }`}
                   >
-                    <span className="font-semibold text-slate-900 block mb-0.5">
+                    <span className="font-bold block mb-0.5">
                       {isRejected
                         ? "Nota sobre este proceso:"
                         : `Estado actual: ${STAGES[currentStageIndex].title}`}
@@ -444,26 +451,27 @@ export default function PostulacionesPage() {
       )}
 
       {/* BANNER ACADEMIAS ALIADAS */}
-      <div className="p-4 rounded-lg bg-white border border-slate-200/90 shadow-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-md bg-amber-50 border border-amber-200/80 text-amber-700 flex items-center justify-center shrink-0">
-            <Shield className="w-4 h-4" strokeWidth={1.75} />
+      <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center shrink-0">
+            <Shield className="w-5 h-5" strokeWidth={1.75} />
           </div>
           <div>
-            <h4 className="text-xs font-semibold text-slate-900 tracking-tight">
+            <h4 className="text-sm font-bold text-slate-900 tracking-tight">
               ¿Tu curso de SuperVigilancia está próximo a vencer?
             </h4>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500 mt-0.5">
               Consulta nuestra Red de Academias Aliadas con hasta 15% de descuento por convenio institucional.
             </p>
           </div>
         </div>
+
         <Link
-          href="/guarda/documentos#academias"
-          className="btn-secondary text-xs h-9 px-3.5 font-medium text-slate-700 hover:text-slate-900 shrink-0 self-start sm:self-auto"
+          href="/guarda/documentos"
+          className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs h-10 px-5 font-semibold inline-flex items-center gap-2 shrink-0 transition-colors shadow-xs"
         >
-          <span>Ver Academias Aliadas</span>
-          <ArrowRight className="w-3.5 h-3.5" />
+          <span>Ver Academias con Descuento</span>
+          <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
     </div>

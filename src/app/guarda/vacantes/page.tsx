@@ -28,6 +28,8 @@ import {
   MoreVertical,
   ChevronDown,
   Building,
+  BadgeCheck,
+  Banknote,
 } from "lucide-react";
 import { calculateMatchScore } from "@/lib/utils/matchCalculator";
 import {
@@ -88,12 +90,26 @@ function VacantesContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
 
-  // Dropdown filter states
+  // Dropdown filter states (Computrabajo style)
   const [sortBy, setSortBy] = useState<"recientes" | "salario">("recientes");
+  const [dateFilter, setDateFilter] = useState<string>("todas");
   const [categoryFilter, setCategoryFilter] = useState<string>("todas");
-  const [contractFilter, setContractFilter] = useState<string>("todos");
   const [experienceFilter, setExperienceFilter] = useState<string>("todos");
+  const [salaryFilter, setSalaryFilter] = useState<string>("todos");
+  const [shiftFilter, setShiftFilter] = useState<string>("todos");
+  const [contractFilter, setContractFilter] = useState<string>("todos");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (!(e.target as HTMLElement).closest(".filter-dropdown-container")) {
+        setOpenDropdown(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Read URL search params on mount
   useEffect(() => {
@@ -319,6 +335,8 @@ function VacantesContent() {
       const loc = locationFilter.toLowerCase().trim();
       const matchesLocation =
         !loc ||
+        loc === "todo el país" ||
+        loc === "todas" ||
         j.city.toLowerCase().includes(loc) ||
         (j.zone_neighborhood || "").toLowerCase().includes(loc);
 
@@ -337,7 +355,53 @@ function VacantesContent() {
         }
       }
 
-      return matchesSearch && matchesLocation && matchesCategory;
+      let matchesDate = true;
+      if (dateFilter !== "todas" && j.created_at) {
+        const createdMs = new Date(j.created_at).getTime();
+        const diffHours = (Date.now() - createdMs) / (1000 * 60 * 60);
+        if (dateFilter === "hoy") matchesDate = diffHours <= 24;
+        else if (dateFilter === "3dias") matchesDate = diffHours <= 72;
+        else if (dateFilter === "semana") matchesDate = diffHours <= 168;
+      }
+
+      let matchesExp = true;
+      if (experienceFilter !== "todos") {
+        const exp = j.min_experience_years || 0;
+        if (experienceFilter === "0") matchesExp = exp === 0;
+        else if (experienceFilter === "1") matchesExp = exp <= 1;
+        else if (experienceFilter === "2") matchesExp = exp >= 2;
+      }
+
+      let matchesSalary = true;
+      if (salaryFilter !== "todos") {
+        const sal = j.salary_monthly || 0;
+        if (salaryFilter === "1600") matchesSalary = sal >= 1600000;
+        else if (salaryFilter === "2000") matchesSalary = sal >= 2000000;
+        else if (salaryFilter === "2500") matchesSalary = sal >= 2500000;
+      }
+
+      let matchesShift = true;
+      if (shiftFilter !== "todos") {
+        const s = (j.shift || "").toLowerCase();
+        matchesShift = s.includes(shiftFilter.toLowerCase());
+      }
+
+      let matchesContract = true;
+      if (contractFilter !== "todos") {
+        const desc = (j.description || "").toLowerCase();
+        matchesContract = desc.includes(contractFilter.toLowerCase());
+      }
+
+      return (
+        matchesSearch &&
+        matchesLocation &&
+        matchesCategory &&
+        matchesDate &&
+        matchesExp &&
+        matchesSalary &&
+        matchesShift &&
+        matchesContract
+      );
     })
     .sort((a, b) => {
       if (sortBy === "salario") {
@@ -354,91 +418,50 @@ function VacantesContent() {
   const isSelectedApplied = selectedJob ? !!appliedJobIds[selectedJob.id] : false;
   const isSelectedSaved = selectedJob ? !!savedJobIds[selectedJob.id] : false;
 
+  const hasActiveFilters = Boolean(
+    searchTerm ||
+    locationFilter ||
+    categoryFilter !== "todas" ||
+    dateFilter !== "todas" ||
+    experienceFilter !== "todos" ||
+    salaryFilter !== "todos" ||
+    shiftFilter !== "todos" ||
+    contractFilter !== "todos" ||
+    sortBy !== "recientes"
+  );
+
+  const resetAllFilters = () => {
+    setSearchTerm("");
+    setLocationFilter("");
+    setCategoryFilter("todas");
+    setDateFilter("todas");
+    setExperienceFilter("todos");
+    setSalaryFilter("todos");
+    setShiftFilter("todos");
+    setContractFilter("todos");
+    setSortBy("recientes");
+    setOpenDropdown(null);
+  };
+
   return (
     <div className="min-h-screen bg-[#F2F5F8] text-[#313944] pb-16">
-      {/* 1. CABECERA BLANCA CON PÍLDORA DE BÚSQUEDA INTEGRADA */}
-      <div className="bg-white border-b border-[#E1E4E9] py-5 px-4 sm:px-6 lg:px-8 shadow-[0_1px_3px_rgba(11,59,112,0.04)]">
-        <div className="max-w-7xl mx-auto space-y-4">
-          <form
-            onSubmit={(e) => e.preventDefault()}
-            className="rounded-full border border-slate-300 bg-white shadow-xs p-1.5 flex flex-col md:flex-row items-center gap-2 max-w-4xl mx-auto transition-all focus-within:border-[#005DA4] focus-within:ring-2 focus-within:ring-[#005DA4]/10"
-          >
-            {/* Campo 1: Cargo o categoría */}
-            <div className="flex-1 w-full px-4 py-1.5 flex items-center gap-3">
-              <Briefcase className="w-5 h-5 text-slate-400 shrink-0" strokeWidth={2} />
-              <div className="w-full">
-                <input
-                  type="text"
-                  placeholder="Cargo o categoría (Ej. Vigilante, Escolta, CCTV)..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full text-xs sm:text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
-                />
-              </div>
-              {searchTerm && (
-                <button
-                  type="button"
-                  onClick={() => setSearchTerm("")}
-                  className="text-slate-400 hover:text-slate-600 p-1"
-                  aria-label="Limpiar búsqueda"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            {/* Divisor vertical */}
-            <div className="hidden md:block w-px h-8 bg-slate-200" />
-
-            {/* Campo 2: Ciudad / Lugar */}
-            <div className="flex-1 w-full px-4 py-1.5 flex items-center gap-3 relative">
-              <MapPin className="w-5 h-5 text-slate-400 shrink-0" strokeWidth={2} />
-              <div className="w-full">
-                <input
-                  type="text"
-                  placeholder="Lugar (Bogotá, Medellín, Cali)..."
-                  value={locationFilter}
-                  onChange={(e) => setLocationFilter(e.target.value)}
-                  className="w-full text-xs sm:text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
-                />
-              </div>
-              {locationFilter && (
-                <button
-                  type="button"
-                  onClick={() => setLocationFilter("")}
-                  className="text-slate-400 hover:text-slate-600 p-1"
-                  aria-label="Limpiar lugar"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            {/* Botón Circular Azul Marino a la derecha (#0B3B70) */}
-            <button
-              type="submit"
-              className="w-10 h-10 rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white flex items-center justify-center shrink-0 shadow-xs transition-colors"
-              title="Buscar empleos"
-            >
-              <Search className="w-4 h-4" strokeWidth={2.5} />
-            </button>
-          </form>
-
-          {/* FILA DE FILTROS TIPO PÍLDORA CON FLECHA (⌄) SOBRE FONDO BLANCO */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-5xl mx-auto scrollbar-none">
-            {/* Filtro Ordenar */}
-            <div className="relative">
+      {/* 1. FILA SUPERIOR DE FILTROS DESPLEGABLES CON FLECHA (⌄) SOBRE FONDO #F2F5F8 */}
+      <div className="w-full bg-[#F2F5F8] border-b border-slate-200/80 sticky top-0 md:top-[68px] z-20 backdrop-blur-md bg-[#F2F5F8]/95 shadow-2xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-0.5">
+            {/* 1. Filtro Ordenar */}
+            <div className="relative filter-dropdown-container shrink-0">
               <button
                 type="button"
                 onClick={() => setOpenDropdown(openDropdown === "sort" ? null : "sort")}
-                className={`bg-white border rounded-full px-4 py-1.5 text-xs sm:text-sm flex items-center gap-1.5 shadow-2xs transition-all whitespace-nowrap ${
+                className={`border rounded-full px-4 py-1.5 text-xs sm:text-sm flex items-center gap-1.5 shadow-2xs transition-all whitespace-nowrap cursor-pointer ${
                   sortBy === "salario"
                     ? "border-[#005DA4] text-[#005DA4] font-bold bg-[#EAF3FA]"
-                    : "border-slate-200 text-slate-700 hover:border-[#005DA4]"
+                    : "border-slate-200/90 text-slate-700 bg-white hover:border-[#005DA4]"
                 }`}
               >
-                <span>Ordenar: {sortBy === "salario" ? "Mayor salario" : "Más recientes"}</span>
-                <ChevronDown className="w-3.5 h-3.5" />
+                <span>{sortBy === "salario" ? "Mayor salario" : "Más recientes"}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
               {openDropdown === "sort" && (
                 <div className="absolute left-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
@@ -448,7 +471,11 @@ function VacantesContent() {
                       setSortBy("recientes");
                       setOpenDropdown(null);
                     }}
-                    className="w-full text-left px-3 py-1.5 text-xs rounded-lg hover:bg-[#EAF3FA] hover:text-[#0B3B70]"
+                    className={`w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                      sortBy === "recientes"
+                        ? "bg-[#EAF3FA] text-[#0B3B70] font-bold"
+                        : "hover:bg-slate-50 text-slate-700"
+                    }`}
                   >
                     Más recientes
                   </button>
@@ -458,7 +485,11 @@ function VacantesContent() {
                       setSortBy("salario");
                       setOpenDropdown(null);
                     }}
-                    className="w-full text-left px-3 py-1.5 text-xs rounded-lg hover:bg-[#EAF3FA] hover:text-[#0B3B70]"
+                    className={`w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                      sortBy === "salario"
+                        ? "bg-[#EAF3FA] text-[#0B3B70] font-bold"
+                        : "hover:bg-slate-50 text-slate-700"
+                    }`}
                   >
                     Mayor salario
                   </button>
@@ -466,22 +497,82 @@ function VacantesContent() {
               )}
             </div>
 
-            {/* Filtro Categoría / Cargo */}
-            <div className="relative">
+            {/* 2. Filtro Fecha */}
+            <div className="relative filter-dropdown-container shrink-0">
+              <button
+                type="button"
+                onClick={() => setOpenDropdown(openDropdown === "date" ? null : "date")}
+                className={`border rounded-full px-4 py-1.5 text-xs sm:text-sm flex items-center gap-1.5 shadow-2xs transition-all whitespace-nowrap cursor-pointer ${
+                  dateFilter !== "todas"
+                    ? "border-[#005DA4] text-[#005DA4] font-bold bg-[#EAF3FA]"
+                    : "border-slate-200/90 text-slate-700 bg-white hover:border-[#005DA4]"
+                }`}
+              >
+                <span>
+                  {dateFilter === "hoy"
+                    ? "Fecha: Hoy"
+                    : dateFilter === "3dias"
+                    ? "Fecha: Últimos 3 días"
+                    : dateFilter === "semana"
+                    ? "Fecha: Última semana"
+                    : "Fecha"}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              </button>
+              {openDropdown === "date" && (
+                <div className="absolute left-0 mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+                  {[
+                    { id: "todas", label: "Cualquier fecha" },
+                    { id: "hoy", label: "Publicadas hoy (24h)" },
+                    { id: "3dias", label: "Últimos 3 días" },
+                    { id: "semana", label: "Última semana" },
+                  ].map((d) => (
+                    <button
+                      key={d.id}
+                      type="button"
+                      onClick={() => {
+                        setDateFilter(d.id);
+                        setOpenDropdown(null);
+                      }}
+                      className={`w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                        dateFilter === d.id
+                          ? "bg-[#EAF3FA] text-[#0B3B70] font-bold"
+                          : "hover:bg-slate-50 text-slate-700"
+                      }`}
+                    >
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 3. Filtro Categoría / Cargo */}
+            <div className="relative filter-dropdown-container shrink-0">
               <button
                 type="button"
                 onClick={() => setOpenDropdown(openDropdown === "cat" ? null : "cat")}
-                className={`bg-white border rounded-full px-4 py-1.5 text-xs sm:text-sm flex items-center gap-1.5 shadow-2xs transition-all whitespace-nowrap ${
+                className={`border rounded-full px-4 py-1.5 text-xs sm:text-sm flex items-center gap-1.5 shadow-2xs transition-all whitespace-nowrap cursor-pointer ${
                   categoryFilter !== "todas"
                     ? "border-[#005DA4] text-[#005DA4] font-bold bg-[#EAF3FA]"
-                    : "border-slate-200 text-slate-700 hover:border-[#005DA4]"
+                    : "border-slate-200/90 text-slate-700 bg-white hover:border-[#005DA4]"
                 }`}
               >
-                <span>Categoría / Cargo</span>
-                <ChevronDown className="w-3.5 h-3.5" />
+                <span>
+                  {categoryFilter === "vigilante"
+                    ? "Vigilante"
+                    : categoryFilter === "escolta"
+                    ? "Escolta"
+                    : categoryFilter === "cctv"
+                    ? "CCTV / Medios"
+                    : categoryFilter === "supervisor"
+                    ? "Supervisor"
+                    : "Categoría / Cargo"}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
               {openDropdown === "cat" && (
-                <div className="absolute left-0 mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+                <div className="absolute left-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
                   {[
                     { id: "todas", label: "Todas las categorías" },
                     { id: "vigilante", label: "Vigilante Fijo / Móvil" },
@@ -496,7 +587,11 @@ function VacantesContent() {
                         setCategoryFilter(c.id);
                         setOpenDropdown(null);
                       }}
-                      className="w-full text-left px-3 py-1.5 text-xs rounded-lg hover:bg-[#EAF3FA] hover:text-[#0B3B70]"
+                      className={`w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                        categoryFilter === c.id
+                          ? "bg-[#EAF3FA] text-[#0B3B70] font-bold"
+                          : "hover:bg-slate-50 text-slate-700"
+                      }`}
                     >
                       {c.label}
                     </button>
@@ -505,42 +600,250 @@ function VacantesContent() {
               )}
             </div>
 
-            {/* Filtro Lugar de trabajo */}
-            <button
-              type="button"
-              onClick={() => {
-                setLocationFilter(locationFilter ? "" : "Bogotá D.C.");
-              }}
-              className={`bg-white border rounded-full px-4 py-1.5 text-xs sm:text-sm flex items-center gap-1.5 shadow-2xs transition-all whitespace-nowrap ${
-                locationFilter
-                  ? "border-[#005DA4] text-[#005DA4] font-bold bg-[#EAF3FA]"
-                  : "border-slate-200 text-slate-700 hover:border-[#005DA4]"
-              }`}
-            >
-              <span>Lugar: {locationFilter || "Todo el país"}</span>
-              <ChevronDown className="w-3.5 h-3.5" />
-            </button>
+            {/* 4. Filtro Lugar de trabajo */}
+            <div className="relative filter-dropdown-container shrink-0">
+              <button
+                type="button"
+                onClick={() => setOpenDropdown(openDropdown === "loc" ? null : "loc")}
+                className={`border rounded-full px-4 py-1.5 text-xs sm:text-sm flex items-center gap-1.5 shadow-2xs transition-all whitespace-nowrap cursor-pointer ${
+                  locationFilter && locationFilter !== "Todo el país"
+                    ? "border-[#005DA4] text-[#005DA4] font-bold bg-[#EAF3FA]"
+                    : "border-slate-200/90 text-slate-700 bg-white hover:border-[#005DA4]"
+                }`}
+              >
+                <span>{locationFilter || "Lugar de trabajo"}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              </button>
+              {openDropdown === "loc" && (
+                <div className="absolute left-0 mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+                  {[
+                    { id: "", label: "Todo el país (Colombia)" },
+                    { id: "Bogotá", label: "Bogotá D.C." },
+                    { id: "Medellín", label: "Medellín (Antioquia)" },
+                    { id: "Cali", label: "Cali (Valle del Cauca)" },
+                    { id: "Barranquilla", label: "Barranquilla (Atlántico)" },
+                    { id: "Bucaramanga", label: "Bucaramanga (Santander)" },
+                  ].map((l) => (
+                    <button
+                      key={l.id}
+                      type="button"
+                      onClick={() => {
+                        setLocationFilter(l.id);
+                        setOpenDropdown(null);
+                      }}
+                      className={`w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                        locationFilter === l.id || (!locationFilter && !l.id)
+                          ? "bg-[#EAF3FA] text-[#0B3B70] font-bold"
+                          : "hover:bg-slate-50 text-slate-700"
+                      }`}
+                    >
+                      {l.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-            {/* Píldoras adicionales Computrabajo style */}
-            <span className="bg-white border border-slate-200 rounded-full px-4 py-1.5 text-xs sm:text-sm text-slate-700 flex items-center gap-1.5 shadow-2xs hover:border-[#005DA4] cursor-pointer whitespace-nowrap">
-              <span>Experiencia</span>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-            </span>
+            {/* 5. Filtro Experiencia */}
+            <div className="relative filter-dropdown-container shrink-0">
+              <button
+                type="button"
+                onClick={() => setOpenDropdown(openDropdown === "exp" ? null : "exp")}
+                className={`border rounded-full px-4 py-1.5 text-xs sm:text-sm flex items-center gap-1.5 shadow-2xs transition-all whitespace-nowrap cursor-pointer ${
+                  experienceFilter !== "todos"
+                    ? "border-[#005DA4] text-[#005DA4] font-bold bg-[#EAF3FA]"
+                    : "border-slate-200/90 text-slate-700 bg-white hover:border-[#005DA4]"
+                }`}
+              >
+                <span>
+                  {experienceFilter === "0"
+                    ? "Sin experiencia"
+                    : experienceFilter === "1"
+                    ? "Hasta 1 año"
+                    : experienceFilter === "2"
+                    ? "2+ años"
+                    : "Experiencia"}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              </button>
+              {openDropdown === "exp" && (
+                <div className="absolute left-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+                  {[
+                    { id: "todos", label: "Cualquier experiencia" },
+                    { id: "0", label: "Sin experiencia" },
+                    { id: "1", label: "Hasta 1 año" },
+                    { id: "2", label: "2 años o más" },
+                  ].map((e) => (
+                    <button
+                      key={e.id}
+                      type="button"
+                      onClick={() => {
+                        setExperienceFilter(e.id);
+                        setOpenDropdown(null);
+                      }}
+                      className={`w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                        experienceFilter === e.id
+                          ? "bg-[#EAF3FA] text-[#0B3B70] font-bold"
+                          : "hover:bg-slate-50 text-slate-700"
+                      }`}
+                    >
+                      {e.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-            <span className="bg-white border border-slate-200 rounded-full px-4 py-1.5 text-xs sm:text-sm text-slate-700 flex items-center gap-1.5 shadow-2xs hover:border-[#005DA4] cursor-pointer whitespace-nowrap">
-              <span>Salario</span>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-            </span>
+            {/* 6. Filtro Salario */}
+            <div className="relative filter-dropdown-container shrink-0">
+              <button
+                type="button"
+                onClick={() => setOpenDropdown(openDropdown === "sal" ? null : "sal")}
+                className={`border rounded-full px-4 py-1.5 text-xs sm:text-sm flex items-center gap-1.5 shadow-2xs transition-all whitespace-nowrap cursor-pointer ${
+                  salaryFilter !== "todos"
+                    ? "border-[#005DA4] text-[#005DA4] font-bold bg-[#EAF3FA]"
+                    : "border-slate-200/90 text-slate-700 bg-white hover:border-[#005DA4]"
+                }`}
+              >
+                <span>
+                  {salaryFilter === "1600"
+                    ? "Desde $1.6M"
+                    : salaryFilter === "2000"
+                    ? "Desde $2.0M"
+                    : salaryFilter === "2500"
+                    ? "Desde $2.5M"
+                    : "Salario"}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              </button>
+              {openDropdown === "sal" && (
+                <div className="absolute left-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+                  {[
+                    { id: "todos", label: "Cualquier salario" },
+                    { id: "1600", label: "Desde $1.600.000" },
+                    { id: "2000", label: "Desde $2.000.000" },
+                    { id: "2500", label: "Desde $2.500.000" },
+                  ].map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => {
+                        setSalaryFilter(s.id);
+                        setOpenDropdown(null);
+                      }}
+                      className={`w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                        salaryFilter === s.id
+                          ? "bg-[#EAF3FA] text-[#0B3B70] font-bold"
+                          : "hover:bg-slate-50 text-slate-700"
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-            <span className="bg-white border border-slate-200 rounded-full px-4 py-1.5 text-xs sm:text-sm text-slate-700 flex items-center gap-1.5 shadow-2xs hover:border-[#005DA4] cursor-pointer whitespace-nowrap">
-              <span>Jornada</span>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-            </span>
+            {/* 7. Filtro Jornada / Turno */}
+            <div className="relative filter-dropdown-container shrink-0">
+              <button
+                type="button"
+                onClick={() => setOpenDropdown(openDropdown === "shift" ? null : "shift")}
+                className={`border rounded-full px-4 py-1.5 text-xs sm:text-sm flex items-center gap-1.5 shadow-2xs transition-all whitespace-nowrap cursor-pointer ${
+                  shiftFilter !== "todos"
+                    ? "border-[#005DA4] text-[#005DA4] font-bold bg-[#EAF3FA]"
+                    : "border-slate-200/90 text-slate-700 bg-white hover:border-[#005DA4]"
+                }`}
+              >
+                <span>
+                  {shiftFilter !== "todos" ? `Turno: ${shiftFilter}` : "Jornada / Turno"}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              </button>
+              {openDropdown === "shift" && (
+                <div className="absolute left-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+                  {[
+                    { id: "todos", label: "Todos los turnos" },
+                    { id: "2x2x2", label: "Turno 2x2x2" },
+                    { id: "4x4x2", label: "Turno 4x4x2" },
+                    { id: "diurno", label: "Turno Diurno" },
+                    { id: "nocturno", label: "Turno Nocturno" },
+                  ].map((sh) => (
+                    <button
+                      key={sh.id}
+                      type="button"
+                      onClick={() => {
+                        setShiftFilter(sh.id);
+                        setOpenDropdown(null);
+                      }}
+                      className={`w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                        shiftFilter === sh.id
+                          ? "bg-[#EAF3FA] text-[#0B3B70] font-bold"
+                          : "hover:bg-slate-50 text-slate-700"
+                      }`}
+                    >
+                      {sh.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-            <span className="bg-white border border-slate-200 rounded-full px-4 py-1.5 text-xs sm:text-sm text-slate-700 flex items-center gap-1.5 shadow-2xs hover:border-[#005DA4] cursor-pointer whitespace-nowrap">
-              <span>Contrato</span>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-            </span>
+            {/* 8. Filtro Contrato */}
+            <div className="relative filter-dropdown-container shrink-0">
+              <button
+                type="button"
+                onClick={() => setOpenDropdown(openDropdown === "contract" ? null : "contract")}
+                className={`border rounded-full px-4 py-1.5 text-xs sm:text-sm flex items-center gap-1.5 shadow-2xs transition-all whitespace-nowrap cursor-pointer ${
+                  contractFilter !== "todos"
+                    ? "border-[#005DA4] text-[#005DA4] font-bold bg-[#EAF3FA]"
+                    : "border-slate-200/90 text-slate-700 bg-white hover:border-[#005DA4]"
+                }`}
+              >
+                <span>
+                  {contractFilter !== "todos" ? `Contrato: ${contractFilter}` : "Contrato"}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              </button>
+              {openDropdown === "contract" && (
+                <div className="absolute left-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+                  {[
+                    { id: "todos", label: "Todos los contratos" },
+                    { id: "fijo", label: "Término fijo" },
+                    { id: "indefinido", label: "Término indefinido" },
+                    { id: "obra", label: "Obra o labor" },
+                  ].map((ct) => (
+                    <button
+                      key={ct.id}
+                      type="button"
+                      onClick={() => {
+                        setContractFilter(ct.id);
+                        setOpenDropdown(null);
+                      }}
+                      className={`w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                        contractFilter === ct.id
+                          ? "bg-[#EAF3FA] text-[#0B3B70] font-bold"
+                          : "hover:bg-slate-50 text-slate-700"
+                      }`}
+                    >
+                      {ct.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Botón Limpiar filtros cuando hay alguno activo */}
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={resetAllFilters}
+                className="bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-full px-3.5 py-1.5 text-xs font-semibold flex items-center gap-1 shadow-2xs whitespace-nowrap transition-colors shrink-0"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Limpiar filtros</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -637,14 +940,14 @@ function VacantesContent() {
                     </h3>
 
                     {/* Fila Empresa + Calificación + Check azul de verificación */}
-                    <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium mt-1 flex-wrap">
+                    <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium mt-1.5 flex-wrap">
                       <span className="text-amber-500 font-bold">4,8 ★</span>
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#005DA4] shrink-0" strokeWidth={2.5} />
+                      <BadgeCheck className="w-4 h-4 text-[#005DA4] shrink-0" strokeWidth={2.5} />
                       <span className="text-[#005DA4] font-semibold">{job.company_name}</span>
                     </div>
 
                     {/* Ciudad / Departamento */}
-                    <div className="text-sm text-slate-600 mt-1 flex items-center gap-1">
+                    <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
                       <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                       <span>{job.city} {job.zone_neighborhood ? `• ${job.zone_neighborhood}` : ""}</span>
                     </div>
@@ -652,8 +955,8 @@ function VacantesContent() {
                     {/* Modalidad y Salario */}
                     <div className="mt-2.5 flex flex-wrap items-center gap-2 text-xs">
                       <span className="text-slate-600 font-medium flex items-center gap-1">
-                        <Building className="w-3.5 h-3.5 text-slate-400" />
-                        Presencial - Puesto operativo
+                        <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        Presencial · Turno operativo
                       </span>
                       <span className="text-slate-300">•</span>
                       <span className="text-slate-900 font-bold font-mono tabular-nums">
@@ -714,7 +1017,7 @@ function VacantesContent() {
                     {/* Sello azul de verificación */}
                     <div className="pt-2">
                       <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#005DA4] bg-[#EAF3FA] px-3 py-1 rounded-full border border-[#D5E6F5]">
-                        <Shield className="w-3.5 h-3.5 text-[#005DA4]" strokeWidth={2} />
+                        <BadgeCheck className="w-4 h-4 text-[#005DA4]" strokeWidth={2.5} />
                         <span>Empresa verificada</span>
                       </span>
                     </div>
@@ -755,7 +1058,7 @@ function VacantesContent() {
                       }`}
                       title={isSelectedSaved ? "Quitar de guardados" : "Guardar oferta"}
                     >
-                      <Heart className={`w-4 h-4 ${isSelectedSaved ? "fill-rose-600" : ""}`} strokeWidth={2} />
+                      <Heart className={`w-4 h-4 ${isSelectedSaved ? "fill-rose-600 text-rose-600" : ""}`} strokeWidth={2} />
                     </button>
 
                     {/* Botón 2: Compartir */}
@@ -829,7 +1132,7 @@ function VacantesContent() {
 
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
-                        <DollarSign className="w-4 h-4" />
+                        <Banknote className="w-4 h-4 text-slate-600" />
                       </div>
                       <div>
                         <span className="font-semibold text-slate-900">Salario mensual: </span>

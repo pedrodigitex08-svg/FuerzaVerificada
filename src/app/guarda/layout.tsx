@@ -152,7 +152,7 @@ export default function GuardaLayout({
     return (
       <div className="min-h-screen bg-[#F2F5F8] text-[#1E293B] flex flex-col">
         <Navbar />
-        <main className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 lg:p-8 pb-20 md:pb-8">
+        <main className="flex-1 w-full pb-20 md:pb-8">
           {children}
         </main>
         <BottomNav />
