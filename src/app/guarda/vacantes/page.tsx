@@ -97,10 +97,10 @@ function VacantesContent() {
 
   // Read URL search params on mount
   useEffect(() => {
-    const locParam = searchParams.get("location") || searchParams.get("city");
+    const locParam = searchParams.get("location") || searchParams.get("city") || searchParams.get("ciudad");
     if (locParam) setLocationFilter(locParam);
 
-    const roleParam = searchParams.get("role") || searchParams.get("search");
+    const roleParam = searchParams.get("role") || searchParams.get("search") || searchParams.get("q");
     if (roleParam) setSearchTerm(roleParam);
 
     const applyParam = searchParams.get("apply");

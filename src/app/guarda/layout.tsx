@@ -24,6 +24,7 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { BottomNav } from "@/components/guarda/BottomNav";
+import { Navbar } from "@/components/public/Navbar";
 import { useAuth } from "@/lib/supabase/useAuth";
 
 export default function GuardaLayout({
@@ -144,6 +145,20 @@ export default function GuardaLayout({
       .slice(0, 2)
       .join("")
       .toUpperCase() || (isCompany ? "ES" : "PO");
+
+  const isPublicJobFeed = pathname === "/guarda/vacantes";
+
+  if (isPublicJobFeed) {
+    return (
+      <div className="min-h-screen bg-[#F2F5F8] text-[#1E293B] flex flex-col">
+        <Navbar />
+        <main className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 lg:p-8 pb-20 md:pb-8">
+          {children}
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#1E293B] flex">
