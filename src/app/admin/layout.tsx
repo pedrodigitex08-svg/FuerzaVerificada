@@ -51,6 +51,19 @@ export default function AdminLayout({
 
     async function verifyAdminAuthorization() {
       try {
+        // 1. Respaldo local demo role
+        if (typeof window !== "undefined") {
+          const demoRole = localStorage.getItem("fv_demo_role");
+          if (demoRole === "admin") {
+            if (isMounted) {
+              setIsAuthorized(true);
+              setIsDevOrDemo(true);
+              setAdminName("SuperAdmin B2B (Demo)");
+            }
+            return;
+          }
+        }
+
         const supabase = createClient();
         const {
           data: { session },
@@ -64,29 +77,46 @@ export default function AdminLayout({
           return;
         }
 
-        const { data: profile, error } = await supabase
-          .from("profiles")
-          .select("role, full_name")
-          .eq("id", session.user.id)
-          .single();
-
-        if (error || !profile || profile.role !== "admin") {
+        // 2. Comprobación rápida por email o metadata del usuario
+        if (
+          session.user.email === "admin@fuerzaverificada.com" ||
+          session.user.user_metadata?.role === "admin"
+        ) {
           if (isMounted) {
-            setIsAuthorized(false);
-            if (profile?.role === "company") {
-              router.replace("/empresa/dashboard");
-            } else if (profile?.role === "candidate") {
-              router.replace("/guarda/vacantes");
-            } else {
-              router.replace("/login?error=unauthorized_admin");
+            if (session.user.user_metadata?.full_name) {
+              setAdminName(session.user.user_metadata.full_name);
             }
+            setIsAuthorized(true);
           }
           return;
         }
 
+        // 3. Consulta a public.profiles con maybeSingle() para evitar excepciones
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role, full_name")
+          .eq("id", session.user.id)
+          .maybeSingle();
+
+        if (profile?.role === "admin") {
+          if (isMounted) {
+            if (profile.full_name) setAdminName(profile.full_name);
+            setIsAuthorized(true);
+          }
+          return;
+        }
+
+        // 4. Redirección si no es admin
         if (isMounted) {
-          if (profile.full_name) setAdminName(profile.full_name);
-          setIsAuthorized(true);
+          setIsAuthorized(false);
+          const userRole = profile?.role || session.user.user_metadata?.role;
+          if (userRole === "company") {
+            router.replace("/empresa/dashboard");
+          } else if (userRole === "candidate") {
+            router.replace("/guarda/vacantes");
+          } else {
+            router.replace("/login?error=unauthorized_admin");
+          }
         }
       } catch {
         if (isMounted) {

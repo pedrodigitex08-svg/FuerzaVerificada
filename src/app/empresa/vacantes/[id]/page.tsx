@@ -38,7 +38,7 @@ import {
 } from "lucide-react";
 import { ResumeDrawerModal } from "@/components/empresa/ResumeDrawerModal";
 import { OrderSecurityStudyModal } from "@/components/empresa/OrderSecurityStudyModal";
-import { ApplicationStatus, SecurityRoleType } from "@/types/database";
+import { ApplicationStatus, SecurityRoleType, SecurityStudyStatus } from "@/types/database";
 import { generateInterviewCitationLink } from "@/lib/utils/whatsappTemplates";
 import { createClient } from "@/lib/supabase/client";
 import { formatSecurityRoleLabel } from "@/lib/utils/roleNormalizer";
@@ -163,11 +163,37 @@ export default function ATSVacantePage() {
           data: { user },
         } = await supabase.auth.getUser();
         if (user) {
-          const { data: comp } = await supabase
+          let { data: comp } = await supabase
             .from("companies")
             .select("id, company_name, credits_security_studies")
             .eq("owner_id", user.id)
             .maybeSingle();
+
+          if (!comp) {
+            const compName =
+              user.user_metadata?.company_name ||
+              user.user_metadata?.full_name ||
+              "Empresa de Seguridad";
+
+            const { data: createdComp } = await supabase
+              .from("companies")
+              .insert({
+                owner_id: user.id,
+                company_name: compName,
+                nit: user.user_metadata?.nit || `NIT-${user.id.slice(0, 8)}`,
+                contact_person: user.user_metadata?.full_name || "Contacto Empresa",
+                contact_phone: user.user_metadata?.phone || "3000000000",
+                city: "Bogotá D.C.",
+                is_verified_company: false,
+                plan_name: "basico",
+                credits_security_studies: 10,
+              })
+              .select("id, company_name, credits_security_studies")
+              .maybeSingle();
+
+            if (createdComp) comp = createdComp;
+          }
+
           if (comp) {
             setCompanyId(comp.id);
             if (comp.company_name) setCompanyName(comp.company_name);
@@ -196,14 +222,39 @@ export default function ATSVacantePage() {
 
       // 2. Cargar Candidatos postulados a esta vacante
       try {
+        let rawApps: any[] = [];
         const { data: apps, error: appsErr } = await supabase
           .from("applications")
           .select("*, profiles(*)")
           .eq("job_id", vacancyId)
           .order("created_at", { ascending: false });
 
-        if (!appsErr && apps && apps.length > 0) {
-          const candidateIds = apps.map((a: any) => a.candidate_id).filter(Boolean);
+        if (!appsErr && Array.isArray(apps) && apps.length > 0) {
+          rawApps = apps;
+        } else {
+          // Respaldo anti-join: consulta directa sin JOIN a profiles
+          const { data: directApps } = await supabase
+            .from("applications")
+            .select("*")
+            .eq("job_id", vacancyId)
+            .order("created_at", { ascending: false });
+          if (Array.isArray(directApps)) {
+            rawApps = directApps;
+          }
+        }
+
+        if (rawApps.length > 0) {
+          const candidateIds = rawApps.map((a: any) => a.candidate_id).filter(Boolean);
+
+          // Obtener profiles de los candidatos
+          const { data: userProfiles } =
+            candidateIds.length > 0
+              ? await supabase
+                  .from("profiles")
+                  .select("id, full_name, phone_whatsapp")
+                  .in("id", candidateIds)
+              : { data: [] as any[] };
+          const userProfMap = new Map((userProfiles || []).map((p: any) => [p.id, p]));
 
           // Obtener candidate_profiles
           const { data: candProfiles } = await supabase
@@ -227,11 +278,11 @@ export default function ATSVacantePage() {
             }
           });
 
-          const resolvedCandidates: ATSCandidate[] = apps.map((a: any) => {
+          const resolvedCandidates: ATSCandidate[] = rawApps.map((a: any) => {
             const candId = a.candidate_id;
             const candProf = profileMap.get(candId) || {};
             const candCourse = courseMap.get(candId);
-            const userProf = a.profiles || {};
+            const userProf = a.profiles || userProfMap.get(candId) || {};
 
             let semaphore: "VIGENTE" | "PROXIMO_A_VENCER" | "VENCIDO" = "VIGENTE";
             let daysRem = 180;
@@ -353,15 +404,81 @@ export default function ATSVacantePage() {
   const handleConfirmStudyOrder = async (orderPayload?: any) => {
     const supabase = createClient();
     try {
-      if (companyId && selectedCandidate?.candidate_user_id) {
-        await supabase.from("security_study_orders").insert({
-          company_id: companyId,
+      let activeCompanyId = companyId;
+
+      // Si no tenemos companyId en estado, resolverlo o auto-provisionarlo
+      if (!activeCompanyId) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          let { data: comp } = await supabase
+            .from("companies")
+            .select("id, credits_security_studies")
+            .eq("owner_id", user.id)
+            .maybeSingle();
+
+          if (!comp) {
+            const compName =
+              companyName ||
+              user.user_metadata?.company_name ||
+              user.user_metadata?.full_name ||
+              "Empresa de Seguridad";
+
+            const { data: createdComp } = await supabase
+              .from("companies")
+              .insert({
+                owner_id: user.id,
+                company_name: compName,
+                nit: user.user_metadata?.nit || `NIT-${user.id.slice(0, 8)}`,
+                contact_person: user.user_metadata?.full_name || "Contacto Empresa",
+                contact_phone: user.user_metadata?.phone || "3000000000",
+                city: vacancyCity || "Bogotá D.C.",
+                is_verified_company: false,
+                plan_name: "basico",
+                credits_security_studies: 10,
+              })
+              .select("id, credits_security_studies")
+              .maybeSingle();
+
+            if (createdComp) comp = createdComp;
+          }
+
+          if (comp) {
+            activeCompanyId = comp.id;
+            setCompanyId(comp.id);
+          }
+        }
+      }
+
+      if (activeCompanyId && selectedCandidate?.candidate_user_id) {
+        const studyType = orderPayload?.study_type || "poligrafo_preempleo";
+        const isPolygraph =
+          studyType.includes("poligrafo") || studyType.includes("combo");
+        const isHomeVisit =
+          studyType.includes("visita") || studyType.includes("combo");
+
+        const orderData = {
+          company_id: activeCompanyId,
           candidate_id: selectedCandidate.candidate_user_id,
-          study_type: orderPayload?.study_type || "poligrafo_preempleo",
-          status: "en_estudio",
-          city: selectedCandidate.city,
-          notes: orderPayload?.notes || "",
-        });
+          application_id: selectedCandidate.id,
+          study_type: studyType,
+          include_polygraph: isPolygraph,
+          include_home_visit: isHomeVisit,
+          include_background_study: true,
+          status: "solicitado" as SecurityStudyStatus,
+          scheduled_date: "En programación pericial",
+          final_concept: `Solicitud pericial de ${studyType.replace(/_/g, " ").toUpperCase()} para ${selectedCandidate.full_name} (C.C. ${selectedCandidate.national_id}, Tel: ${selectedCandidate.phone_whatsapp}, Ciudad: ${selectedCandidate.city}). Obs: ${orderPayload?.notes || "Radicado desde ATS de vacante."}`,
+          report_pdf_url: null,
+        };
+
+        const { error: insertOrderErr } = await supabase
+          .from("security_study_orders")
+          .insert(orderData);
+
+        if (insertOrderErr) {
+          console.error("Error inserting security_study_orders:", insertOrderErr);
+        }
 
         // Descontar crédito de la empresa
         const nextCredits = Math.max(credits - 1, 0);
@@ -370,7 +487,7 @@ export default function ATSVacantePage() {
           .update({
             credits_security_studies: nextCredits,
           })
-          .eq("id", companyId);
+          .eq("id", activeCompanyId);
 
         setCredits(nextCredits);
         if (typeof window !== "undefined") {
@@ -378,7 +495,7 @@ export default function ATSVacantePage() {
         }
 
         handleStatusChange(selectedCandidate.id, "en_estudio_seguridad");
-        setNotificationToast("Orden de Poligrafía radicada con éxito. Dictamen disponible en 24h.");
+        setNotificationToast("Orden de Poligrafía radicada con éxito en bandeja Admin. Dictamen disponible en 24h.");
         setTimeout(() => setNotificationToast(null), 4000);
       }
     } catch (err) {

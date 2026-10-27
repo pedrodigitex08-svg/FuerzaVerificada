@@ -65,11 +65,38 @@ export default function EmpresaEstudiosPage() {
         } = await supabase.auth.getUser();
 
         if (user) {
-          const { data: comp } = await supabase
+          let { data: comp } = await supabase
             .from("companies")
             .select("id, credits_security_studies")
             .eq("owner_id", user.id)
             .maybeSingle();
+
+          // Auto-provisionar registro en public.companies si falta
+          if (!comp) {
+            const compName =
+              user.user_metadata?.company_name ||
+              user.user_metadata?.full_name ||
+              "Empresa de Seguridad";
+
+            const { data: createdComp } = await supabase
+              .from("companies")
+              .insert({
+                owner_id: user.id,
+                company_name: compName,
+                nit: user.user_metadata?.nit || `NIT-${user.id.slice(0, 8)}`,
+                contact_person: user.user_metadata?.full_name || "Contacto Empresa",
+                contact_phone: user.user_metadata?.phone || "3000000000",
+                city: "Bogotá D.C.",
+                is_verified_company: false,
+                plan_name: "basico",
+                credits_security_studies: 10,
+              })
+              .select("id, credits_security_studies")
+              .maybeSingle();
+
+            if (createdComp) comp = createdComp;
+          }
+
           if (comp?.id) {
             currentCompanyId = comp.id;
             setCompanyId(comp.id);
@@ -83,14 +110,31 @@ export default function EmpresaEstudiosPage() {
           return;
         }
 
+        // 1. Intentar consulta relacional con profiles
+        let rawOrders: any[] = [];
         const { data, error } = await supabase
           .from("security_study_orders")
           .select("*, profiles(*)")
           .eq("company_id", currentCompanyId)
           .order("created_at", { ascending: false });
 
-        if (!error && data && data.length > 0) {
-          const candIds = data.map((s: any) => s.candidate_id).filter(Boolean);
+        if (!error && Array.isArray(data) && data.length > 0) {
+          rawOrders = data;
+        } else {
+          // 2. Respaldo anti-join resiliente: consulta directa sin JOIN
+          const { data: directOrders } = await supabase
+            .from("security_study_orders")
+            .select("*")
+            .eq("company_id", currentCompanyId)
+            .order("created_at", { ascending: false });
+
+          if (Array.isArray(directOrders)) {
+            rawOrders = directOrders;
+          }
+        }
+
+        if (rawOrders.length > 0) {
+          const candIds = rawOrders.map((s: any) => s.candidate_id).filter(Boolean);
           const { data: candProfs } =
             candIds.length > 0
               ? await supabase
@@ -102,20 +146,46 @@ export default function EmpresaEstudiosPage() {
             (candProfs || []).map((cp: any) => [cp.user_id, cp.national_id])
           );
 
+          const { data: profs } =
+            candIds.length > 0
+              ? await supabase
+                  .from("profiles")
+                  .select("id, full_name, phone_whatsapp")
+                  .in("id", candIds)
+              : { data: [] as any[] };
+          const profMap = new Map((profs || []).map((p: any) => [p.id, p]));
+
           setOrders(
-            data.map((s: any) => ({
-              id: s.id,
-              candidate_name: s.profiles?.full_name || "Aspirante",
-              national_id: natMap.get(s.candidate_id) || "En verificación",
-              job_title: s.study_type
-                ? s.study_type.replace(/_/g, " ").toUpperCase()
-                : "Estudio Solicitado",
-              status: s.status as SecurityStudyStatus,
-              scheduled_date: s.scheduled_date || "En programación",
-              final_concept: s.final_concept || "En proceso de validación",
-              report_pdf_url: s.report_pdf_url,
-              created_at: new Date(s.created_at).toLocaleDateString("es-CO"),
-            }))
+            rawOrders.map((s: any) => {
+              const cpNat = natMap.get(s.candidate_id);
+              const p = profMap.get(s.candidate_id);
+
+              let candName = s.profiles?.full_name || p?.full_name;
+              let candNatId = cpNat;
+
+              if (!candName && typeof s.final_concept === "string") {
+                const nameMatch = s.final_concept.match(/para\s+([^(\n]+?)\s*\(/i);
+                if (nameMatch && nameMatch[1]) candName = nameMatch[1].trim();
+              }
+              if (!candNatId && typeof s.final_concept === "string") {
+                const idMatch = s.final_concept.match(/C\.C\.\s*([^,\n]+)/i);
+                if (idMatch && idMatch[1]) candNatId = idMatch[1].trim();
+              }
+
+              return {
+                id: s.id,
+                candidate_name: candName || "Aspirante en Evaluación",
+                national_id: candNatId || "En verificación",
+                job_title: s.study_type
+                  ? s.study_type.replace(/_/g, " ").toUpperCase()
+                  : "Estudio Solicitado",
+                status: s.status as SecurityStudyStatus,
+                scheduled_date: s.scheduled_date || "En programación",
+                final_concept: s.final_concept || "En proceso de validación",
+                report_pdf_url: s.report_pdf_url,
+                created_at: new Date(s.created_at).toLocaleDateString("es-CO"),
+              };
+            })
           );
         } else {
           setOrders([]);
@@ -139,30 +209,100 @@ export default function EmpresaEstudiosPage() {
     const supabase = createClient();
 
     try {
+      let activeCompanyId = companyId;
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!activeCompanyId && user) {
+        let { data: comp } = await supabase
+          .from("companies")
+          .select("id, credits_security_studies")
+          .eq("owner_id", user.id)
+          .maybeSingle();
+
+        if (!comp) {
+          const compName =
+            user.user_metadata?.company_name ||
+            user.user_metadata?.full_name ||
+            "Empresa de Seguridad";
+
+          const { data: createdComp } = await supabase
+            .from("companies")
+            .insert({
+              owner_id: user.id,
+              company_name: compName,
+              nit: user.user_metadata?.nit || `NIT-${user.id.slice(0, 8)}`,
+              contact_person: user.user_metadata?.full_name || "Contacto Empresa",
+              contact_phone: user.user_metadata?.phone || "3000000000",
+              city: "Bogotá D.C.",
+              is_verified_company: false,
+              plan_name: "basico",
+              credits_security_studies: 10,
+            })
+            .select("id, credits_security_studies")
+            .maybeSingle();
+
+          if (createdComp) comp = createdComp;
+        }
+
+        if (comp?.id) {
+          activeCompanyId = comp.id;
+          setCompanyId(comp.id);
+        }
+      }
+
+      // Resolver candidate_id si existe en candidate_profiles
+      let resolvedCandId: string | null = null;
+      const { data: candMatch } = await supabase
+        .from("candidate_profiles")
+        .select("user_id")
+        .eq("national_id", formNationalId.trim())
+        .maybeSingle();
+
+      if (candMatch?.user_id) {
+        resolvedCandId = candMatch.user_id;
+      } else if (user?.id) {
+        resolvedCandId = user.id;
+      }
+
       let updatedCredits = credits;
-      if (companyId && credits > 0) {
+      if (activeCompanyId && credits > 0) {
         updatedCredits = credits - 1;
         await supabase
           .from("companies")
           .update({ credits_security_studies: updatedCredits })
-          .eq("id", companyId);
+          .eq("id", activeCompanyId);
         setCredits(updatedCredits);
       }
 
+      const isPolygraph =
+        formStudyType.includes("poligrafo") || formStudyType.includes("combo");
+      const isHomeVisit =
+        formStudyType.includes("visita") || formStudyType.includes("combo");
+
       const newPayload = {
-        company_id: companyId,
+        company_id: activeCompanyId,
+        candidate_id: resolvedCandId,
         study_type: formStudyType,
+        include_polygraph: isPolygraph,
+        include_home_visit: isHomeVisit,
+        include_background_study: true,
         status: "solicitado" as SecurityStudyStatus,
         scheduled_date: "En programación pericial",
         final_concept: `Solicitud pericial de ${formStudyType.replace(/_/g, " ").toUpperCase()} para ${formCandName.trim()} (C.C. ${formNationalId.trim()}, Tel: ${formPhone.trim() || "N/A"}, Ciudad: ${formCity}). Obs: ${formNotes.trim() || "Sin observaciones adicionales."}`,
         report_pdf_url: null,
       };
 
-      const { data: insertedOrder } = await supabase
+      const { data: insertedOrder, error: insertErr } = await supabase
         .from("security_study_orders")
         .insert(newPayload)
         .select("*")
         .maybeSingle();
+
+      if (insertErr) {
+        console.error("Error creating security order:", insertErr);
+      }
 
       const newOrderItem: SecurityOrder = {
         id: insertedOrder?.id || `order-${Date.now()}`,

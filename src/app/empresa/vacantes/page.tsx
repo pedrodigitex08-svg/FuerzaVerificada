@@ -53,11 +53,37 @@ export default function EmpresaVacantesListPage() {
         } = await supabase.auth.getUser();
 
         if (user) {
-          const { data: comp } = await supabase
+          let { data: comp } = await supabase
             .from("companies")
             .select("id")
             .eq("owner_id", user.id)
             .maybeSingle();
+
+          if (!comp) {
+            const compName =
+              user.user_metadata?.company_name ||
+              user.user_metadata?.full_name ||
+              "Empresa de Seguridad";
+
+            const { data: createdComp } = await supabase
+              .from("companies")
+              .insert({
+                owner_id: user.id,
+                company_name: compName,
+                nit: user.user_metadata?.nit || `NIT-${user.id.slice(0, 8)}`,
+                contact_person: user.user_metadata?.full_name || "Contacto Empresa",
+                contact_phone: user.user_metadata?.phone || "3000000000",
+                city: "Bogotá D.C.",
+                is_verified_company: false,
+                plan_name: "basico",
+                credits_security_studies: 10,
+              })
+              .select("id")
+              .maybeSingle();
+
+            if (createdComp) comp = createdComp;
+          }
+
           if (comp?.id) currentCompanyId = comp.id;
         }
 
@@ -67,15 +93,40 @@ export default function EmpresaVacantesListPage() {
           return;
         }
 
+        let rawJobs: any[] = [];
         const { data, error } = await supabase
           .from("job_posts")
           .select("*, applications(count)")
           .eq("company_id", currentCompanyId)
           .order("created_at", { ascending: false });
 
-        if (!error && data && data.length > 0) {
+        if (!error && Array.isArray(data) && data.length > 0) {
+          rawJobs = data;
+        } else {
+          // Respaldo anti-join: consulta directa sin JOIN
+          const { data: directJobs } = await supabase
+            .from("job_posts")
+            .select("*")
+            .eq("company_id", currentCompanyId)
+            .order("created_at", { ascending: false });
+
+          if (Array.isArray(directJobs) && directJobs.length > 0) {
+            rawJobs = directJobs;
+          } else {
+            const { data: fallbackJobs } = await supabase
+              .from("jobs")
+              .select("*")
+              .eq("company_id", currentCompanyId)
+              .order("created_at", { ascending: false });
+            if (Array.isArray(fallbackJobs)) {
+              rawJobs = fallbackJobs;
+            }
+          }
+        }
+
+        if (rawJobs.length > 0) {
           setVacancies(
-            data.map((j: any) => {
+            rawJobs.map((j: any) => {
               const isActive = j.is_active !== false;
               return {
                 id: j.id,

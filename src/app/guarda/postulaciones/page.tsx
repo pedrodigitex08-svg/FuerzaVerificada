@@ -168,6 +168,64 @@ export default function PostulacionesPage() {
             setIsLoading(false);
             return;
           }
+
+          // Respaldo anti-join: consulta directa a applications sin anidar tablas
+          const { data: directApps } = await supabase
+            .from("applications")
+            .select("*")
+            .eq("candidate_id", user.id)
+            .order("created_at", { ascending: false });
+
+          if (directApps && directApps.length > 0) {
+            const jobIds = directApps.map((d: any) => d.job_id).filter(Boolean);
+
+            let { data: rawJobs } = await supabase
+              .from("job_posts")
+              .select("id, company_id, title, shift, salary_monthly, zone_neighborhood, city")
+              .in("id", jobIds);
+
+            if (!rawJobs || rawJobs.length === 0) {
+              const { data: rawJobs2 } = await supabase
+                .from("jobs")
+                .select("id, company_id, title, shift, salary_monthly, zone_neighborhood, city")
+                .in("id", jobIds);
+              rawJobs = rawJobs2;
+            }
+
+            const jobMap = new Map((rawJobs || []).map((j: any) => [j.id, j]));
+            const compIds = (rawJobs || []).map((j: any) => j.company_id).filter(Boolean);
+
+            const { data: rawComps } =
+              compIds.length > 0
+                ? await supabase
+                    .from("companies")
+                    .select("id, company_name")
+                    .in("id", compIds)
+                : { data: [] as any[] };
+            const compMap = new Map((rawComps || []).map((c: any) => [c.id, c.company_name]));
+
+            setApplications(
+              directApps.map((app: any) => {
+                const job = jobMap.get(app.job_id);
+                const compName = job?.company_id ? compMap.get(job.company_id) : "Empresa de Seguridad";
+                return {
+                  id: app.id,
+                  job_id: app.job_id,
+                  job_title: job?.title || "Vacante de Seguridad",
+                  company_name: compName || "Empresa de Seguridad",
+                  shift: job?.shift || "Turno rotativo",
+                  salary_monthly: Number(job?.salary_monthly) || 0,
+                  interview_address:
+                    job?.zone_neighborhood || job?.city || "Oficina principal",
+                  match_score: app.match_score ?? 90,
+                  status: app.status as ApplicationStatus,
+                  created_at: app.created_at,
+                };
+              })
+            );
+            setIsLoading(false);
+            return;
+          }
         }
 
         setApplications([]);

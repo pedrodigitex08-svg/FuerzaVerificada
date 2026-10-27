@@ -52,11 +52,36 @@ export default function EmpresaDashboardPage() {
         } = await supabase.auth.getUser();
 
         if (user) {
-          const { data: comp } = await supabase
+          let { data: comp } = await supabase
             .from("companies")
             .select("*")
             .eq("owner_id", user.id)
             .maybeSingle();
+
+          if (!comp) {
+            const compName =
+              user.user_metadata?.company_name ||
+              user.user_metadata?.full_name ||
+              "Empresa de Seguridad";
+
+            const { data: createdComp } = await supabase
+              .from("companies")
+              .insert({
+                owner_id: user.id,
+                company_name: compName,
+                nit: user.user_metadata?.nit || `NIT-${user.id.slice(0, 8)}`,
+                contact_person: user.user_metadata?.full_name || "Contacto Empresa",
+                contact_phone: user.user_metadata?.phone || "3000000000",
+                city: "Bogotá D.C.",
+                is_verified_company: false,
+                plan_name: "basico",
+                credits_security_studies: 10,
+              })
+              .select("*")
+              .maybeSingle();
+
+            if (createdComp) comp = createdComp;
+          }
 
           if (comp) {
             currentCompanyId = comp.id;
@@ -157,6 +182,7 @@ export default function EmpresaDashboardPage() {
 
       // 3. Cargar las 5 órdenes más recientes de la empresa
       try {
+        let rawStudies: any[] = [];
         const { data: studiesData, error: studiesError } = await supabase
           .from("security_study_orders")
           .select("*, profiles(*)")
@@ -165,7 +191,22 @@ export default function EmpresaDashboardPage() {
           .limit(5);
 
         if (!studiesError && studiesData && studiesData.length > 0) {
-          const candIds = studiesData.map((s: any) => s.candidate_id).filter(Boolean);
+          rawStudies = studiesData;
+        } else {
+          const { data: directStudies } = await supabase
+            .from("security_study_orders")
+            .select("*")
+            .eq("company_id", currentCompanyId)
+            .order("created_at", { ascending: false })
+            .limit(5);
+
+          if (Array.isArray(directStudies)) {
+            rawStudies = directStudies;
+          }
+        }
+
+        if (rawStudies.length > 0) {
+          const candIds = rawStudies.map((s: any) => s.candidate_id).filter(Boolean);
           const { data: candProfs } =
             candIds.length > 0
               ? await supabase
@@ -177,19 +218,42 @@ export default function EmpresaDashboardPage() {
             (candProfs || []).map((cp: any) => [cp.user_id, cp.national_id])
           );
 
+          const { data: profs } =
+            candIds.length > 0
+              ? await supabase
+                  .from("profiles")
+                  .select("id, full_name")
+                  .in("id", candIds)
+              : { data: [] as any[] };
+          const profMap = new Map((profs || []).map((p: any) => [p.id, p.full_name]));
+
           setRecentStudies(
-            studiesData.map((s: any) => ({
-              id: s.id,
-              candidate_name: s.profiles?.full_name || "Aspirante",
-              national_id: natMap.get(s.candidate_id) || "En verificación",
-              job_title: s.study_type
-                ? s.study_type.replace(/_/g, " ").toUpperCase()
-                : "Estudio Solicitado",
-              status: s.status,
-              concept: s.final_concept || "En proceso de validación",
-              report_url: s.report_pdf_url,
-              date: new Date(s.created_at).toLocaleDateString("es-CO"),
-            }))
+            rawStudies.map((s: any) => {
+              let candName = s.profiles?.full_name || profMap.get(s.candidate_id);
+              let candNatId = natMap.get(s.candidate_id);
+
+              if (!candName && typeof s.final_concept === "string") {
+                const nameMatch = s.final_concept.match(/para\s+([^(\n]+?)\s*\(/i);
+                if (nameMatch && nameMatch[1]) candName = nameMatch[1].trim();
+              }
+              if (!candNatId && typeof s.final_concept === "string") {
+                const idMatch = s.final_concept.match(/C\.C\.\s*([^,\n]+)/i);
+                if (idMatch && idMatch[1]) candNatId = idMatch[1].trim();
+              }
+
+              return {
+                id: s.id,
+                candidate_name: candName || "Aspirante",
+                national_id: candNatId || "En verificación",
+                job_title: s.study_type
+                  ? s.study_type.replace(/_/g, " ").toUpperCase()
+                  : "Estudio Solicitado",
+                status: s.status,
+                concept: s.final_concept || "En proceso de validación",
+                report_url: s.report_pdf_url,
+                date: new Date(s.created_at).toLocaleDateString("es-CO"),
+              };
+            })
           );
         } else {
           setRecentStudies([]);

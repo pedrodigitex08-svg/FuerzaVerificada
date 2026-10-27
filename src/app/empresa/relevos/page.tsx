@@ -86,12 +86,35 @@ export default function RadarRelevosPage() {
         }
 
         // 2. Fallback to candidate_profiles joined with profiles
+        let rawCandidates: any[] = [];
         const { data, error } = await supabase
           .from("candidate_profiles")
           .select("*, profiles(*)");
 
-        if (!error && data && data.length > 0) {
-          const userIds = data.map((c: any) => c.user_id || c.id).filter(Boolean);
+        if (!error && Array.isArray(data) && data.length > 0) {
+          rawCandidates = data;
+        } else {
+          // Respaldo anti-join resiliente: consulta directa sin JOIN a profiles
+          const { data: directCandidates } = await supabase
+            .from("candidate_profiles")
+            .select("*");
+          if (Array.isArray(directCandidates)) {
+            rawCandidates = directCandidates;
+          }
+        }
+
+        if (rawCandidates.length > 0) {
+          const userIds = rawCandidates.map((c: any) => c.user_id || c.id).filter(Boolean);
+
+          const { data: rawProfiles } =
+            userIds.length > 0
+              ? await supabase
+                  .from("profiles")
+                  .select("id, full_name, phone_whatsapp, role")
+                  .in("id", userIds)
+              : { data: [] as any[] };
+          const profMap = new Map((rawProfiles || []).map((p: any) => [p.id, p]));
+
           const { data: coursesData } =
             userIds.length > 0
               ? await supabase
@@ -110,16 +133,20 @@ export default function RadarRelevosPage() {
           });
 
           setGuards(
-            data
-              .filter((c: any) => c.profiles?.role === "candidate" || !c.profiles?.role)
+            rawCandidates
+              .filter((c: any) => {
+                const p = profMap.get(c.user_id || c.id) || c.profiles;
+                return p?.role === "candidate" || !p?.role;
+              })
               .map((c: any) => {
                 const uid = c.user_id || c.id;
+                const p = profMap.get(uid) || c.profiles;
                 const days = courseMap.has(uid) ? courseMap.get(uid) : 0;
                 return {
                   id: uid,
-                  full_name: c.profiles?.full_name || "Aspirante Operativo",
+                  full_name: p?.full_name || c.full_name || "Aspirante Operativo",
                   national_id: c.national_id || "En verificación",
-                  phone_whatsapp: c.profiles?.phone_whatsapp || "",
+                  phone_whatsapp: p?.phone_whatsapp || "",
                   city: c.city || "Bogotá D.C.",
                   locality: c.locality_neighborhood || c.locality || c.city || "Bogotá",
                   primary_role: c.primary_role || "Vigilante Fijo",

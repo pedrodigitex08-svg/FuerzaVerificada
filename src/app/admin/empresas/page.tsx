@@ -76,10 +76,10 @@ export default function AdminEmpresasPage() {
                   nit: `NIT-${prof.id.slice(0, 8)}`,
                   city: "Bogotá D.C.",
                   contact_person: prof.full_name || "Contacto Principal",
-                  contact_phone: prof.phone_whatsapp || "",
+                  contact_phone: prof.phone_whatsapp || "3000000000",
                   is_verified_company: false,
                   plan_name: "basico",
-                  credits_security_studies: 0,
+                  credits_security_studies: 10,
                 })
                 .select("*")
                 .maybeSingle();

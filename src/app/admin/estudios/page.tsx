@@ -68,13 +68,35 @@ export default function AdminEstudiosPage() {
     setIsLoadingCandidates(true);
     const supabase = createClient();
     try {
+      let rawCandData: any[] = [];
       const { data: candData, error: candError } = await supabase
         .from("candidate_profiles")
         .select("*, profiles(*)")
         .order("updated_at", { ascending: false });
 
       if (!candError && candData && candData.length > 0) {
-        const userIds = candData.map((c: any) => c.user_id).filter(Boolean);
+        rawCandData = candData;
+      } else {
+        const { data: directCandData } = await supabase
+          .from("candidate_profiles")
+          .select("*")
+          .order("updated_at", { ascending: false });
+        if (Array.isArray(directCandData)) {
+          rawCandData = directCandData;
+        }
+      }
+
+      if (rawCandData.length > 0) {
+        const userIds = rawCandData.map((c: any) => c.user_id).filter(Boolean);
+
+        const { data: rawProfiles } =
+          userIds.length > 0
+            ? await supabase
+                .from("profiles")
+                .select("id, full_name, phone_whatsapp")
+                .in("id", userIds)
+            : { data: [] as any[] };
+        const profileMap = new Map((rawProfiles || []).map((p: any) => [p.id, p]));
 
         const { data: docData } =
           userIds.length > 0
@@ -92,7 +114,8 @@ export default function AdminEstudiosPage() {
                 .in("candidate_id", userIds)
             : { data: [] as any[] };
 
-        const mapped: CandidateVerificationItem[] = candData.map((c: any) => {
+        const mapped: CandidateVerificationItem[] = rawCandData.map((c: any) => {
+          const userProf = profileMap.get(c.user_id) || c.profiles;
           const uDocs = (docData || []).filter((d: any) => d.candidate_id === c.user_id);
           const uCourses = (courseData || []).filter((cs: any) => cs.candidate_id === c.user_id);
           const latestCourse = uCourses[0] || null;
@@ -119,9 +142,9 @@ export default function AdminEstudiosPage() {
 
           return {
             user_id: c.user_id,
-            full_name: c.profiles?.full_name || "Aspirante Operativo",
+            full_name: userProf?.full_name || c.full_name || "Aspirante Operativo",
             national_id: c.national_id || "En validación",
-            phone_whatsapp: c.profiles?.phone_whatsapp || "Sin registrar",
+            phone_whatsapp: userProf?.phone_whatsapp || "Sin registrar",
             city: c.city || "Bogotá D.C.",
             locality: c.locality_neighborhood || undefined,
             primary_role: c.primary_role || "Vigilante Fijo",
@@ -192,13 +215,41 @@ export default function AdminEstudiosPage() {
   const loadOrdersFromSupabase = async () => {
     const supabase = createClient();
     try {
+      // 1. Intentar consulta relacional JOIN
+      let rawOrders: any[] = [];
       const { data, error } = await supabase
         .from("security_study_orders")
         .select("*, companies(*), profiles(*)")
         .order("created_at", { ascending: false });
 
-      if (!error && data && data.length > 0) {
-        const candIds = data.map((s: any) => s.candidate_id).filter(Boolean);
+      if (!error && Array.isArray(data) && data.length > 0) {
+        rawOrders = data;
+      } else {
+        // 2. Respaldo anti-join resiliente: consulta directa sin JOIN
+        const { data: directOrders, error: directErr } = await supabase
+          .from("security_study_orders")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (!directErr && Array.isArray(directOrders)) {
+          rawOrders = directOrders;
+        }
+      }
+
+      if (rawOrders.length > 0) {
+        // Resolver nombres de empresas por ID
+        const compIds = rawOrders.map((s: any) => s.company_id).filter(Boolean);
+        const { data: rawComps } =
+          compIds.length > 0
+            ? await supabase
+                .from("companies")
+                .select("id, company_name, contact_phone")
+                .in("id", compIds)
+            : { data: [] as any[] };
+        const compMap = new Map((rawComps || []).map((c: any) => [c.id, c]));
+
+        // Resolver perfiles de candidatos
+        const candIds = rawOrders.map((s: any) => s.candidate_id).filter(Boolean);
         const { data: candProfs } =
           candIds.length > 0
             ? await supabase
@@ -206,25 +257,53 @@ export default function AdminEstudiosPage() {
                 .select("user_id, national_id, city, locality_neighborhood, resume_pdf_url")
                 .in("user_id", candIds)
             : { data: [] as any[] };
-        const candMap = new Map(
-          (candProfs || []).map((cp: any) => [cp.user_id, cp])
-        );
+        const candMap = new Map((candProfs || []).map((cp: any) => [cp.user_id, cp]));
 
-        const mapped: DemoSecurityOrder[] = data.map((s: any) => {
+        const { data: rawProfiles } =
+          candIds.length > 0
+            ? await supabase
+                .from("profiles")
+                .select("id, full_name, phone_whatsapp")
+                .in("id", candIds)
+            : { data: [] as any[] };
+        const profMap = new Map((rawProfiles || []).map((p: any) => [p.id, p]));
+
+        const mapped: DemoSecurityOrder[] = rawOrders.map((s: any) => {
+          const comp = compMap.get(s.company_id) || s.companies;
           const cp = candMap.get(s.candidate_id);
+          const p = profMap.get(s.candidate_id) || s.profiles;
+
+          // Extraer nombre y cédula si no están en profiles
+          let candName = p?.full_name;
+          let candNatId = cp?.national_id;
+          let candPhone = p?.phone_whatsapp;
+
+          if (!candName && typeof s.final_concept === "string") {
+            const nameMatch = s.final_concept.match(/para\s+([^(\n]+?)\s*\(/i);
+            if (nameMatch && nameMatch[1]) candName = nameMatch[1].trim();
+          }
+          if (!candNatId && typeof s.final_concept === "string") {
+            const idMatch = s.final_concept.match(/C\.C\.\s*([^,\n]+)/i);
+            if (idMatch && idMatch[1]) candNatId = idMatch[1].trim();
+          }
+          if (!candPhone && typeof s.final_concept === "string") {
+            const phoneMatch = s.final_concept.match(/Tel:\s*([^,\n]+)/i);
+            if (phoneMatch && phoneMatch[1]) candPhone = phoneMatch[1].trim();
+          }
+
           return {
             id: s.id,
             company_id: s.company_id,
-            company_name: s.companies?.company_name || "Empresa Solicitante",
-            company_phone: s.companies?.contact_phone || "3150000000",
+            company_name: comp?.company_name || "Empresa Solicitante",
+            company_phone: comp?.contact_phone || "3150000000",
             candidate_id: s.candidate_id,
-            candidate_name: s.profiles?.full_name || "Aspirante",
-            candidate_phone: s.profiles?.phone_whatsapp || "3000000000",
+            candidate_name: candName || "Aspirante Registrado",
+            candidate_phone: candPhone || "3000000000",
             candidate_address:
               cp?.locality_neighborhood && cp?.city
                 ? `${cp.locality_neighborhood}, ${cp.city}`
                 : cp?.city || "Por confirmar",
-            national_id: cp?.national_id || "En verificación",
+            national_id: candNatId || "En verificación",
             job_title: s.study_type
               ? s.study_type.replace(/_/g, " ").toUpperCase()
               : "Estudio Integral",
@@ -235,16 +314,18 @@ export default function AdminEstudiosPage() {
             report_pdf_url: s.report_pdf_url || null,
             resume_pdf_url: cp?.resume_pdf_url || null,
             course_diploma_url: null,
-            include_polygraph: true,
-            include_home_visit: true,
-            include_background_study: true,
+            include_polygraph: s.include_polygraph ?? true,
+            include_home_visit: s.include_home_visit ?? true,
+            include_background_study: s.include_background_study ?? true,
             created_at: s.created_at,
           };
         });
         setOrders(mapped);
         return;
       }
-    } catch {}
+    } catch (err) {
+      console.error("Error loading orders from Supabase:", err);
+    }
 
     setOrders([]);
   };
