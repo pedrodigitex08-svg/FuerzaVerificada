@@ -120,13 +120,19 @@ function VacantesContent() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Read URL search params on mount
+  // Read URL search params on mount & on searchParams change
   useEffect(() => {
-    const locParam = searchParams.get("location") || searchParams.get("city") || searchParams.get("ciudad");
-    if (locParam) setLocationFilter(locParam);
+    const locParam =
+      searchParams.get("ciudad") ||
+      searchParams.get("location") ||
+      searchParams.get("city");
+    if (locParam !== null) setLocationFilter(locParam);
 
-    const roleParam = searchParams.get("role") || searchParams.get("search") || searchParams.get("q");
-    if (roleParam) setSearchTerm(roleParam);
+    const roleParam =
+      searchParams.get("q") ||
+      searchParams.get("search") ||
+      searchParams.get("role");
+    if (roleParam !== null) setSearchTerm(roleParam);
 
     const applyParam = searchParams.get("apply");
     if (applyParam) setSelectedJobId(applyParam);
@@ -401,6 +407,7 @@ function VacantesContent() {
         !q ||
         normalizeFilterStr(j.title).includes(q) ||
         normalizeFilterStr(j.company_name).includes(q) ||
+        normalizeFilterStr(j.role_required).includes(q) ||
         normalizeFilterStr(j.zone_neighborhood).includes(q) ||
         normalizeFilterStr(j.description).includes(q);
 

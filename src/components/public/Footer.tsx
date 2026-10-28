@@ -266,8 +266,6 @@ export function Footer() {
             <Link href="/terminos" className="hover:text-slate-700">Términos</Link>
             <span>•</span>
             <Link href="/privacidad" className="hover:text-slate-700">Privacidad</Link>
-            <span>•</span>
-            <Link href="/sitemap.xml" className="hover:text-slate-700">Mapa del Sitio</Link>
           </div>
         </div>
       </div>

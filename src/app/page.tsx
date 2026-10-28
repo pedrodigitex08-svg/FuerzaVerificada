@@ -199,20 +199,22 @@ export default function HomePage() {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const query = new URLSearchParams();
-    if (roleSearch.trim()) {
-      query.set("search", roleSearch.trim());
-      query.set("q", roleSearch.trim());
-    }
-    if (locationSearch.trim()) {
-      query.set("location", locationSearch.trim());
-      query.set("city", locationSearch.trim());
-      query.set("ciudad", locationSearch.trim());
-    }
-    router.push(`/vacantes?${query.toString()}`);
-  };
+    const params = new URLSearchParams();
+    const cargo = roleSearch.trim();
+    const lugar = locationSearch.trim();
 
-  const formattedOfferCount = totalActiveJobs > 0 ? totalActiveJobs.toLocaleString("es-CO") : "1.250";
+    if (cargo) {
+      params.set("q", cargo);
+      params.set("search", cargo);
+    }
+    if (lugar) {
+      params.set("ciudad", lugar);
+      params.set("location", lugar);
+      params.set("city", lugar);
+    }
+    const qs = params.toString();
+    router.push(qs ? `/vacantes?${qs}` : "/vacantes");
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F2F5F8] text-[#313944] font-sans antialiased">
@@ -281,15 +283,14 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Gran Título Hero Estilo Computrabajo */}
+          {/* Gran Título Hero Institucional de Autoridad */}
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white max-w-4xl mx-auto leading-tight drop-shadow-md">
-            ¡Ahora es el momento de cambiar!
+            El Portal de Empleo y Confiabilidad para la Seguridad Privada en Colombia
           </h1>
 
-          {/* Subtítulo con Conteo Activo de Ofertas */}
-          <p className="text-sm sm:text-base md:text-lg text-slate-100 max-w-2xl mx-auto font-normal leading-relaxed drop-shadow-xs">
-            Encuentra el empleo en seguridad privada que encaja contigo.{" "}
-            <span className="font-semibold text-[#FFE066]">Más de {formattedOfferCount} ofertas activas</span> esperándote en todo el país.
+          {/* Subtítulo 100% Real (Cero cifras infladas) */}
+          <p className="text-sm sm:text-base md:text-lg text-slate-100 max-w-3xl mx-auto font-normal leading-relaxed drop-shadow-xs">
+            Conecta directamente con empresas de vigilancia autorizadas para cargos de Guarda, Escolta, Supervisor y Operador CCTV.
           </p>
 
           {/* BUSCADOR EN PÍLDORA BLANCA GIGANTE (ROUNDED-FULL) */}
@@ -320,9 +321,8 @@ export default function HomePage() {
 
               {/* Campo 2: Lugar o Ciudad */}
               <div className="flex-1 w-full px-4 py-2 flex items-center gap-3 text-left relative">
-                <MapPin className="w-5 h-5 text-slate-400 shrink-0" strokeWidth={2} />
                 <div className="w-full">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block leading-tight">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block leading-tight mb-0.5">
                     Lugar o Ciudad
                   </label>
                   <CityAutocompleteInput
@@ -336,7 +336,7 @@ export default function HomePage() {
               {/* Botón Píldora Azul Marino (#0B3B70) */}
               <button
                 type="submit"
-                className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white font-semibold px-8 py-3.5 text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shrink-0 w-full md:w-auto active:scale-[0.98] transition-all"
+                className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white font-semibold px-8 py-3.5 text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shrink-0 w-full md:w-auto active:scale-[0.98] transition-all cursor-pointer"
               >
                 <Search className="w-4 h-4" strokeWidth={2.5} />
                 <span>Buscar empleos</span>
@@ -356,7 +356,7 @@ export default function HomePage() {
               ].map((term) => (
                 <Link
                   key={term}
-                  href={`/vacantes?search=${encodeURIComponent(term)}`}
+                  href={`/vacantes?q=${encodeURIComponent(term)}&search=${encodeURIComponent(term)}`}
                   className="rounded-full bg-white/10 backdrop-blur-xs border border-white/20 px-3 py-1 text-[11px] font-medium text-white shadow-2xs hover:bg-white/20 transition-colors"
                 >
                   {term}
@@ -382,7 +382,7 @@ export default function HomePage() {
       {/* TEXTO INFORMATIVO JUSTO DEBAJO DE LA CURVA EN ARCO */}
       <div className="py-4 px-4 text-center">
         <p className="text-xs sm:text-sm font-medium text-[#627384]">
-          Hoy hay empresas de seguridad contratando con las mejores vacantes verificadas para ti
+          Convocatorias verificadas con respaldo normativo y validación SuperVigilancia
         </p>
       </div>
 

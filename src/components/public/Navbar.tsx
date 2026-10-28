@@ -107,7 +107,7 @@ function NavbarSearchPill() {
         <input
           type="text"
           value={locationQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => setLocationQuery(e.target.value)}
           placeholder="Lugar (ej. Bogotá, Barranquilla)"
           className="w-full bg-transparent border-none text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none px-2"
         />
@@ -155,6 +155,9 @@ export function Navbar() {
 
   // Función para determinar si una ruta está activa
   const isActiveRoute = (href: string) => {
+    if (href === "/") {
+      return pathname === "/";
+    }
     if (href === "/vacantes") {
       return isVacantesPage;
     }
@@ -458,9 +461,9 @@ export function Navbar() {
               {!isAuthenticated && (
                 <>
                   <Link
-                    href="/vacantes"
+                    href="/"
                     className={`py-5 border-b-[3px] transition-all ${
-                      isActiveRoute("/vacantes")
+                      isActiveRoute("/")
                         ? "text-[#0B3B70] font-semibold border-[#0B3B70]"
                         : "text-slate-700 hover:text-[#0B3B70] border-transparent hover:border-[#0B3B70]"
                     }`}
@@ -722,12 +725,12 @@ export function Navbar() {
           ) : (
             /* VISITANTE SIN SESIÓN: BOTONES PÍLDORA ROUNDED-FULL ESTILO COMPUTRABAJO */
             <div className="flex items-center gap-2.5">
-              {/* Botón secundario píldora "Publicar ofertas" */}
+              {/* Botón secundario píldora "Publicar ofertas / Empresas" */}
               <Link
-                href="/login?role=company"
+                href="/precios-empresas"
                 className="rounded-full border border-slate-300 hover:border-[#0B3B70] text-slate-700 hover:text-[#0B3B70] px-4 py-2 text-xs font-semibold transition-all bg-white shadow-2xs hover:bg-[#EAF3FA]/40"
               >
-                Publicar ofertas
+                Publicar ofertas / Empresas
               </Link>
 
               {/* Botón primario píldora "Ingresar" */}
@@ -1023,7 +1026,7 @@ export function Navbar() {
               {!isAuthenticated && (
                 <>
                   <Link
-                    href="/vacantes"
+                    href="/"
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center justify-between p-3 rounded-xl border border-slate-200/90 hover:border-[#0B3B70] hover:bg-[#EAF3FA] transition-all"
                   >
@@ -1076,11 +1079,11 @@ export function Navbar() {
               ) : (
                 <div className="grid grid-cols-2 gap-2">
                   <Link
-                    href="/login?role=company"
+                    href="/precios-empresas"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="h-10 rounded-full border border-slate-300 text-slate-700 text-xs font-semibold flex items-center justify-center bg-white"
+                    className="h-10 rounded-full border border-slate-300 text-slate-700 text-[11px] font-semibold flex items-center justify-center bg-white text-center px-1"
                   >
-                    Publicar ofertas
+                    Publicar ofertas / Empresas
                   </Link>
                   <Link
                     href="/login"
