@@ -106,6 +106,7 @@ export default function NuevaVacantePage() {
 
   const [loading, setLoading] = useState(false);
   const [successToast, setSuccessToast] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [companyName, setCompanyName] = useState("Empresa de Seguridad");
   const [honeypot, setHoneypot] = useState("");
   const [activeTemplateName, setActiveTemplateName] = useState<string | null>(null);
@@ -186,6 +187,7 @@ export default function NuevaVacantePage() {
     e.preventDefault();
     if (honeypot) return;
     setLoading(true);
+    setErrorMessage(null);
 
     try {
       let resolvedCompanyId: string | null = null;
@@ -201,9 +203,16 @@ export default function NuevaVacantePage() {
           .maybeSingle();
 
         if (!comp) {
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("full_name, phone_whatsapp")
+            .eq("id", user.id)
+            .maybeSingle();
+
           const compName =
             companyName.trim() ||
             user.user_metadata?.company_name ||
+            prof?.full_name ||
             user.user_metadata?.full_name ||
             "Empresa de Seguridad";
 
@@ -213,12 +222,12 @@ export default function NuevaVacantePage() {
               owner_id: user.id,
               company_name: compName,
               nit: user.user_metadata?.nit || `NIT-${user.id.slice(0, 8)}`,
-              contact_person: user.user_metadata?.full_name || "Contacto Empresa",
-              contact_phone: user.user_metadata?.phone || "3000000000",
+              contact_person: prof?.full_name || user.user_metadata?.full_name || "Contacto Empresa",
+              contact_phone: prof?.phone_whatsapp || user.user_metadata?.phone || "3000000000",
               city: city || "Bogotá D.C.",
               is_verified_company: false,
               plan_name: "basico",
-              credits_security_studies: 10,
+              credits_security_studies: 0,
             })
             .select("id")
             .maybeSingle();
@@ -262,15 +271,23 @@ export default function NuevaVacantePage() {
         .maybeSingle();
 
       if (jobPostErr) {
-        await supabase.from("jobs").insert(payload);
+        console.error("Error creating job_posts:", jobPostErr);
+        const { error: fallbackErr } = await supabase.from("jobs").insert(payload);
+        if (fallbackErr) {
+          setErrorMessage(
+            `Error de base de datos al publicar la vacante: ${jobPostErr.message || fallbackErr.message}`
+          );
+          return;
+        }
       }
 
       setSuccessToast(true);
       setTimeout(() => {
         router.push("/empresa/vacantes");
       }, 1200);
-    } catch {
-      router.push("/empresa/vacantes");
+    } catch (err: any) {
+      console.error("Error submitting vacancy:", err);
+      setErrorMessage(err?.message || "Ocurrió un error inesperado al procesar la vacante.");
     } finally {
       setLoading(false);
     }
@@ -305,6 +322,22 @@ export default function NuevaVacantePage() {
         <div className="p-4 rounded-2xl bg-emerald-600 text-white text-xs font-semibold flex items-center gap-2.5 shadow-md">
           <CheckCircle2 className="w-4 h-4 text-white" strokeWidth={2.5} />
           <span>¡Vacante publicada con éxito! Redirigiendo a tu bandeja ATS...</span>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span className="font-medium">{errorMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setErrorMessage(null)}
+            className="text-rose-600 hover:text-rose-800 text-xs font-bold px-2 py-1 rounded-md hover:bg-rose-100 transition-colors"
+          >
+            Cerrar
+          </button>
         </div>
       )}
 

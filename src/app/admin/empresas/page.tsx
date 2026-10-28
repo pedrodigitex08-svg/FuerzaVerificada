@@ -79,7 +79,7 @@ export default function AdminEmpresasPage() {
                   contact_phone: prof.phone_whatsapp || "3000000000",
                   is_verified_company: false,
                   plan_name: "basico",
-                  credits_security_studies: 10,
+                  credits_security_studies: 0,
                 })
                 .select("*")
                 .maybeSingle();

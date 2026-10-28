@@ -62,6 +62,7 @@ export function AdminStudyDrawerModal({
 
   // Status visual mapping
   const statusOptions: { value: SecurityStudyStatus; label: string; dotColor: string }[] = [
+    { value: "pendiente", label: "Pendiente (Recién Solicitado)", dotColor: "bg-blue-400" },
     { value: "solicitado", label: "Solicitado (Pendiente Agendamiento)", dotColor: "bg-blue-500" },
     { value: "agendado", label: "Agendado (Cita Asignada)", dotColor: "bg-amber-500" },
     { value: "en_proceso", label: "En Proceso (En Campo / Poligrafía)", dotColor: "bg-indigo-500" },

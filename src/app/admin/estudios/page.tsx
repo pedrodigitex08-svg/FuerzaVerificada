@@ -362,14 +362,21 @@ export default function AdminEstudiosPage() {
 
   // KPI calculations (Órdenes)
   const totalOrders = orders.length;
-  const pendingScheduling = orders.filter((o) => o.status === "solicitado").length;
+  const pendingScheduling = orders.filter(
+    (o) => o.status === "solicitado" || (o.status as any) === "pendiente"
+  ).length;
   const inEvaluation = orders.filter((o) => o.status === "agendado" || o.status === "en_proceso").length;
   const completedApproved = orders.filter((o) => o.status === "aprobado").length;
   const completedRejected = orders.filter((o) => o.status === "rechazado_riesgo").length;
 
   // Filtered orders list
   const filteredOrders = orders.filter((order) => {
-    const matchesFilter = selectedFilter === "todos" || order.status === selectedFilter;
+    const isPendingOrSolicitado =
+      order.status === "solicitado" || (order.status as any) === "pendiente";
+    const matchesFilter =
+      selectedFilter === "todos" ||
+      order.status === selectedFilter ||
+      (selectedFilter === "solicitado" && isPendingOrSolicitado);
     const matchesSearch =
       order.candidate_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.national_id.includes(searchTerm) ||
@@ -403,10 +410,11 @@ export default function AdminEstudiosPage() {
   const getStatusBadge = (status: SecurityStudyStatus) => {
     switch (status) {
       case "solicitado":
+      case "pendiente":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-blue-50/80 text-blue-700 border border-blue-200/70">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-            Solicitado
+            Solicitado (Pendiente)
           </span>
         );
       case "agendado":

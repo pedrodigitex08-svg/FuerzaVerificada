@@ -70,14 +70,20 @@ export default function EmpresaLayout({
             .eq("owner_id", user.id)
             .maybeSingle();
 
-          // Si el usuario tiene rol 'company' pero su registro en public.companies aún no existe, crearlo automáticamente
-          if (!comp && role === "company") {
-            const { data: prof } = await supabase
-              .from("profiles")
-              .select("full_name, phone_whatsapp")
-              .eq("id", user.id)
-              .maybeSingle();
+          // Consultar el perfil real del usuario en public.profiles para verificar si tiene role === "company"
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("role, full_name, phone_whatsapp")
+            .eq("id", user.id)
+            .maybeSingle();
 
+          const isUserCompany =
+            role === "company" ||
+            prof?.role === "company" ||
+            user.user_metadata?.role === "company";
+
+          // Si el usuario tiene rol 'company' pero su registro en public.companies aún no existe, crearlo automáticamente
+          if (!comp && isUserCompany) {
             const meta = user.user_metadata || {};
             const resolvedCompName =
               meta.company_name || prof?.full_name || fullName || user.email?.split("@")[0] || "Empresa de Seguridad";
@@ -90,7 +96,7 @@ export default function EmpresaLayout({
                 nit: meta.nit || "",
                 city: meta.city || "Bogotá D.C.",
                 contact_person: prof?.full_name || meta.full_name || "Contacto Principal",
-                contact_phone: prof?.phone_whatsapp || meta.phone_whatsapp || "",
+                contact_phone: prof?.phone_whatsapp || meta.phone_whatsapp || "3000000000",
                 is_verified_company: false,
                 plan_name: "basico",
                 credits_security_studies: 0,

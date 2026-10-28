@@ -17,6 +17,8 @@ import {
   PlusCircle,
   X,
   Sparkles,
+  Lock,
+  ArrowRight,
 } from "lucide-react";
 import { SecurityStudyStatus } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
@@ -44,6 +46,7 @@ export default function EmpresaEstudiosPage() {
 
   // Modal State for new study request
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isNoCreditsModalOpen, setIsNoCreditsModalOpen] = useState(false);
   const [formCandName, setFormCandName] = useState("");
   const [formNationalId, setFormNationalId] = useState("");
   const [formPhone, setFormPhone] = useState("");
@@ -73,8 +76,15 @@ export default function EmpresaEstudiosPage() {
 
           // Auto-provisionar registro en public.companies si falta
           if (!comp) {
+            const { data: prof } = await supabase
+              .from("profiles")
+              .select("full_name, phone_whatsapp")
+              .eq("id", user.id)
+              .maybeSingle();
+
             const compName =
               user.user_metadata?.company_name ||
+              prof?.full_name ||
               user.user_metadata?.full_name ||
               "Empresa de Seguridad";
 
@@ -84,12 +94,12 @@ export default function EmpresaEstudiosPage() {
                 owner_id: user.id,
                 company_name: compName,
                 nit: user.user_metadata?.nit || `NIT-${user.id.slice(0, 8)}`,
-                contact_person: user.user_metadata?.full_name || "Contacto Empresa",
-                contact_phone: user.user_metadata?.phone || "3000000000",
+                contact_person: prof?.full_name || user.user_metadata?.full_name || "Contacto Empresa",
+                contact_phone: prof?.phone_whatsapp || user.user_metadata?.phone || "3000000000",
                 city: "Bogotá D.C.",
                 is_verified_company: false,
                 plan_name: "basico",
-                credits_security_studies: 10,
+                credits_security_studies: 0,
               })
               .select("id, credits_security_studies")
               .maybeSingle();
@@ -205,6 +215,13 @@ export default function EmpresaEstudiosPage() {
     e.preventDefault();
     if (!formCandName.trim() || !formNationalId.trim()) return;
 
+    // CANDADO ESTRICTO REGLA A: Si créditos <= 0, bloquear de inmediato
+    if (credits <= 0) {
+      setIsModalOpen(false);
+      setIsNoCreditsModalOpen(true);
+      return;
+    }
+
     setSubmittingOrder(true);
     const supabase = createClient();
 
@@ -222,8 +239,15 @@ export default function EmpresaEstudiosPage() {
           .maybeSingle();
 
         if (!comp) {
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("full_name, phone_whatsapp")
+            .eq("id", user.id)
+            .maybeSingle();
+
           const compName =
             user.user_metadata?.company_name ||
+            prof?.full_name ||
             user.user_metadata?.full_name ||
             "Empresa de Seguridad";
 
@@ -233,12 +257,12 @@ export default function EmpresaEstudiosPage() {
               owner_id: user.id,
               company_name: compName,
               nit: user.user_metadata?.nit || `NIT-${user.id.slice(0, 8)}`,
-              contact_person: user.user_metadata?.full_name || "Contacto Empresa",
-              contact_phone: user.user_metadata?.phone || "3000000000",
+              contact_person: prof?.full_name || user.user_metadata?.full_name || "Contacto Empresa",
+              contact_phone: prof?.phone_whatsapp || user.user_metadata?.phone || "3000000000",
               city: "Bogotá D.C.",
               is_verified_company: false,
               plan_name: "basico",
-              credits_security_studies: 10,
+              credits_security_studies: 0,
             })
             .select("id, credits_security_studies")
             .maybeSingle();
@@ -249,7 +273,15 @@ export default function EmpresaEstudiosPage() {
         if (comp?.id) {
           activeCompanyId = comp.id;
           setCompanyId(comp.id);
+          setCredits(Number(comp.credits_security_studies ?? 0));
         }
+      }
+
+      // Re-verificar candado tras resolver empresa
+      if (credits <= 0) {
+        setIsModalOpen(false);
+        setIsNoCreditsModalOpen(true);
+        return;
       }
 
       // Resolver candidate_id si existe en candidate_profiles
@@ -266,9 +298,9 @@ export default function EmpresaEstudiosPage() {
         resolvedCandId = user.id;
       }
 
-      let updatedCredits = credits;
-      if (activeCompanyId && credits > 0) {
-        updatedCredits = credits - 1;
+      // REGLA B: Descontar automáticamente 1 crédito
+      const updatedCredits = Math.max(credits - 1, 0);
+      if (activeCompanyId) {
         await supabase
           .from("companies")
           .update({ credits_security_studies: updatedCredits })
@@ -288,7 +320,7 @@ export default function EmpresaEstudiosPage() {
         include_polygraph: isPolygraph,
         include_home_visit: isHomeVisit,
         include_background_study: true,
-        status: "solicitado" as SecurityStudyStatus,
+        status: "pendiente" as SecurityStudyStatus,
         scheduled_date: "En programación pericial",
         final_concept: `Solicitud pericial de ${formStudyType.replace(/_/g, " ").toUpperCase()} para ${formCandName.trim()} (C.C. ${formNationalId.trim()}, Tel: ${formPhone.trim() || "N/A"}, Ciudad: ${formCity}). Obs: ${formNotes.trim() || "Sin observaciones adicionales."}`,
         report_pdf_url: null,
@@ -309,7 +341,7 @@ export default function EmpresaEstudiosPage() {
         candidate_name: formCandName.trim(),
         national_id: formNationalId.trim(),
         job_title: formStudyType.replace(/_/g, " ").toUpperCase(),
-        status: "solicitado",
+        status: "pendiente",
         scheduled_date: "En programación pericial",
         final_concept: `Solicitud pericial registrada. Obs: ${formNotes.trim() || "Sin observaciones."}`,
         report_pdf_url: null,
@@ -377,7 +409,7 @@ export default function EmpresaEstudiosPage() {
         <div className="flex items-center gap-3 shrink-0">
           <button
             type="button"
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => (credits > 0 ? setIsModalOpen(true) : setIsNoCreditsModalOpen(true))}
             className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs h-10 px-5 font-semibold flex items-center gap-2 transition-colors shadow-xs"
           >
             <PlusCircle className="w-4 h-4 text-white" strokeWidth={2} />
@@ -479,7 +511,7 @@ export default function EmpresaEstudiosPage() {
             <div className="mt-4 flex items-center justify-center gap-2">
               <button
                 type="button"
-                onClick={() => setIsModalOpen(true)}
+                onClick={() => (credits > 0 ? setIsModalOpen(true) : setIsNoCreditsModalOpen(true))}
                 className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs h-9 px-5 font-semibold inline-flex items-center gap-2 shadow-xs transition-colors"
               >
                 <PlusCircle className="w-3.5 h-3.5 text-white" />
@@ -708,14 +740,36 @@ export default function EmpresaEstudiosPage() {
               </div>
 
               {credits <= 0 && (
-                <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-center justify-between">
-                  <span>Tu cuenta no tiene créditos prepagados activos.</span>
-                  <Link
-                    href="/precios-empresas"
-                    className="font-bold underline text-amber-800 hover:text-amber-900 ml-2"
-                  >
-                    Ver Paquetes B2B
-                  </Link>
+                <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-2.5">
+                  <div className="flex items-start gap-2.5">
+                    <Lock className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="block text-slate-900 font-semibold mb-0.5">
+                        Créditos Agotados
+                      </strong>
+                      <p className="text-slate-600">
+                        No tienes créditos disponibles. Tienes que comprar créditos para poder solicitar un estudio de poligrafía o seguridad.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <Link
+                      href="/precios-empresas"
+                      className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-[11px] h-8 px-4 font-semibold inline-flex items-center gap-1.5 transition-colors"
+                    >
+                      <span>Comprar / Recargar Créditos</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                    <a
+                      href="https://wa.me/573102737603?text=Hola,%20deseo%20comprar%20créditos%20para%20estudios%20de%20seguridad%20y%20poligrafía"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] h-8 px-4 font-semibold inline-flex items-center gap-1.5 transition-colors"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      <span>WhatsApp</span>
+                    </a>
+                  </div>
                 </div>
               )}
 
@@ -729,11 +783,16 @@ export default function EmpresaEstudiosPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={submittingOrder}
-                  className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs h-10 px-6 font-semibold flex items-center gap-2 shadow-xs transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled={submittingOrder || credits <= 0}
+                  className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs h-10 px-6 font-semibold flex items-center gap-2 shadow-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submittingOrder ? (
                     <span>Registrando orden...</span>
+                  ) : credits <= 0 ? (
+                    <>
+                      <Lock className="w-4 h-4 text-white" />
+                      <span>Créditos Requeridos</span>
+                    </>
                   ) : (
                     <>
                       <Shield className="w-4 h-4 text-[#FFE066]" />
@@ -743,6 +802,54 @@ export default function EmpresaEstudiosPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CANDADO ESTRICTO DE CRÉDITOS (REGLA A) */}
+      {isNoCreditsModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md shadow-2xl p-7 space-y-5 animate-in fade-in zoom-in-95 duration-150 text-center">
+            <div className="w-14 h-14 rounded-full bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto">
+              <Lock className="w-7 h-7" strokeWidth={2} />
+            </div>
+
+            <div className="space-y-1.5">
+              <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                Créditos Agotados
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed max-w-xs mx-auto">
+                No tienes créditos disponibles. Tienes que comprar créditos para poder solicitar un estudio de poligrafía o seguridad.
+              </p>
+            </div>
+
+            <div className="space-y-2.5 pt-2">
+              <Link
+                href="/precios-empresas"
+                className="w-full h-11 bg-[#0B3B70] hover:bg-[#082B54] text-white rounded-full px-5 text-xs font-semibold flex items-center justify-center gap-2 shadow-xs transition-colors"
+              >
+                <span>Comprar / Recargar Créditos</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+
+              <a
+                href="https://wa.me/573102737603?text=Hola,%20deseo%20comprar%20créditos%20para%20estudios%20de%20seguridad%20y%20poligrafía"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-5 text-xs font-semibold flex items-center justify-center gap-2 shadow-xs transition-colors"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>Recargar por WhatsApp</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={() => setIsNoCreditsModalOpen(false)}
+                className="w-full h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}

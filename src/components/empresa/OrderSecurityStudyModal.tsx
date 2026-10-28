@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Shield,
   CheckCircle2,
@@ -183,25 +184,36 @@ export function OrderSecurityStudyModal({
           </div>
         </div>
 
-        {/* Warning if 0 credits */}
+        {/* Warning if 0 credits - Candado Estricto */}
         {availableCredits <= 0 && (
-          <div className="p-3.5 rounded-md bg-rose-50/80 border border-rose-200/80 text-xs text-rose-800 flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" strokeWidth={1.75} />
-            <div className="space-y-2">
-              <p>
-                <strong>Sin créditos disponibles.</strong> Adquiera o recargue su paquete corporativo para solicitar este estudio de seguridad.
-              </p>
+          <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-2.5">
+            <div className="flex items-start gap-2.5">
+              <Lock className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+              <div>
+                <strong className="block text-slate-900 font-semibold mb-0.5">
+                  Créditos Agotados
+                </strong>
+                <p className="text-slate-600 leading-relaxed">
+                  No tienes créditos disponibles. Tienes que comprar créditos para poder solicitar un estudio de poligrafía o seguridad.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <Link
+                href="/precios-empresas"
+                className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-[11px] h-8 px-4 font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs"
+              >
+                <span>Comprar / Recargar Créditos</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
               <a
-                href={generatePackageRechargeLink({
-                  companyName: "Empresa con Créditos Agotados",
-                  packageType: "Recarga de Paquete B2B desde ATS",
-                })}
+                href="https://wa.me/573102737603?text=Hola,%20deseo%20comprar%20créditos%20para%20estudios%20de%20seguridad%20y%20poligrafía"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium transition-all shadow-[0_1px_2px_rgba(15,23,42,0.08)]"
+                className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] h-8 px-4 font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs"
               >
-                <MessageCircle className="w-3.5 h-3.5 text-emerald-400" strokeWidth={1.75} />
-                <span>Recargar Paquete por WhatsApp</span>
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>Recargar por WhatsApp</span>
               </a>
             </div>
           </div>

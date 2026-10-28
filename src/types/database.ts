@@ -21,7 +21,8 @@ export type SecurityStudyStatus =
   | "agendado"
   | "en_proceso"
   | "aprobado"
-  | "rechazado_riesgo";
+  | "rechazado_riesgo"
+  | "pendiente";
 
 export type CourseSemaphore =
   | "SIN_CURSO"

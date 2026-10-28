@@ -404,6 +404,15 @@ export default function ATSVacantePage() {
   const handleConfirmStudyOrder = async (orderPayload?: any) => {
     const supabase = createClient();
     try {
+      // Regla A: Candado estricto si créditos <= 0
+      if (credits <= 0) {
+        setNotificationToast(
+          "No tienes créditos disponibles. Debes recargar créditos para solicitar estudios de seguridad."
+        );
+        setTimeout(() => setNotificationToast(null), 4500);
+        return;
+      }
+
       let activeCompanyId = companyId;
 
       // Si no tenemos companyId en estado, resolverlo o auto-provisionarlo
@@ -419,9 +428,16 @@ export default function ATSVacantePage() {
             .maybeSingle();
 
           if (!comp) {
+            const { data: prof } = await supabase
+              .from("profiles")
+              .select("full_name, phone_whatsapp")
+              .eq("id", user.id)
+              .maybeSingle();
+
             const compName =
               companyName ||
               user.user_metadata?.company_name ||
+              prof?.full_name ||
               user.user_metadata?.full_name ||
               "Empresa de Seguridad";
 
@@ -431,12 +447,12 @@ export default function ATSVacantePage() {
                 owner_id: user.id,
                 company_name: compName,
                 nit: user.user_metadata?.nit || `NIT-${user.id.slice(0, 8)}`,
-                contact_person: user.user_metadata?.full_name || "Contacto Empresa",
-                contact_phone: user.user_metadata?.phone || "3000000000",
+                contact_person: prof?.full_name || user.user_metadata?.full_name || "Contacto Empresa",
+                contact_phone: prof?.phone_whatsapp || user.user_metadata?.phone || "3000000000",
                 city: vacancyCity || "Bogotá D.C.",
                 is_verified_company: false,
                 plan_name: "basico",
-                credits_security_studies: 10,
+                credits_security_studies: 0,
               })
               .select("id, credits_security_studies")
               .maybeSingle();
@@ -447,8 +463,13 @@ export default function ATSVacantePage() {
           if (comp) {
             activeCompanyId = comp.id;
             setCompanyId(comp.id);
+            setCredits(Number(comp.credits_security_studies ?? 0));
           }
         }
+      }
+
+      if (credits <= 0) {
+        return;
       }
 
       if (activeCompanyId && selectedCandidate?.candidate_user_id) {
@@ -466,7 +487,7 @@ export default function ATSVacantePage() {
           include_polygraph: isPolygraph,
           include_home_visit: isHomeVisit,
           include_background_study: true,
-          status: "solicitado" as SecurityStudyStatus,
+          status: "pendiente" as SecurityStudyStatus,
           scheduled_date: "En programación pericial",
           final_concept: `Solicitud pericial de ${studyType.replace(/_/g, " ").toUpperCase()} para ${selectedCandidate.full_name} (C.C. ${selectedCandidate.national_id}, Tel: ${selectedCandidate.phone_whatsapp}, Ciudad: ${selectedCandidate.city}). Obs: ${orderPayload?.notes || "Radicado desde ATS de vacante."}`,
           report_pdf_url: null,
@@ -480,7 +501,7 @@ export default function ATSVacantePage() {
           console.error("Error inserting security_study_orders:", insertOrderErr);
         }
 
-        // Descontar crédito de la empresa
+        // Descontar crédito de la empresa (Regla B)
         const nextCredits = Math.max(credits - 1, 0);
         await supabase
           .from("companies")
