@@ -8,19 +8,12 @@ import {
   CreditCard,
   FileText,
   Upload,
-  CheckCircle2,
-  AlertTriangle,
-  MessageCircle,
   ExternalLink,
-  Check,
-  BadgeCheck,
-  MapPin,
+  ChevronRight,
   GraduationCap,
 } from "lucide-react";
 import { CourseSemaphoreBanner } from "@/components/guarda/CourseSemaphoreBanner";
-import { generateAcademyRenewalLink } from "@/lib/utils/whatsappTemplates";
 import { createClient } from "@/lib/supabase/client";
-import { PartnerAcademy } from "@/types/database";
 import { openSecureDocument } from "@/lib/utils/storageSecurity";
 
 export default function DocumentosPage() {
@@ -35,22 +28,11 @@ export default function DocumentosPage() {
   const [courseDiplomaUrl, setCourseDiplomaUrl] = useState<string | null>(null);
   const [hasIdCard, setHasIdCard] = useState(false);
   const [idCardUrl, setIdCardUrl] = useState<string | null>(null);
-  const [partnerAcademies, setPartnerAcademies] = useState<PartnerAcademy[]>([]);
 
   useEffect(() => {
     async function loadData() {
       const supabase = createClient();
       try {
-        // Load active partner academies from Supabase
-        const { data: acads } = await supabase
-          .from("partner_academies")
-          .select("*")
-          .eq("is_active", true)
-          .order("name", { ascending: true });
-        if (acads && acads.length > 0) {
-          setPartnerAcademies(acads as PartnerAcademy[]);
-        }
-
         const {
           data: { user },
         } = await supabase.auth.getUser();
@@ -132,18 +114,6 @@ export default function DocumentosPage() {
 
     loadData();
   }, []);
-
-  const primaryAcademy =
-    partnerAcademies.find((a) => a.city === candidateCity) || partnerAcademies[0];
-
-  const renewalLink = generateAcademyRenewalLink({
-    academyPhone: primaryAcademy?.whatsapp_number || "573158901234",
-    academyName: primaryAcademy?.name || "Academia Nacional de Seguridad",
-    candidateName: candidateName,
-    city: primaryAcademy?.city || candidateCity,
-    referralCode: primaryAcademy?.referral_code || "FUERZA2026",
-    discountText: primaryAcademy?.discount_text || "15% Descuento Convenio FuerzaVerificada",
-  });
 
   return (
     <div className="space-y-6">
@@ -227,15 +197,13 @@ export default function DocumentosPage() {
           <span className="text-xs text-slate-500">
             ¿Desea adelantar su renovación antes del vencimiento?
           </span>
-          <a
-            href={renewalLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-full bg-[#EAF3FA] hover:bg-[#d8e8f6] text-[#0B3B70] border border-[#D5E6F5] text-xs h-9 px-4 font-semibold inline-flex items-center gap-2 transition-colors"
+          <Link
+            href="/guarda/academias"
+            className="rounded-full bg-[#EAF3FA] hover:bg-[#d8e8f6] text-[#0B3B70] border border-[#D5E6F5] text-xs h-9 px-4 font-semibold inline-flex items-center gap-2 transition-colors shadow-2xs"
           >
-            <MessageCircle className="w-3.5 h-3.5 text-emerald-600" strokeWidth={2} />
-            Consultar Convenio con Academia Aliada (15% OFF)
-          </a>
+            <GraduationCap className="w-3.5 h-3.5 text-[#005DA4]" strokeWidth={2} />
+            <span>Consultar Directorio de Academias Aliadas (15% OFF)</span>
+          </Link>
         </div>
       </div>
 
@@ -327,84 +295,28 @@ export default function DocumentosPage() {
         </div>
       </div>
 
-      {/* RED DE ACADEMIAS ALIADAS AUTORIZADAS */}
-      <div id="academias" className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      {/* BANNER DE ACCESO A ACADEMIAS ALIADAS */}
+      <div className="bg-gradient-to-r from-[#0B3B70] to-[#005DA4] rounded-2xl p-6 text-white shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-xs flex items-center justify-center shrink-0 border border-white/20">
+            <GraduationCap className="w-6 h-6 text-white" strokeWidth={2} />
+          </div>
           <div>
-            <div className="flex items-center gap-2">
-              <GraduationCap className="w-5 h-5 text-slate-700" strokeWidth={1.75} />
-              <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                Red de Academias Aliadas Autorizadas (SuperVigilancia)
-              </h3>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Escuelas de capacitación con convenios activos de descuento para renovación y fundamentación de cursos.
+            <h4 className="text-sm font-bold text-white tracking-tight">
+              Directorio de Academias Aliadas Autorizadas SuperVigilancia
+            </h4>
+            <p className="text-xs text-blue-100 mt-0.5 max-w-xl leading-relaxed">
+              Consulta nuestra red nacional de escuelas autorizadas para cursos de Vigilancia, Escolta y CCTV con convenios de descuento del 15% y contacto directo por WhatsApp.
             </p>
           </div>
-          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#005DA4] bg-[#EAF3FA] px-2.5 py-0.5 rounded-full border border-[#D5E6F5] self-start sm:self-auto">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#005DA4]" />
-            Convenio Oficial
-          </span>
         </div>
-
-        {partnerAcademies.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
-            {partnerAcademies.map((acad) => {
-              const acadLink = generateAcademyRenewalLink({
-                academyPhone: acad.whatsapp_number || "573158901234",
-                academyName: acad.name,
-                candidateName: candidateName,
-                city: acad.city || candidateCity,
-                referralCode: acad.referral_code || "FUERZA2026",
-                discountText: acad.discount_text || "15% Descuento Convenio FuerzaVerificada",
-              });
-
-              return (
-                <div
-                  key={acad.id}
-                  className="p-4 rounded-xl border border-slate-200 bg-[#F2F5F8] flex flex-col justify-between space-y-3 hover:border-slate-300 transition-colors"
-                >
-                  <div className="space-y-1.5">
-                    <div className="flex items-start justify-between gap-2">
-                      <h4 className="text-xs font-bold text-slate-900 leading-snug">
-                        {acad.name}
-                      </h4>
-                      <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full whitespace-nowrap">
-                        {acad.discount_text || "Descuento Convenio"}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                      <MapPin className="w-3 h-3 text-slate-400 shrink-0" strokeWidth={1.5} />
-                      <span>{acad.city}</span>
-                    </div>
-
-                    <div className="text-[10px] text-slate-400 font-mono tabular-nums">
-                      Código de Convenio: <span className="font-bold text-slate-700">{acad.referral_code || "FUERZA2026"}</span>
-                    </div>
-                  </div>
-
-                  <a
-                    href={acadLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white w-full h-9 px-3 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-xs"
-                  >
-                    <MessageCircle className="w-3.5 h-3.5" strokeWidth={1.75} />
-                    <span>Contactar por WhatsApp</span>
-                  </a>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="p-6 rounded-xl border border-dashed border-slate-200 text-center text-slate-400 text-xs">
-            <p className="font-semibold text-slate-600">Consulte nuestras academias asociadas en Bogotá, Medellín y Cali.</p>
-            <p className="text-[11px] text-slate-400 mt-1">
-              Comuníquese a la línea de soporte para acceder a los convenios de hasta 15% de descuento en su certificado.
-            </p>
-          </div>
-        )}
+        <Link
+          href="/guarda/academias"
+          className="rounded-full bg-white text-[#0B3B70] hover:bg-blue-50 px-5 py-2.5 text-xs font-bold shrink-0 transition-colors shadow-xs inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+        >
+          <span>Ver Academias Aliadas</span>
+          <ChevronRight className="w-3.5 h-3.5" />
+        </Link>
       </div>
     </div>
   );

@@ -138,7 +138,7 @@ function NavbarSearchPill() {
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { role, isAuthenticated, fullName, email, signOut } = useAuth();
+  const { role, isAuthenticated, fullName, email, avatarUrl, signOut } = useAuth();
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -160,6 +160,12 @@ export function Navbar() {
     }
     if (href === "/vacantes") {
       return isVacantesPage;
+    }
+    if (href === "/guarda/academias") {
+      return pathname.startsWith("/guarda/academias");
+    }
+    if (href === "/guarda/documentos") {
+      return pathname === "/guarda/documentos";
     }
     if (href === "/mi-perfil") {
       return pathname === "/mi-perfil" || pathname.startsWith("/guarda/perfil");
@@ -286,9 +292,9 @@ export function Navbar() {
               {isCandidate && (
                 <>
                   <Link
-                    href="/vacantes"
+                    href="/"
                     className={`py-5 border-b-[3px] transition-all ${
-                      isActiveRoute("/vacantes")
+                      isActiveRoute("/")
                         ? "text-[#0B3B70] font-semibold border-[#0B3B70]"
                         : "text-slate-700 hover:text-[#0B3B70] border-transparent hover:border-[#0B3B70]"
                     }`}
@@ -326,8 +332,12 @@ export function Navbar() {
                     Credencial & Cursos
                   </Link>
                   <Link
-                    href="/guarda/documentos#academias"
-                    className="py-5 border-b-[3px] border-transparent text-slate-700 hover:text-[#0B3B70] hover:border-[#0B3B70] transition-all"
+                    href="/guarda/academias"
+                    className={`py-5 border-b-[3px] transition-all ${
+                      isActiveRoute("/guarda/academias")
+                        ? "text-[#0B3B70] font-semibold border-[#0B3B70]"
+                        : "text-slate-700 hover:text-[#0B3B70] border-transparent hover:border-[#0B3B70]"
+                    }`}
                   >
                     Academias Aliadas
                   </Link>
@@ -507,12 +517,12 @@ export function Navbar() {
                 aria-expanded={userMenuOpen}
                 className="rounded-full border border-slate-200/90 bg-white hover:border-slate-300 hover:shadow-xs px-3.5 py-1.5 flex items-center gap-2.5 transition-all cursor-pointer group select-none"
               >
-                {/* Punto coral circular de alerta (#FF4B6E) */}
-                <span className="relative flex h-2.5 w-2.5 shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF4B6E] opacity-75" />
+                {/* Punto verde esmeralda circular de conectado (bg-emerald-500 / #10B981) */}
+                <span className="relative flex h-2.5 w-2.5 shrink-0" title="Sesión activa / Conectado">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                   <span
-                    className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#FF4B6E]"
-                    title="Notificaciones activas"
+                    className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 ring-2 ring-emerald-500/20"
+                    title="Sesión activa / Conectado"
                   />
                 </span>
 
@@ -525,8 +535,17 @@ export function Navbar() {
                 </span>
 
                 {/* Avatar circular */}
-                <div className="w-7 h-7 rounded-full bg-[#0B3B70] text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-2xs">
-                  {initials}
+                <div className="w-7 h-7 rounded-full bg-[#0B3B70] text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-2xs overflow-hidden">
+                  {avatarUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={avatarUrl}
+                      alt={displayName}
+                      className="w-full h-full object-cover rounded-full"
+                    />
+                  ) : (
+                    initials
+                  )}
                 </div>
 
                 {/* Flecha indicadora */}
@@ -542,8 +561,17 @@ export function Navbar() {
                 <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200/90 py-2.5 z-50 animate-in fade-in slide-in-from-top-2">
                   {/* Cabecera del Dropdown con datos del perfil */}
                   <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#0B3B70] text-white flex items-center justify-center text-sm font-bold shrink-0 shadow-xs">
-                      {initials}
+                    <div className="w-10 h-10 rounded-full bg-[#0B3B70] text-white flex items-center justify-center text-sm font-bold shrink-0 shadow-xs overflow-hidden">
+                      {avatarUrl ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={avatarUrl}
+                          alt={displayName}
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      ) : (
+                        initials
+                      )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-bold text-slate-900 truncate">
@@ -564,7 +592,7 @@ export function Navbar() {
                     {isCandidate && (
                       <>
                         <Link
-                          href="/vacantes"
+                          href="/"
                           onClick={() => setUserMenuOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 hover:text-[#0B3B70] hover:bg-[#EAF3FA] rounded-xl transition-colors"
                         >
@@ -596,7 +624,7 @@ export function Navbar() {
                           <span>Credencial & Cursos Vigentes</span>
                         </Link>
                         <Link
-                          href="/guarda/documentos#academias"
+                          href="/guarda/academias"
                           onClick={() => setUserMenuOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 hover:text-[#0B3B70] hover:bg-[#EAF3FA] rounded-xl transition-colors"
                         >
@@ -809,8 +837,17 @@ export function Navbar() {
             {isAuthenticated && (
               <div className="p-4 border-b border-slate-100 bg-[#F2F5F8]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#0B3B70] text-white flex items-center justify-center text-sm font-bold shadow-xs shrink-0">
-                    {initials}
+                  <div className="w-10 h-10 rounded-full bg-[#0B3B70] text-white flex items-center justify-center text-sm font-bold shadow-xs shrink-0 overflow-hidden">
+                    {avatarUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={avatarUrl}
+                        alt={displayName}
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                    ) : (
+                      initials
+                    )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-slate-900 truncate">
@@ -831,7 +868,7 @@ export function Navbar() {
               {isCandidate && (
                 <>
                   <Link
-                    href="/vacantes"
+                    href="/"
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center justify-between p-3 rounded-xl border border-slate-200/90 hover:border-[#0B3B70] hover:bg-[#EAF3FA] transition-all"
                   >
@@ -879,7 +916,7 @@ export function Navbar() {
                   </Link>
 
                   <Link
-                    href="/guarda/documentos#academias"
+                    href="/guarda/academias"
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center justify-between p-3 rounded-xl border border-slate-200/90 hover:border-[#0B3B70] hover:bg-[#EAF3FA] transition-all"
                   >

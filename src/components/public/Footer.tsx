@@ -111,7 +111,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/guarda/documentos#academias"
+                  href="/guarda/academias"
                   className="hover:text-[#005DA4] transition-colors"
                 >
                   Red de Academias Aliadas

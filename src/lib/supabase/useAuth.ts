@@ -11,6 +11,7 @@ export interface AuthState {
   role: UserRole;
   fullName: string;
   email: string;
+  avatarUrl: string;
   isAuthenticated: boolean;
   isLoading: boolean;
   signOut: () => Promise<void>;
@@ -21,6 +22,7 @@ export function useAuth(): AuthState {
   const [role, setRole] = useState<UserRole>(null);
   const [fullName, setFullName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -39,7 +41,12 @@ export function useAuth(): AuthState {
           const parsed = JSON.parse(cachedUserStr);
           if (parsed.full_name) setFullName(parsed.full_name);
           if (parsed.email) setEmail(parsed.email);
+          if (parsed.avatar_url) setAvatarUrl(parsed.avatar_url);
         } catch {}
+      }
+      const localAvatar = localStorage.getItem("fv_user_avatar");
+      if (localAvatar) {
+        setAvatarUrl(localAvatar);
       }
     }
 
@@ -120,9 +127,18 @@ export function useAuth(): AuthState {
           currentUser.email?.split("@")[0] ||
           (userRole === "company" ? "Empresa de Seguridad" : "Personal Operativo");
 
+        const photo =
+          currentUser.user_metadata?.avatar_url ||
+          currentUser.user_metadata?.picture ||
+          currentUser.user_metadata?.photo_url ||
+          (profile as any)?.avatar_url ||
+          (typeof window !== "undefined" ? localStorage.getItem("fv_user_avatar") || "" : "") ||
+          "";
+
         if (isMounted) {
           setRole(userRole);
           setFullName(name);
+          setAvatarUrl(photo);
           setIsLoading(false);
         }
 
@@ -134,6 +150,7 @@ export function useAuth(): AuthState {
               email: currentUser.email,
               full_name: name,
               role: userRole,
+              avatar_url: photo,
             })
           );
         }
@@ -159,6 +176,7 @@ export function useAuth(): AuthState {
           setRole(null);
           setFullName("");
           setEmail("");
+          setAvatarUrl("");
           setIsLoading(false);
         }
       } else {
@@ -192,6 +210,7 @@ export function useAuth(): AuthState {
       // Clear all cached credentials and states
       localStorage.removeItem("fv_demo_role");
       localStorage.removeItem("fv_demo_user");
+      localStorage.removeItem("fv_user_avatar");
       localStorage.removeItem("fv_company_verified");
       localStorage.removeItem("fv_candidate_profile");
       sessionStorage.clear();
@@ -200,6 +219,7 @@ export function useAuth(): AuthState {
       setRole(null);
       setFullName("");
       setEmail("");
+      setAvatarUrl("");
       setIsLoading(false);
 
       // Force clean navigation and fresh context
@@ -212,6 +232,7 @@ export function useAuth(): AuthState {
     role,
     fullName,
     email,
+    avatarUrl,
     isAuthenticated: !!role || !!user,
     isLoading,
     signOut,

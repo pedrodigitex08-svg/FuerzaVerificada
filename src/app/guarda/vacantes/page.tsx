@@ -125,14 +125,16 @@ function VacantesContent() {
     const locParam =
       searchParams.get("ciudad") ||
       searchParams.get("location") ||
-      searchParams.get("city");
-    if (locParam !== null) setLocationFilter(locParam);
+      searchParams.get("city") ||
+      "";
+    setLocationFilter(locParam);
 
     const roleParam =
       searchParams.get("q") ||
       searchParams.get("search") ||
-      searchParams.get("role");
-    if (roleParam !== null) setSearchTerm(roleParam);
+      searchParams.get("role") ||
+      "";
+    setSearchTerm(roleParam);
 
     const applyParam = searchParams.get("apply");
     if (applyParam) setSelectedJobId(applyParam);
@@ -522,13 +524,79 @@ function VacantesContent() {
     setContractFilter("todos");
     setSortBy("recientes");
     setOpenDropdown(null);
+    router.push("/guarda/vacantes");
   };
 
   return (
     <div className="min-h-screen bg-[#F2F5F8] text-[#313944] pb-16">
       {/* 1. FILA SUPERIOR DE FILTROS DESPLEGABLES CON FLECHA (⌄) SOBRE FONDO #F2F5F8 */}
       <div className="w-full bg-[#F2F5F8] border-b border-slate-200/80 sticky top-0 md:top-[68px] z-20 backdrop-blur-md bg-[#F2F5F8]/95 shadow-2xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 space-y-2.5">
+          {/* Barra de búsqueda móvil (visible en pantallas móviles < md donde NavbarSearchPill no está activa) */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const p = new URLSearchParams();
+              if (searchTerm.trim()) {
+                p.set("q", searchTerm.trim());
+                p.set("search", searchTerm.trim());
+              }
+              if (locationFilter.trim()) {
+                p.set("ciudad", locationFilter.trim());
+                p.set("location", locationFilter.trim());
+              }
+              const qs = p.toString();
+              router.push(qs ? `/guarda/vacantes?${qs}` : "/guarda/vacantes");
+            }}
+            className="md:hidden flex items-center gap-1.5 bg-white border border-slate-300 rounded-full p-1 shadow-2xs"
+          >
+            <div className="flex items-center flex-1 min-w-0 px-2">
+              <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Cargo (ej. Vigilante)"
+                className="w-full bg-transparent border-none text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none px-1.5"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  className="text-slate-400 p-0.5 hover:text-slate-600"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+            <span className="h-4 w-px bg-slate-200 shrink-0" />
+            <div className="flex items-center flex-1 min-w-0 px-2">
+              <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <input
+                type="text"
+                value={locationFilter}
+                onChange={(e) => setLocationFilter(e.target.value)}
+                placeholder="Lugar o Ciudad"
+                className="w-full bg-transparent border-none text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none px-1.5"
+              />
+              {locationFilter && (
+                <button
+                  type="button"
+                  onClick={() => setLocationFilter("")}
+                  className="text-slate-400 p-0.5 hover:text-slate-600"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+            <button
+              type="submit"
+              className="w-7 h-7 rounded-full bg-[#0B3B70] text-white flex items-center justify-center shrink-0 shadow-xs cursor-pointer hover:bg-[#082B54]"
+              title="Buscar empleos"
+            >
+              <Search className="w-3 h-3" strokeWidth={2.5} />
+            </button>
+          </form>
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-0.5">
             {/* 1. Filtro Ordenar */}
             <div className="relative filter-dropdown-container shrink-0">

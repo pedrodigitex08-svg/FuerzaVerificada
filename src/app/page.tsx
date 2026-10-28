@@ -588,7 +588,7 @@ export default function HomePage() {
           </div>
 
           <Link
-            href="/guarda/documentos#academias"
+            href="/guarda/academias"
             className="rounded-full border-2 border-[#0B3B70] text-[#0B3B70] hover:bg-[#0B3B70] hover:text-white px-6 py-2.5 text-xs sm:text-sm font-bold transition-all shrink-0 whitespace-nowrap shadow-xs"
           >
             FuerzaVerificada te ayuda
