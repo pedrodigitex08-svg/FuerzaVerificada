@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatSecurityRoleLabel } from "@/lib/utils/roleNormalizer";
+import { formatShiftLabel } from "@/lib/utils/shiftNormalizer";
 
 interface VacancyItem {
   id: string;
@@ -132,7 +133,7 @@ export default function EmpresaVacantesListPage() {
                 id: j.id,
                 title: j.title,
                 role: formatSecurityRoleLabel(j.role_required),
-                shift: j.shift || "Turno rotativo",
+                shift: formatShiftLabel(j.shift),
                 salary: j.salary_monthly || 0,
                 zone: j.zone_neighborhood || j.city || "Colombia",
                 applicants_count: j.applications?.[0]?.count ?? 0,

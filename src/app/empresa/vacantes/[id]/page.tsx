@@ -42,6 +42,7 @@ import { ApplicationStatus, SecurityRoleType, SecurityStudyStatus } from "@/type
 import { generateInterviewCitationLink } from "@/lib/utils/whatsappTemplates";
 import { createClient } from "@/lib/supabase/client";
 import { formatSecurityRoleLabel } from "@/lib/utils/roleNormalizer";
+import { formatShiftLabel } from "@/lib/utils/shiftNormalizer";
 
 interface ATSCandidate {
   id: string;
@@ -212,7 +213,7 @@ export default function ATSVacantePage() {
 
         if (job) {
           setVacancyTitle(job.title || "Vacante de Seguridad");
-          setVacancyShift(job.shift || "Turno rotativo");
+          setVacancyShift(formatShiftLabel(job.shift));
           setVacancyCity(job.city || "Bogotá D.C.");
           setVacancyAddress(job.interview_address || job.zone_neighborhood || job.city || "Colombia");
         }

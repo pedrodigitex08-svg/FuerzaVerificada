@@ -36,6 +36,10 @@ import {
   normalizeSecurityRole,
   formatSecurityRoleLabel,
 } from "@/lib/utils/roleNormalizer";
+import {
+  formatShiftLabel,
+  SHIFT_OPTIONS,
+} from "@/lib/utils/shiftNormalizer";
 import { JobPost, CourseSemaphore } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/supabase/useAuth";
@@ -910,13 +914,10 @@ function VacantesContent() {
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
               {openDropdown === "shift" && (
-                <div className="absolute left-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+                <div className="absolute left-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
                   {[
                     { id: "todos", label: "Todos los turnos" },
-                    { id: "2x2x2", label: "Turno 2x2x2" },
-                    { id: "4x4x2", label: "Turno 4x4x2" },
-                    { id: "diurno", label: "Turno Diurno" },
-                    { id: "nocturno", label: "Turno Nocturno" },
+                    ...SHIFT_OPTIONS.map((o) => ({ id: o.value, label: `Turno ${o.shortLabel}` })),
                   ].map((sh) => (
                     <button
                       key={sh.id}
@@ -1265,7 +1266,7 @@ function VacantesContent() {
                       </div>
                       <div>
                         <span className="font-semibold text-slate-900">Jornada / Turno: </span>
-                        <span className="font-mono tabular-nums">{selectedJob.shift || "Turno rotativo de ley"}</span>
+                        <span className="font-mono tabular-nums">{formatShiftLabel(selectedJob.shift)}</span>
                       </div>
                     </div>
 
@@ -1416,7 +1417,7 @@ function VacantesContent() {
                 </div>
               </div>
               <span className="text-xs text-[#005DA4] font-mono font-bold tabular-nums">
-                {selectedJob.shift}
+                {formatShiftLabel(selectedJob.shift)}
               </span>
             </div>
 

@@ -28,24 +28,22 @@ import {
   normalizeSecurityRole,
   formatSecurityRoleLabel,
 } from "@/lib/utils/roleNormalizer";
+import {
+  DbShiftTypeEnum,
+  SHIFT_OPTIONS,
+  normalizeShift,
+  formatShiftLabel,
+} from "@/lib/utils/shiftNormalizer";
 import { createClient } from "@/lib/supabase/client";
 
-const SHIFTS = [
-  "2x2x2 (2 Día, 2 Noche, 2 Descanso)",
-  "4x2 Rotativo",
-  "5x2 Diurno",
-  "6x1 Diurno",
-  "12x12 Rotativo",
-];
-
-// 4 PLANTILLAS RÁPIDAS DEL SECTOR SEGURIDAD
+// 4 PLANTILLAS RÁPIDAS DEL SECTOR SEGURIDAD CON ENUMS CANÓNICOS
 const QUICK_TEMPLATES = [
   {
     name: "Vigilante Fijo (2x2x2)",
     icon: Shield,
     role: "vigilante_fijo" as SecurityRoleType,
     title: "Vigilante Fijo - Control de Accesos 2x2x2",
-    shift: "2x2x2 (2 Día, 2 Noche, 2 Descanso)",
+    shift: "2x2x2" as DbShiftTypeEnum,
     salary: 1950000,
     requiresCourse: true,
     requiresMilitaryBooklet: true,
@@ -57,9 +55,9 @@ const QUICK_TEMPLATES = [
   {
     name: "Escolta Motorizado",
     icon: Bike,
-    role: "escolta_motorizado" as SecurityRoleType,
+    role: "escolta_mercancia" as SecurityRoleType,
     title: "Escolta Motorizado - Protección de Personas y Mercancías",
-    shift: "12x12 Rotativo",
+    shift: "12x12" as DbShiftTypeEnum,
     salary: 2850000,
     requiresCourse: true,
     requiresMilitaryBooklet: true,
@@ -72,9 +70,9 @@ const QUICK_TEMPLATES = [
   {
     name: "Operador CCTV / Medios",
     icon: Radio,
-    role: "operador_cctv" as SecurityRoleType,
+    role: "operador_medios_tecnologicos" as SecurityRoleType,
     title: "Operador de Medios Tecnológicos - Centro de Control CCTV",
-    shift: "2x2x2 (2 Día, 2 Noche, 2 Descanso)",
+    shift: "2x2x2" as DbShiftTypeEnum,
     salary: 2200000,
     requiresCourse: true,
     requiresMilitaryBooklet: false,
@@ -86,9 +84,9 @@ const QUICK_TEMPLATES = [
   {
     name: "Supervisor de Patrulla / Zona",
     icon: Briefcase,
-    role: "supervisor_puesto" as SecurityRoleType,
+    role: "supervisor_zona" as SecurityRoleType,
     title: "Supervisor de Puestos y Patrulla Operativa",
-    shift: "4x2 Rotativo",
+    shift: "4x2" as DbShiftTypeEnum,
     salary: 2600000,
     requiresCourse: true,
     requiresMilitaryBooklet: true,
@@ -116,7 +114,7 @@ export default function NuevaVacantePage() {
   const [roleRequired, setRoleRequired] = useState<SecurityRoleType>("vigilante_fijo");
   const [city, setCity] = useState("Bogotá D.C.");
   const [zone, setZone] = useState("");
-  const [shift, setShift] = useState(SHIFTS[0]);
+  const [shift, setShift] = useState<DbShiftTypeEnum>("2x2x2");
   const [salaryMonthly, setSalaryMonthly] = useState(1950000);
   const [includesSurcharges, setIncludesSurcharges] = useState(true);
   const [description, setDescription] = useState("");
@@ -240,6 +238,7 @@ export default function NuevaVacantePage() {
 
       const normalizedRoleRequired = normalizeSecurityRole(roleRequired);
       const roleLabel = formatSecurityRoleLabel(normalizedRoleRequired);
+      const normalizedShift = normalizeShift(shift);
 
       const payload = {
         company_id: resolvedCompanyId,
@@ -247,7 +246,7 @@ export default function NuevaVacantePage() {
         role_required: normalizedRoleRequired,
         city,
         zone_neighborhood: zone.trim() || "Zona Principal",
-        shift,
+        shift: normalizedShift,
         salary_monthly: salaryMonthly,
         includes_surcharges: includesSurcharges,
         requires_active_course: requiresCourse,
@@ -272,13 +271,10 @@ export default function NuevaVacantePage() {
 
       if (jobPostErr) {
         console.error("Error creating job_posts:", jobPostErr);
-        const { error: fallbackErr } = await supabase.from("jobs").insert(payload);
-        if (fallbackErr) {
-          setErrorMessage(
-            `Error de base de datos al publicar la vacante: ${jobPostErr.message || fallbackErr.message}`
-          );
-          return;
-        }
+        setErrorMessage(
+          `Error al publicar la vacante en la base de datos: ${jobPostErr.message || "No fue posible guardar la vacante."}`
+        );
+        return;
       }
 
       setSuccessToast(true);
@@ -506,12 +502,12 @@ export default function NuevaVacantePage() {
                 </label>
                 <select
                   value={shift}
-                  onChange={(e) => setShift(e.target.value)}
+                  onChange={(e) => setShift(normalizeShift(e.target.value))}
                   className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-sm font-medium text-slate-900 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all cursor-pointer"
                 >
-                  {SHIFTS.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
+                  {SHIFT_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
                     </option>
                   ))}
                 </select>
@@ -682,7 +678,7 @@ export default function NuevaVacantePage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="text-slate-600 font-medium">{shift}</span>
+                <span className="text-slate-600 font-medium">{formatShiftLabel(shift)}</span>
                 <span className="text-slate-300">•</span>
                 <span className="text-slate-900 font-bold font-mono tabular-nums">
                   ${salaryMonthly.toLocaleString("es-CO")} COP
