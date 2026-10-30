@@ -273,23 +273,45 @@ export default function AdminEstudiosPage() {
           const cp = candMap.get(s.candidate_id);
           const p = profMap.get(s.candidate_id) || s.profiles;
 
-          // Extraer nombre y cédula si no están en profiles
-          let candName = p?.full_name;
-          let candNatId = cp?.national_id;
-          let candPhone = p?.phone_whatsapp;
+          // 1. Priorizar extracción de datos embebidos en el dictamen pericial
+          let candName = "";
+          let candNatId = "";
+          let candPhone = "";
 
-          if (!candName && typeof s.final_concept === "string") {
+          if (typeof s.final_concept === "string") {
             const nameMatch = s.final_concept.match(/para\s+([^(\n]+?)\s*\(/i);
             if (nameMatch && nameMatch[1]) candName = nameMatch[1].trim();
-          }
-          if (!candNatId && typeof s.final_concept === "string") {
+
             const idMatch = s.final_concept.match(/C\.C\.\s*([^,\n]+)/i);
             if (idMatch && idMatch[1]) candNatId = idMatch[1].trim();
-          }
-          if (!candPhone && typeof s.final_concept === "string") {
+
             const phoneMatch = s.final_concept.match(/Tel:\s*([^,\n]+)/i);
             if (phoneMatch && phoneMatch[1]) candPhone = phoneMatch[1].trim();
           }
+
+          // 2. Fallback a perfiles si no estaban en el concepto
+          if (!candName) candName = p?.full_name || "Aspirante Registrado";
+          if (!candNatId) candNatId = cp?.national_id || "En verificación";
+          if (!candPhone) candPhone = p?.phone_whatsapp || "Sin registrar";
+
+          let studyLabel = "Estudio de Seguridad";
+          if (s.include_polygraph && s.include_home_visit) {
+            studyLabel = "COMBO INTEGRAL (POLÍGRAFO + VISITA)";
+          } else if (s.include_polygraph) {
+            studyLabel = "POLIGRAFÍA PREEMPLEO";
+          } else if (s.include_home_visit) {
+            studyLabel = "VISITA DOMICILIARIA CON FOTOS";
+          } else if (s.study_type) {
+            studyLabel = s.study_type.replace(/_/g, " ").toUpperCase();
+          }
+
+          const scheduledDateLabel = s.scheduled_date
+            ? new Date(s.scheduled_date).toLocaleDateString("es-CO", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })
+            : "Por agendar";
 
           return {
             id: s.id,
@@ -297,19 +319,17 @@ export default function AdminEstudiosPage() {
             company_name: comp?.company_name || "Empresa Solicitante",
             company_phone: comp?.contact_phone || "3150000000",
             candidate_id: s.candidate_id,
-            candidate_name: candName || "Aspirante Registrado",
-            candidate_phone: candPhone || "3000000000",
+            candidate_name: candName,
+            candidate_phone: candPhone,
             candidate_address:
               cp?.locality_neighborhood && cp?.city
                 ? `${cp.locality_neighborhood}, ${cp.city}`
                 : cp?.city || "Por confirmar",
-            national_id: candNatId || "En verificación",
-            job_title: s.study_type
-              ? s.study_type.replace(/_/g, " ").toUpperCase()
-              : "Estudio Integral",
+            national_id: candNatId,
+            job_title: studyLabel,
             study_type: s.study_type || "combo_integral_poligrafo_visita",
             status: (s.status as SecurityStudyStatus) || "solicitado",
-            scheduled_date: s.scheduled_date || "Por agendar",
+            scheduled_date: scheduledDateLabel,
             final_concept: s.final_concept || "",
             report_pdf_url: s.report_pdf_url || null,
             resume_pdf_url: cp?.resume_pdf_url || null,
@@ -342,17 +362,27 @@ export default function AdminEstudiosPage() {
 
     try {
       const supabase = createClient();
+      let cleanScheduledDate: string | null = null;
+      if (updated.scheduled_date && updated.scheduled_date.trim()) {
+        const parsed = Date.parse(updated.scheduled_date);
+        if (!isNaN(parsed)) {
+          cleanScheduledDate = new Date(parsed).toISOString();
+        }
+      }
+
       await supabase
         .from("security_study_orders")
         .update({
           status: updated.status,
-          scheduled_date: updated.scheduled_date,
+          scheduled_date: cleanScheduledDate,
           final_concept: updated.final_concept,
           report_pdf_url: updated.report_pdf_url,
           updated_at: new Date().toISOString(),
         })
         .eq("id", updated.id);
-    } catch {}
+    } catch (err) {
+      console.error("Error saving updated order in Supabase:", err);
+    }
 
     setNotification(
       `¡Orden #${updated.id} actualizada en Supabase! El dictamen ya está disponible para ${updated.company_name}.`

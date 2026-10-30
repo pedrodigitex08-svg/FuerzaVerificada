@@ -54,6 +54,7 @@ export default function EmpresaEstudiosPage() {
   const [formCity, setFormCity] = useState("Bogotá D.C.");
   const [formNotes, setFormNotes] = useState("");
   const [submittingOrder, setSubmittingOrder] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
 
   useEffect(() => {
@@ -170,27 +171,45 @@ export default function EmpresaEstudiosPage() {
               const cpNat = natMap.get(s.candidate_id);
               const p = profMap.get(s.candidate_id);
 
-              let candName = s.profiles?.full_name || p?.full_name;
-              let candNatId = cpNat;
+              let candName = "";
+              let candNatId = "";
 
-              if (!candName && typeof s.final_concept === "string") {
+              if (typeof s.final_concept === "string") {
                 const nameMatch = s.final_concept.match(/para\s+([^(\n]+?)\s*\(/i);
                 if (nameMatch && nameMatch[1]) candName = nameMatch[1].trim();
-              }
-              if (!candNatId && typeof s.final_concept === "string") {
                 const idMatch = s.final_concept.match(/C\.C\.\s*([^,\n]+)/i);
                 if (idMatch && idMatch[1]) candNatId = idMatch[1].trim();
               }
 
+              if (!candName) candName = s.profiles?.full_name || p?.full_name || "Aspirante en Evaluación";
+              if (!candNatId) candNatId = cpNat || "En verificación";
+
+              let serviceTitle = "Estudio de Seguridad";
+              if (s.include_polygraph && s.include_home_visit) {
+                serviceTitle = "COMBO INTEGRAL (POLÍGRAFO + VISITA)";
+              } else if (s.include_polygraph) {
+                serviceTitle = "POLIGRAFÍA PREEMPLEO";
+              } else if (s.include_home_visit) {
+                serviceTitle = "VISITA DOMICILIARIA CON FOTOS";
+              } else if (s.study_type) {
+                serviceTitle = s.study_type.replace(/_/g, " ").toUpperCase();
+              }
+
+              const dateDisplay = s.scheduled_date
+                ? new Date(s.scheduled_date).toLocaleDateString("es-CO", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })
+                : "En programación pericial";
+
               return {
                 id: s.id,
-                candidate_name: candName || "Aspirante en Evaluación",
-                national_id: candNatId || "En verificación",
-                job_title: s.study_type
-                  ? s.study_type.replace(/_/g, " ").toUpperCase()
-                  : "Estudio Solicitado",
+                candidate_name: candName,
+                national_id: candNatId,
+                job_title: serviceTitle,
                 status: s.status as SecurityStudyStatus,
-                scheduled_date: s.scheduled_date || "En programación",
+                scheduled_date: dateDisplay,
                 final_concept: s.final_concept || "En proceso de validación",
                 report_pdf_url: s.report_pdf_url,
                 created_at: new Date(s.created_at).toLocaleDateString("es-CO"),
@@ -223,6 +242,7 @@ export default function EmpresaEstudiosPage() {
     }
 
     setSubmittingOrder(true);
+    setFormError(null);
     const supabase = createClient();
 
     try {
@@ -298,31 +318,34 @@ export default function EmpresaEstudiosPage() {
         resolvedCandId = user.id;
       }
 
-      // REGLA B: Descontar automáticamente 1 crédito
-      const updatedCredits = Math.max(credits - 1, 0);
-      if (activeCompanyId) {
-        await supabase
-          .from("companies")
-          .update({ credits_security_studies: updatedCredits })
-          .eq("id", activeCompanyId);
-        setCredits(updatedCredits);
-      }
-
       const isPolygraph =
         formStudyType.includes("poligrafo") || formStudyType.includes("combo");
       const isHomeVisit =
         formStudyType.includes("visita") || formStudyType.includes("combo");
 
-      const newPayload = {
+      let serviceTitle = "COMBO INTEGRAL (POLÍGRAFO + VISITA)";
+      if (isPolygraph && isHomeVisit) {
+        serviceTitle = "COMBO INTEGRAL (POLÍGRAFO + VISITA)";
+      } else if (isPolygraph) {
+        serviceTitle = "POLIGRAFÍA PREEMPLEO";
+      } else if (isHomeVisit) {
+        serviceTitle = "VISITA DOMICILIARIA CON FOTOS";
+      } else if (formStudyType.includes("antecedentes")) {
+        serviceTitle = "ESTUDIO DE SEGURIDAD Y ANTECEDENTES";
+      }
+
+      const candidateSummary = `Solicitud pericial de ${serviceTitle} para ${formCandName.trim()} (C.C. ${formNationalId.trim()}, Tel: ${formPhone.trim() || "N/A"}, Ciudad: ${formCity}). Obs: ${formNotes.trim() || "Sin observaciones adicionales."}`;
+
+      // Inserción en Supabase con esquema exacto (sin columnas inexistentes ni tipos inválidos)
+      const newPayload: any = {
         company_id: activeCompanyId,
         candidate_id: resolvedCandId,
-        study_type: formStudyType,
         include_polygraph: isPolygraph,
         include_home_visit: isHomeVisit,
         include_background_study: true,
-        status: "pendiente" as SecurityStudyStatus,
-        scheduled_date: "En programación pericial",
-        final_concept: `Solicitud pericial de ${formStudyType.replace(/_/g, " ").toUpperCase()} para ${formCandName.trim()} (C.C. ${formNationalId.trim()}, Tel: ${formPhone.trim() || "N/A"}, Ciudad: ${formCity}). Obs: ${formNotes.trim() || "Sin observaciones adicionales."}`,
+        status: "solicitado" as SecurityStudyStatus,
+        scheduled_date: null,
+        final_concept: candidateSummary,
         report_pdf_url: null,
       };
 
@@ -332,18 +355,32 @@ export default function EmpresaEstudiosPage() {
         .select("*")
         .maybeSingle();
 
-      if (insertErr) {
-        console.error("Error creating security order:", insertErr);
+      if (insertErr || !insertedOrder) {
+        console.error("Error creating security order in Supabase:", insertErr);
+        setFormError(
+          `No se pudo radicar la orden en Supabase: ${insertErr?.message || "Error al insertar registro"}. Verifica tus permisos de empresa o ejecuta el script de migración SQL.`
+        );
+        return;
+      }
+
+      // REGLA B: Descontar 1 crédito de la empresa ÚNICAMENTE tras confirmación de inserción en Supabase
+      const updatedCredits = Math.max(credits - 1, 0);
+      if (activeCompanyId) {
+        await supabase
+          .from("companies")
+          .update({ credits_security_studies: updatedCredits })
+          .eq("id", activeCompanyId);
+        setCredits(updatedCredits);
       }
 
       const newOrderItem: SecurityOrder = {
-        id: insertedOrder?.id || `order-${Date.now()}`,
+        id: insertedOrder.id,
         candidate_name: formCandName.trim(),
         national_id: formNationalId.trim(),
-        job_title: formStudyType.replace(/_/g, " ").toUpperCase(),
-        status: "pendiente",
+        job_title: serviceTitle,
+        status: "solicitado",
         scheduled_date: "En programación pericial",
-        final_concept: `Solicitud pericial registrada. Obs: ${formNotes.trim() || "Sin observaciones."}`,
+        final_concept: candidateSummary,
         report_pdf_url: null,
         created_at: new Date().toLocaleDateString("es-CO"),
       };
@@ -359,8 +396,9 @@ export default function EmpresaEstudiosPage() {
       setFormNationalId("");
       setFormPhone("");
       setFormNotes("");
-      setSuccessToast(`Estudio solicitado con éxito para ${formCandName.trim()}`);
-      setTimeout(() => setSuccessToast(null), 3500);
+      setFormError(null);
+      setSuccessToast(`¡Estudio solicitado con éxito para ${formCandName.trim()}! Visible de inmediato en el panel del SuperAdministrador.`);
+      setTimeout(() => setSuccessToast(null), 4000);
     } catch (err) {
       console.error("Error creating security order:", err);
     } finally {
@@ -645,6 +683,16 @@ export default function EmpresaEstudiosPage() {
 
             {/* Form */}
             <form onSubmit={handleCreateOrder} className="space-y-4">
+              {formError && (
+                <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <strong className="block font-semibold">Error de Registro</strong>
+                    <p className="leading-relaxed">{formError}</p>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-3.5">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">

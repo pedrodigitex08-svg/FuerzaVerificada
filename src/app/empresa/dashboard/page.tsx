@@ -229,25 +229,36 @@ export default function EmpresaDashboardPage() {
 
           setRecentStudies(
             rawStudies.map((s: any) => {
-              let candName = s.profiles?.full_name || profMap.get(s.candidate_id);
-              let candNatId = natMap.get(s.candidate_id);
+              let candName = "";
+              let candNatId = "";
 
-              if (!candName && typeof s.final_concept === "string") {
+              if (typeof s.final_concept === "string") {
                 const nameMatch = s.final_concept.match(/para\s+([^(\n]+?)\s*\(/i);
                 if (nameMatch && nameMatch[1]) candName = nameMatch[1].trim();
-              }
-              if (!candNatId && typeof s.final_concept === "string") {
+
                 const idMatch = s.final_concept.match(/C\.C\.\s*([^,\n]+)/i);
                 if (idMatch && idMatch[1]) candNatId = idMatch[1].trim();
               }
 
+              if (!candName) candName = s.profiles?.full_name || profMap.get(s.candidate_id) || "Aspirante";
+              if (!candNatId) candNatId = natMap.get(s.candidate_id) || "En verificación";
+
+              let serviceTitle = "Estudio Solicitado";
+              if (s.include_polygraph && s.include_home_visit) {
+                serviceTitle = "COMBO INTEGRAL (POLÍGRAFO + VISITA)";
+              } else if (s.include_polygraph) {
+                serviceTitle = "POLIGRAFÍA PREEMPLEO";
+              } else if (s.include_home_visit) {
+                serviceTitle = "VISITA DOMICILIARIA CON FOTOS";
+              } else if (s.study_type) {
+                serviceTitle = s.study_type.replace(/_/g, " ").toUpperCase();
+              }
+
               return {
                 id: s.id,
-                candidate_name: candName || "Aspirante",
-                national_id: candNatId || "En verificación",
-                job_title: s.study_type
-                  ? s.study_type.replace(/_/g, " ").toUpperCase()
-                  : "Estudio Solicitado",
+                candidate_name: candName,
+                national_id: candNatId,
+                job_title: serviceTitle,
                 status: s.status,
                 concept: s.final_concept || "En proceso de validación",
                 report_url: s.report_pdf_url,

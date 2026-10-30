@@ -479,29 +479,46 @@ export default function ATSVacantePage() {
         const isHomeVisit =
           studyType.includes("visita") || studyType.includes("combo");
 
-        const orderData = {
+        let serviceTitle = "COMBO INTEGRAL (POLÍGRAFO + VISITA)";
+        if (isPolygraph && isHomeVisit) {
+          serviceTitle = "COMBO INTEGRAL (POLÍGRAFO + VISITA)";
+        } else if (isPolygraph) {
+          serviceTitle = "POLIGRAFÍA PREEMPLEO";
+        } else if (isHomeVisit) {
+          serviceTitle = "VISITA DOMICILIARIA CON FOTOS";
+        }
+
+        const candidateSummary = `Solicitud pericial de ${serviceTitle} para ${selectedCandidate.full_name} (C.C. ${selectedCandidate.national_id}, Tel: ${selectedCandidate.phone_whatsapp}, Ciudad: ${selectedCandidate.city}). Obs: ${orderPayload?.notes || "Radicado desde ATS de vacante."}`;
+
+        const orderData: any = {
           company_id: activeCompanyId,
           candidate_id: selectedCandidate.candidate_user_id,
           application_id: selectedCandidate.id,
-          study_type: studyType,
           include_polygraph: isPolygraph,
           include_home_visit: isHomeVisit,
           include_background_study: true,
-          status: "pendiente" as SecurityStudyStatus,
-          scheduled_date: "En programación pericial",
-          final_concept: `Solicitud pericial de ${studyType.replace(/_/g, " ").toUpperCase()} para ${selectedCandidate.full_name} (C.C. ${selectedCandidate.national_id}, Tel: ${selectedCandidate.phone_whatsapp}, Ciudad: ${selectedCandidate.city}). Obs: ${orderPayload?.notes || "Radicado desde ATS de vacante."}`,
+          status: "solicitado" as SecurityStudyStatus,
+          scheduled_date: null,
+          final_concept: candidateSummary,
           report_pdf_url: null,
         };
 
-        const { error: insertOrderErr } = await supabase
+        const { data: insertedOrder, error: insertOrderErr } = await supabase
           .from("security_study_orders")
-          .insert(orderData);
+          .insert(orderData)
+          .select("*")
+          .maybeSingle();
 
-        if (insertOrderErr) {
+        if (insertOrderErr || !insertedOrder) {
           console.error("Error inserting security_study_orders:", insertOrderErr);
+          setNotificationToast(
+            `Error al radicar orden en Supabase: ${insertOrderErr?.message || "Error al insertar registro"}`
+          );
+          setTimeout(() => setNotificationToast(null), 5000);
+          return;
         }
 
-        // Descontar crédito de la empresa (Regla B)
+        // Descontar crédito de la empresa (Regla B) únicamente si la orden se guardó en Supabase
         const nextCredits = Math.max(credits - 1, 0);
         await supabase
           .from("companies")
@@ -516,7 +533,7 @@ export default function ATSVacantePage() {
         }
 
         handleStatusChange(selectedCandidate.id, "en_estudio_seguridad");
-        setNotificationToast("Orden de Poligrafía radicada con éxito en bandeja Admin. Dictamen disponible en 24h.");
+        setNotificationToast("¡Orden de Poligrafía radicada con éxito en Supabase y visible en bandeja Admin!");
         setTimeout(() => setNotificationToast(null), 4000);
       }
     } catch (err) {

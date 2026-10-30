@@ -170,6 +170,7 @@ export interface SecurityStudyOrder {
   company_id: string;
   candidate_id: string;
   application_id: string | null;
+  study_type?: string | null;
   include_polygraph: boolean;
   include_home_visit: boolean;
   include_background_study: boolean;
