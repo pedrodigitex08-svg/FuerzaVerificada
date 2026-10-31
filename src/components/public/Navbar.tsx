@@ -240,7 +240,7 @@ export function Navbar() {
   // Función para determinar si una ruta está activa
   const isActiveRoute = (href: string) => {
     if (href === "/") {
-      return pathname === "/";
+      return pathname === "/" || isVacantesPage;
     }
     if (href === "/vacantes") {
       return isVacantesPage;
@@ -251,7 +251,7 @@ export function Navbar() {
     if (href === "/guarda/documentos") {
       return pathname === "/guarda/documentos";
     }
-    if (href === "/mi-perfil") {
+    if (href === "/guarda/perfil" || href === "/mi-perfil") {
       return pathname === "/mi-perfil" || pathname.startsWith("/guarda/perfil");
     }
     if (href === "/empresa/vacantes") {
@@ -364,8 +364,8 @@ export function Navbar() {
             </div>
           </Link>
 
-          {/* CENTRO CONDICIONAL 1: EN VISTA DE OFERTAS (/vacantes) -> BUSCADOR EN PÍLDORA COMPACTO */}
-          {isVacantesPage ? (
+          {/* CENTRO CONDICIONAL 1: EN VISTA DE OFERTAS (/vacantes) PARA VISITANTES -> BUSCADOR EN PÍLDORA COMPACTO */}
+          {isVacantesPage && !isAuthenticated ? (
             <Suspense fallback={<div className="hidden md:block w-96 h-10" />}>
               <NavbarSearchPill />
             </Suspense>
@@ -396,9 +396,9 @@ export function Navbar() {
                     Mis Postulaciones
                   </Link>
                   <Link
-                    href="/mi-perfil"
+                    href="/guarda/perfil"
                     className={`py-5 border-b-[3px] transition-all ${
-                      isActiveRoute("/mi-perfil")
+                      isActiveRoute("/guarda/perfil")
                         ? "text-[#0B3B70] font-semibold border-[#0B3B70]"
                         : "text-slate-700 hover:text-[#0B3B70] border-transparent hover:border-[#0B3B70]"
                     }`}
@@ -692,7 +692,7 @@ export function Navbar() {
                           <span>Mis Postulaciones y Estado</span>
                         </Link>
                         <Link
-                          href="/mi-perfil"
+                          href="/guarda/perfil"
                           onClick={() => setUserMenuOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 hover:text-[#0B3B70] hover:bg-[#EAF3FA] rounded-xl transition-colors"
                         >
@@ -976,7 +976,7 @@ export function Navbar() {
                   </Link>
 
                   <Link
-                    href="/mi-perfil"
+                    href="/guarda/perfil"
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center justify-between p-3 rounded-xl border border-slate-200/90 hover:border-[#0B3B70] hover:bg-[#EAF3FA] transition-all"
                   >

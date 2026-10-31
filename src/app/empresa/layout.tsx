@@ -75,12 +75,14 @@ export default function EmpresaLayout({
           prof = fallbackProf;
         }
 
-        const canonicalRole: UserRole =
+        const dbRole: UserRole =
           prof?.role === "company" ||
           prof?.role === "candidate" ||
           prof?.role === "admin"
             ? (prof.role as UserRole)
-            : role;
+            : null;
+
+        const canonicalRole: UserRole = dbRole || role;
 
         if (!isMounted) return;
 
@@ -98,7 +100,7 @@ export default function EmpresaLayout({
         );
 
         // Redirección inteligente si el rol en public.profiles cambió a 'candidate'
-        if (canonicalRole === "candidate") {
+        if (dbRole === "candidate" || (!dbRole && canonicalRole === "candidate")) {
           setIsAuthorized(false);
           router.replace("/guarda/vacantes");
           return;

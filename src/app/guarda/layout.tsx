@@ -57,12 +57,14 @@ export default function GuardaLayout({
           profile = fallbackProfile;
         }
 
-        const canonicalRole: UserRole =
+        const dbRole: UserRole =
           profile?.role === "company" ||
           profile?.role === "candidate" ||
           profile?.role === "admin"
             ? (profile.role as UserRole)
-            : role;
+            : null;
+
+        const canonicalRole: UserRole = dbRole || role;
 
         if (!isMounted) return;
 
@@ -79,13 +81,13 @@ export default function GuardaLayout({
           profile?.phone_whatsapp
         );
 
-        // Redirección inteligente entre layouts cuando public.profiles.role cambia
-        if (canonicalRole === "company") {
+        // Redirección inteligente entre layouts SOLO cuando public.profiles.role confirma el cambio de rol
+        if (dbRole === "company") {
           router.replace("/empresa/dashboard");
           return;
         }
 
-        if (canonicalRole === "admin") {
+        if (dbRole === "admin") {
           router.replace("/admin/estudios");
           return;
         }

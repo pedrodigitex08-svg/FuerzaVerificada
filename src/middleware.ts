@@ -93,16 +93,17 @@ export async function middleware(request: NextRequest) {
       .eq("id", user.id)
       .maybeSingle();
 
-    if (
+    const hasCanonicalRole =
       profile?.role === "admin" ||
       profile?.role === "company" ||
-      profile?.role === "candidate"
-    ) {
+      profile?.role === "candidate";
+
+    if (hasCanonicalRole) {
       activeRole = profile.role;
     }
 
-    // Fallback check in public.companies if not admin/company yet
-    if (activeRole !== "admin" && activeRole !== "company") {
+    // Fallback check in public.companies ONLY if profile.role is NOT defined in public.profiles
+    if (!hasCanonicalRole && activeRole !== "admin" && activeRole !== "company") {
       const { data: companyRecord } = await supabase
         .from("companies")
         .select("id")
