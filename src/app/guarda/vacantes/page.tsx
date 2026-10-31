@@ -113,15 +113,27 @@ function VacantesContent() {
   const [contractFilter, setContractFilter] = useState<string>("todos");
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
-  // Close dropdown on outside click
+  // Close dropdown on outside click / touch or Escape key
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (!(e.target as HTMLElement).closest(".filter-dropdown-container")) {
+    function handleOutsideInteraction(e: MouseEvent | TouchEvent) {
+      const target = e.target as HTMLElement | null;
+      if (target && !target.closest(".filter-dropdown-container")) {
         setOpenDropdown(null);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    function handleEscapeKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setOpenDropdown(null);
+      }
+    }
+    document.addEventListener("mousedown", handleOutsideInteraction);
+    document.addEventListener("touchstart", handleOutsideInteraction, { passive: true });
+    document.addEventListener("keydown", handleEscapeKey);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideInteraction);
+      document.removeEventListener("touchstart", handleOutsideInteraction);
+      document.removeEventListener("keydown", handleEscapeKey);
+    };
   }, []);
 
   // Read URL search params on mount & on searchParams change
@@ -428,15 +440,42 @@ function VacantesContent() {
       let matchesCategory = true;
       if (categoryFilter !== "todas") {
         const norm = normalizeSecurityRole(j.role_required);
+        const roleRaw = normalizeFilterStr(j.role_required);
         const titleL = normalizeFilterStr(j.title);
         if (categoryFilter === "vigilante") {
-          matchesCategory = norm.includes("vigilante") || titleL.includes("vigilante") || titleL.includes("guarda");
+          matchesCategory =
+            norm.includes("vigilante") ||
+            roleRaw.includes("vigilante") ||
+            titleL.includes("vigilante") ||
+            titleL.includes("guarda");
         } else if (categoryFilter === "escolta") {
-          matchesCategory = norm.includes("escolta") || titleL.includes("escolta");
+          matchesCategory =
+            norm.includes("escolta") ||
+            roleRaw.includes("escolta") ||
+            titleL.includes("escolta") ||
+            titleL.includes("proteccion");
         } else if (categoryFilter === "cctv") {
-          matchesCategory = norm.includes("medios") || titleL.includes("cctv") || titleL.includes("operador") || titleL.includes("camaras");
+          matchesCategory =
+            norm.includes("medios") ||
+            roleRaw.includes("cctv") ||
+            roleRaw.includes("medios") ||
+            titleL.includes("cctv") ||
+            titleL.includes("operador") ||
+            titleL.includes("camaras") ||
+            titleL.includes("monitoreo");
         } else if (categoryFilter === "supervisor") {
-          matchesCategory = norm.includes("supervisor") || titleL.includes("supervisor");
+          matchesCategory =
+            norm.includes("supervisor") ||
+            roleRaw.includes("supervisor") ||
+            titleL.includes("supervisor") ||
+            titleL.includes("motorizado");
+        } else if (categoryFilter === "manejador_canino") {
+          matchesCategory =
+            norm === "manejador_canino" ||
+            norm.includes("canino") ||
+            roleRaw.includes("canino") ||
+            titleL.includes("canino") ||
+            titleL.includes("guia canino");
         }
       }
 
@@ -473,8 +512,32 @@ function VacantesContent() {
 
       let matchesContract = true;
       if (contractFilter !== "todos") {
-        const desc = normalizeFilterStr(j.description);
-        matchesContract = desc.includes(normalizeFilterStr(contractFilter));
+        const contractRaw = normalizeFilterStr((j as any).contract_type);
+        const titleNorm = normalizeFilterStr(j.title);
+        const descNorm = normalizeFilterStr(j.description);
+        const haystack = `${contractRaw} ${titleNorm} ${descNorm}`;
+
+        if (contractFilter === "fijo") {
+          matchesContract =
+            haystack.includes("termino fijo") ||
+            haystack.includes("contrato fijo") ||
+            haystack.includes("fijo") ||
+            haystack.includes("fija");
+        } else if (contractFilter === "indefinido") {
+          matchesContract =
+            haystack.includes("termino indefinido") ||
+            haystack.includes("contrato indefinido") ||
+            haystack.includes("indefinido") ||
+            haystack.includes("indefinida");
+        } else if (contractFilter === "obra") {
+          matchesContract =
+            haystack.includes("obra o labor") ||
+            haystack.includes("obra") ||
+            haystack.includes("labor") ||
+            haystack.includes("prestacion");
+        } else {
+          matchesContract = haystack.includes(normalizeFilterStr(contractFilter));
+        }
       }
 
       return (
@@ -601,7 +664,7 @@ function VacantesContent() {
               <Search className="w-3 h-3" strokeWidth={2.5} />
             </button>
           </form>
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-0.5">
+          <div className="flex items-center gap-2 flex-wrap pb-0.5">
             {/* 1. Filtro Ordenar */}
             <div className="relative filter-dropdown-container shrink-0">
               <button
@@ -713,25 +776,28 @@ function VacantesContent() {
               >
                 <span>
                   {categoryFilter === "vigilante"
-                    ? "Vigilante"
+                    ? "Vigilante Fijo / Móvil"
                     : categoryFilter === "escolta"
-                    ? "Escolta"
+                    ? "Escolta VIP / Mercancía"
                     : categoryFilter === "cctv"
-                    ? "CCTV / Medios"
+                    ? "Operador CCTV"
                     : categoryFilter === "supervisor"
-                    ? "Supervisor"
+                    ? "Supervisor Motorizado / Zona"
+                    : categoryFilter === "manejador_canino"
+                    ? "Manejador Canino"
                     : "Categoría / Cargo"}
                 </span>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
               {openDropdown === "cat" && (
-                <div className="absolute left-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+                <div className="absolute left-0 mt-2 w-60 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
                   {[
                     { id: "todas", label: "Todas las categorías" },
                     { id: "vigilante", label: "Vigilante Fijo / Móvil" },
-                    { id: "escolta", label: "Escolta Profesional" },
-                    { id: "cctv", label: "Operador CCTV / Medios" },
-                    { id: "supervisor", label: "Supervisor de Zona" },
+                    { id: "escolta", label: "Escolta VIP / Mercancía" },
+                    { id: "cctv", label: "Operador CCTV" },
+                    { id: "supervisor", label: "Supervisor Motorizado / Zona" },
+                    { id: "manejador_canino", label: "Manejador Canino" },
                   ].map((c) => (
                     <button
                       key={c.id}
@@ -951,7 +1017,13 @@ function VacantesContent() {
                 }`}
               >
                 <span>
-                  {contractFilter !== "todos" ? `Contrato: ${contractFilter}` : "Contrato"}
+                  {contractFilter === "fijo"
+                    ? "Contrato: Término fijo"
+                    : contractFilter === "indefinido"
+                    ? "Contrato: Indefinido"
+                    : contractFilter === "obra"
+                    ? "Contrato: Obra o labor"
+                    : "Contrato"}
                 </span>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
@@ -1042,12 +1114,8 @@ function VacantesContent() {
                 </p>
                 <button
                   type="button"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setLocationFilter("");
-                    setCategoryFilter("todas");
-                  }}
-                  className="rounded-full bg-[#0B3B70] text-white text-xs font-semibold px-4 py-2"
+                  onClick={resetAllFilters}
+                  className="rounded-full bg-[#0B3B70] text-white text-xs font-semibold px-4 py-2 cursor-pointer hover:bg-[#082B54] transition-colors"
                 >
                   Ver todas las ofertas
                 </button>
