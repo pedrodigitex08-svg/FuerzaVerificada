@@ -55,12 +55,12 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${origin}/login?error=not_registered`);
       }
 
-      const targetRole = (roleParam || meta.role || profile?.role || "candidate") as
+      const targetRole = (profile?.role || roleParam || meta.role || "candidate") as
         | "candidate"
         | "company"
         | "admin";
 
-      // Si el perfil no existe (viene de registro OAuth o confirmación de correo), crearlo con sus metadatos reales
+      // Si el perfil no existe (viene de registro OAuth o confirmación de correo), crearlo sin sobrescribir un rol existente
       if (!profile) {
         const resolvedFullName =
           meta.full_name ||
@@ -80,7 +80,7 @@ export async function GET(request: Request) {
               phone_whatsapp: meta.phone_whatsapp || user.phone || "",
               updated_at: new Date().toISOString(),
             },
-            { onConflict: "id" }
+            { onConflict: "id", ignoreDuplicates: true }
           )
           .select("id, role, full_name, phone_whatsapp")
           .maybeSingle();
@@ -90,11 +90,13 @@ export async function GET(request: Request) {
         }
       }
 
-      // Verificación de rol: Si el perfil tiene role definido en public.profiles
-      let activeRole = profile?.role || targetRole;
+      // Verificación de rol: Si el perfil ya tiene role definido en public.profiles, se respeta como única fuente de verdad
+      let activeRole = profile?.role;
+      const hasExistingRole =
+        activeRole === "candidate" || activeRole === "company" || activeRole === "admin";
 
-      // Si no es admin ni company, verificar si tiene empresa registrada como propietario
-      if (activeRole !== "admin" && activeRole !== "company") {
+      // Solo consultar public.companies si el usuario NO tenía un rol definido en public.profiles
+      if (!hasExistingRole) {
         const { data: comp } = await supabase
           .from("companies")
           .select("id")
@@ -103,10 +105,8 @@ export async function GET(request: Request) {
 
         if (comp) {
           activeRole = "company";
-          await supabase
-            .from("profiles")
-            .update({ role: "company" })
-            .eq("id", user.id);
+        } else {
+          activeRole = targetRole;
         }
       }
 

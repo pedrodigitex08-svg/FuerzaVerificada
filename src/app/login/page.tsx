@@ -160,7 +160,10 @@ function LoginForm() {
             .maybeSingle();
 
           let userRole = profile?.role;
-          if (userRole !== "admin" && userRole !== "company") {
+          const hasCanonicalRole =
+            userRole === "candidate" || userRole === "company" || userRole === "admin";
+
+          if (!hasCanonicalRole) {
             const { data: comp } = await supabase
               .from("companies")
               .select("id")
@@ -168,10 +171,6 @@ function LoginForm() {
               .maybeSingle();
             if (comp) {
               userRole = "company";
-              await supabase
-                .from("profiles")
-                .update({ role: "company" })
-                .eq("id", session.user.id);
             }
           }
 
@@ -215,7 +214,10 @@ function LoginForm() {
             .maybeSingle();
 
           let userRole = profile?.role;
-          if (userRole !== "admin" && userRole !== "company") {
+          const hasCanonicalRole =
+            userRole === "candidate" || userRole === "company" || userRole === "admin";
+
+          if (!hasCanonicalRole) {
             const { data: comp } = await supabase
               .from("companies")
               .select("id")
@@ -223,10 +225,6 @@ function LoginForm() {
               .maybeSingle();
             if (comp) {
               userRole = "company";
-              await supabase
-                .from("profiles")
-                .update({ role: "company" })
-                .eq("id", session.user.id);
             }
           }
 
@@ -236,7 +234,7 @@ function LoginForm() {
 
           const meta = session.user.user_metadata || {};
 
-          // Asegurar que el perfil exista (upsert automático solo si no existe)
+          // Asegurar que el perfil exista (solo insertar si no existe fila en public.profiles, sin sobrescribir un rol existente)
           if (!profile) {
             const googleFullName =
               meta.full_name ||
@@ -253,7 +251,7 @@ function LoginForm() {
                 phone_whatsapp: meta.phone_whatsapp || session.user.phone || "",
                 updated_at: new Date().toISOString(),
               },
-              { onConflict: "id" }
+              { onConflict: "id", ignoreDuplicates: true }
             );
           }
 
@@ -640,7 +638,10 @@ function LoginForm() {
           }
 
           let role = profile?.role;
-          if (role !== "admin" && role !== "company") {
+          const hasExistingRole =
+            role === "candidate" || role === "company" || role === "admin";
+
+          if (!hasExistingRole) {
             const { data: comp } = await supabase
               .from("companies")
               .select("id")
@@ -648,10 +649,6 @@ function LoginForm() {
               .maybeSingle();
             if (comp) {
               role = "company";
-              await supabase
-                .from("profiles")
-                .update({ role: "company" })
-                .eq("id", data.user.id);
             }
           }
 
