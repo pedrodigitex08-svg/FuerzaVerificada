@@ -108,9 +108,30 @@ CREATE POLICY "Empresas pueden eliminar sus vacantes"
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.job_posts TO anon, authenticated;
 
 -- -----------------------------------------------------------------------------
--- 3. HABILITAR ROW LEVEL SECURITY (RLS) EN PUBLIC.APPLICATIONS
+-- 3. HABILITAR ROW LEVEL SECURITY (RLS) Y REALTIME EN PUBLIC.APPLICATIONS
 -- -----------------------------------------------------------------------------
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'applications'
+      AND column_name = 'updated_at'
+  ) THEN
+    ALTER TABLE public.applications ADD COLUMN updated_at timestamptz DEFAULT now();
+  END IF;
+END $$;
+
 ALTER TABLE public.applications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.applications REPLICA IDENTITY FULL;
+
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.applications;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+  WHEN undefined_object THEN NULL;
+END $$;
 
 -- Política 1: Candidatos y SuperAdmin pueden enviar su postulación (INSERT)
 DROP POLICY IF EXISTS "Candidatos pueden postularse a vacantes" ON public.applications;
@@ -142,7 +163,7 @@ CREATE POLICY "Lectura de postulaciones autorizadas"
     OR
     EXISTS (
       SELECT 1 FROM public.profiles p
-      WHERE p.id = auth.uid() AND p.role = 'admin'
+      WHERE p.id = auth.uid() AND p.role IN ('company', 'admin')
     )
   );
 
@@ -160,7 +181,19 @@ CREATE POLICY "Empresas gestionan estado en ATS"
     OR
     EXISTS (
       SELECT 1 FROM public.profiles p
-      WHERE p.id = auth.uid() AND p.role = 'admin'
+      WHERE p.id = auth.uid() AND p.role IN ('company', 'admin')
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.job_posts jp
+      JOIN public.companies c ON c.id = jp.company_id
+      WHERE jp.id = applications.job_id AND c.owner_id = auth.uid()
+    )
+    OR
+    EXISTS (
+      SELECT 1 FROM public.profiles p
+      WHERE p.id = auth.uid() AND p.role IN ('company', 'admin')
     )
   );
 

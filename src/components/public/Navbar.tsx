@@ -27,7 +27,8 @@ import {
   CheckCircle,
   ExternalLink,
 } from "lucide-react";
-import { useAuth } from "@/lib/supabase/useAuth";
+import { useAuth, UserRole, ensureRoleProvisioning } from "@/lib/supabase/useAuth";
+import { createClient } from "@/lib/supabase/client";
 
 /**
  * Subcomponente para el Buscador en Píldora Compacto (Estilo Computrabajo en /vacantes).
@@ -138,13 +139,96 @@ function NavbarSearchPill() {
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { role, isAuthenticated, fullName, email, avatarUrl, signOut } = useAuth();
+  const { role: authRole, isAuthenticated, fullName: authFullName, email, avatarUrl: authAvatarUrl, signOut } = useAuth();
+
+  const [dbRole, setDbRole] = useState<UserRole>(null);
+  const [dbFullName, setDbFullName] = useState<string>("");
+  const [dbAvatarUrl, setDbAvatarUrl] = useState<string>("");
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const userDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Sincronización directa desde public.profiles (Única Fuente de la Verdad)
+  useEffect(() => {
+    let isMounted = true;
+
+    async function syncProfileRole() {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          if (isMounted) {
+            setDbRole(null);
+            setDbFullName("");
+            setDbAvatarUrl("");
+          }
+          return;
+        }
+
+        let profile: any = null;
+        const { data: primaryProfile, error: primaryErr } = await supabase
+          .from("profiles")
+          .select("role, full_name, avatar_url")
+          .eq("id", user.id)
+          .single();
+
+        if (!primaryErr && primaryProfile) {
+          profile = primaryProfile;
+        } else {
+          const { data: fallbackProfile } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
+            .maybeSingle();
+          profile = fallbackProfile;
+        }
+
+        if (profile && isMounted) {
+          const validRole =
+            profile.role === "company" ||
+            profile.role === "candidate" ||
+            profile.role === "admin"
+              ? (profile.role as UserRole)
+              : null;
+
+          if (validRole) {
+            setDbRole(validRole);
+            await ensureRoleProvisioning(
+              supabase,
+              user,
+              validRole,
+              profile.full_name,
+              profile.phone_whatsapp
+            );
+            if (typeof window !== "undefined") {
+              localStorage.setItem("fv_demo_role", validRole);
+            }
+          }
+          if (profile.full_name) setDbFullName(profile.full_name);
+          if (profile.avatar_url) setDbAvatarUrl(profile.avatar_url);
+        }
+      } catch {}
+    }
+
+    syncProfileRole();
+
+    const handleFocus = () => syncProfileRole();
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      isMounted = false;
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [pathname, isAuthenticated]);
+
+  const role = dbRole || authRole;
+  const fullName = dbFullName || authFullName;
+  const avatarUrl = dbAvatarUrl || authAvatarUrl;
 
   const isCompany = role === "company";
   const isCandidate = role === "candidate";

@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Navbar } from "@/components/public/Navbar";
 import { generatePackageRechargeLink } from "@/lib/utils/whatsappTemplates";
-import { useAuth } from "@/lib/supabase/useAuth";
+import { useAuth, ensureRoleProvisioning, UserRole } from "@/lib/supabase/useAuth";
 import { createClient } from "@/lib/supabase/client";
 
 export default function EmpresaLayout({
@@ -31,28 +31,11 @@ export default function EmpresaLayout({
   const [planName, setPlanName] = useState("Plan Corporativo");
   const [isVerifiedCompany, setIsVerifiedCompany] = useState(false);
 
-  // 1. Route Authorization Guard
+  // 1. Route Authorization Guard & Company Metadata Sync from Supabase (public.profiles Single Source of Truth)
   useEffect(() => {
-    if (isLoading) return;
+    let isMounted = true;
 
-    if (!isAuthenticated) {
-      setIsAuthorized(false);
-      router.replace(`/login?error=unauthorized_company&redirect=${encodeURIComponent(pathname)}`);
-      return;
-    }
-
-    if (role === "candidate") {
-      setIsAuthorized(false);
-      router.replace("/guarda/vacantes");
-      return;
-    }
-
-    setIsAuthorized(true);
-  }, [isAuthenticated, role, isLoading, pathname, router]);
-
-  // 2. Company Metadata Sync from Supabase
-  useEffect(() => {
-    async function loadCompanyMetadata() {
+    async function verifyAndLoadCompany() {
       if (fullName) {
         setCompanyName(fullName);
       }
@@ -63,82 +46,140 @@ export default function EmpresaLayout({
           data: { user },
         } = await supabase.auth.getUser();
 
-        if (user) {
-          let { data: comp } = await supabase
-            .from("companies")
-            .select("*")
-            .eq("owner_id", user.id)
-            .maybeSingle();
+        if (!user) {
+          if (!isLoading && !isAuthenticated && isMounted) {
+            setIsAuthorized(false);
+            router.replace(
+              `/login?error=unauthorized_company&redirect=${encodeURIComponent(pathname)}`
+            );
+          }
+          return;
+        }
 
-          // Consultar el perfil real del usuario en public.profiles para verificar si tiene role === "company"
-          const { data: prof } = await supabase
+        // Única Fuente de la Verdad: consultar directamente public.profiles sin caché estático
+        let prof: any = null;
+        const { data: primaryProf, error: primaryErr } = await supabase
+          .from("profiles")
+          .select("role, full_name, avatar_url")
+          .eq("id", user.id)
+          .single();
+
+        if (!primaryErr && primaryProf) {
+          prof = primaryProf;
+        } else {
+          const { data: fallbackProf } = await supabase
             .from("profiles")
-            .select("role, full_name, phone_whatsapp")
+            .select("*")
             .eq("id", user.id)
             .maybeSingle();
+          prof = fallbackProf;
+        }
 
-          const isUserCompany =
-            role === "company" ||
-            prof?.role === "company" ||
-            user.user_metadata?.role === "company";
+        const canonicalRole: UserRole =
+          prof?.role === "company" ||
+          prof?.role === "candidate" ||
+          prof?.role === "admin"
+            ? (prof.role as UserRole)
+            : role;
 
-          // Si el usuario tiene rol 'company' pero su registro en public.companies aún no existe, crearlo automáticamente
-          if (!comp && isUserCompany) {
-            const meta = user.user_metadata || {};
-            const resolvedCompName =
-              meta.company_name || prof?.full_name || fullName || user.email?.split("@")[0] || "Empresa de Seguridad";
+        if (!isMounted) return;
 
-            const { data: createdComp } = await supabase
-              .from("companies")
-              .insert({
-                owner_id: user.id,
-                company_name: resolvedCompName,
-                nit: meta.nit || "",
-                city: meta.city || "Bogotá D.C.",
-                contact_person: prof?.full_name || meta.full_name || "Contacto Principal",
-                contact_phone: prof?.phone_whatsapp || meta.phone_whatsapp || "3000000000",
-                is_verified_company: false,
-                plan_name: "basico",
-                credits_security_studies: 0,
-              })
-              .select("*")
-              .maybeSingle();
+        if (canonicalRole && typeof window !== "undefined") {
+          localStorage.setItem("fv_demo_role", canonicalRole);
+        }
 
-            if (createdComp) {
-              comp = createdComp;
-            }
+        // Auto-aprovisionamiento transparente según el rol activo en public.profiles
+        await ensureRoleProvisioning(
+          supabase,
+          user,
+          canonicalRole,
+          prof?.full_name,
+          prof?.phone_whatsapp
+        );
+
+        // Redirección inteligente si el rol en public.profiles cambió a 'candidate'
+        if (canonicalRole === "candidate") {
+          setIsAuthorized(false);
+          router.replace("/guarda/vacantes");
+          return;
+        }
+
+        setIsAuthorized(true);
+
+        let { data: comp } = await supabase
+          .from("companies")
+          .select("*")
+          .eq("owner_id", user.id)
+          .maybeSingle();
+
+        const isUserCompany = canonicalRole === "company" || canonicalRole === "admin";
+
+        // Si el usuario tiene rol 'company' pero su registro en public.companies aún no existe, crearlo automáticamente
+        if (!comp && isUserCompany) {
+          const meta = user.user_metadata || {};
+          const resolvedCompName =
+            meta.company_name ||
+            prof?.full_name ||
+            fullName ||
+            user.email?.split("@")[0] ||
+            "Empresa de Seguridad";
+
+          const { data: createdComp } = await supabase
+            .from("companies")
+            .insert({
+              owner_id: user.id,
+              company_name: resolvedCompName,
+              nit: meta.nit || `NIT-${user.id.slice(0, 8)}`,
+              city: meta.city || "Bogotá D.C.",
+              contact_person: prof?.full_name || meta.full_name || "Contacto Principal",
+              contact_phone: prof?.phone_whatsapp || meta.phone_whatsapp || "3000000000",
+              is_verified_company: false,
+              plan_name: "basico",
+              credits_security_studies: 0,
+            })
+            .select("*")
+            .maybeSingle();
+
+          if (createdComp) {
+            comp = createdComp;
           }
+        }
 
-          if (comp) {
-            const validName = comp.company_name?.trim() || fullName || user.email?.split("@")[0] || "Empresa Registrada";
-            setCompanyName(validName);
+        if (comp && isMounted) {
+          const validName =
+            comp.company_name?.trim() ||
+            prof?.full_name ||
+            fullName ||
+            user.email?.split("@")[0] ||
+            "Empresa Registrada";
+          setCompanyName(validName);
 
-            const hasRealNit = comp.nit && !comp.nit.startsWith("NIT-") && comp.nit.trim().length > 0;
-            if (hasRealNit) {
-              setCompanyNit(`NIT ${comp.nit.trim()}`);
-            } else {
-              setCompanyNit("NIT pendiente de registrar");
-            }
-            setIsVerifiedCompany(Boolean(comp.is_verified_company));
-            setCredits(Number(comp.credits_security_studies ?? 0));
-            if (comp.plan_name) setPlanName(comp.plan_name.replace(/_/g, " "));
-
-            if (typeof window !== "undefined") {
-              localStorage.setItem(
-                "fv_company_credits",
-                String(comp.credits_security_studies ?? 0)
-              );
-              localStorage.setItem(
-                "fv_company_verified",
-                String(Boolean(comp.is_verified_company))
-              );
-            }
-            return;
+          const hasRealNit =
+            comp.nit && !comp.nit.startsWith("NIT-") && comp.nit.trim().length > 0;
+          if (hasRealNit) {
+            setCompanyNit(`NIT ${comp.nit.trim()}`);
+          } else {
+            setCompanyNit("NIT pendiente de registrar");
           }
+          setIsVerifiedCompany(Boolean(comp.is_verified_company));
+          setCredits(Number(comp.credits_security_studies ?? 0));
+          if (comp.plan_name) setPlanName(comp.plan_name.replace(/_/g, " "));
+
+          if (typeof window !== "undefined") {
+            localStorage.setItem(
+              "fv_company_credits",
+              String(comp.credits_security_studies ?? 0)
+            );
+            localStorage.setItem(
+              "fv_company_verified",
+              String(Boolean(comp.is_verified_company))
+            );
+          }
+          return;
         }
       } catch {}
 
-      if (typeof window !== "undefined") {
+      if (typeof window !== "undefined" && isMounted) {
         const savedCredits = localStorage.getItem("fv_company_credits");
         if (savedCredits !== null) {
           setCredits(parseInt(savedCredits, 10) || 0);
@@ -151,8 +192,15 @@ export default function EmpresaLayout({
       }
     }
 
-    loadCompanyMetadata();
-  }, [pathname, fullName, role]);
+    verifyAndLoadCompany();
+
+    const handleFocus = () => verifyAndLoadCompany();
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      isMounted = false;
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [pathname, fullName, role, isAuthenticated, isLoading, router]);
 
   const whatsappRechargeLink = generatePackageRechargeLink({
     companyName,

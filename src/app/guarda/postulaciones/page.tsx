@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import {
   Shield,
@@ -18,6 +18,7 @@ import {
   Eye,
   CheckCircle,
   BadgeCheck,
+  Sparkles,
 } from "lucide-react";
 import { ApplicationStatus } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
@@ -27,37 +28,39 @@ interface SavedApp {
   job_id: string;
   job_title: string;
   company_name: string;
+  company_phone?: string;
   shift: string;
   salary_monthly: number;
   interview_address?: string;
   match_score: number;
   status: ApplicationStatus | string;
   created_at: string;
+  updated_at?: string;
 }
 
 // 4 ETAPAS ESTILO COMPUTRABAJO
 const STAGES = [
   {
     stage: 1,
-    title: "Postulado",
+    title: "1. Postulado",
     subtitle: "CV enviado a la empresa",
     desc: "Tu hoja de vida fue enviada exitosamente y está en cola de revisión por el equipo de recursos humanos.",
   },
   {
     stage: 2,
-    title: "CV Visto por la empresa",
+    title: "2. CV en Revisión",
     subtitle: "Perfil consultado",
     desc: "El reclutador ha abierto y evaluado tu perfil operativo y soportes de SuperVigilancia.",
   },
   {
     stage: 3,
-    title: "En proceso / Pruebas",
+    title: "3. Poligrafía / Evaluación",
     subtitle: "Entrevista o estudio",
     desc: "Fuiste seleccionado para pruebas técnicas, citación presencial o estudio de seguridad / poligrafía.",
   },
   {
     stage: 4,
-    title: "Finalista / Contratado",
+    title: "4. Resultado Final",
     subtitle: "Vinculación laboral",
     desc: "¡Proceso culminado exitosamente! Asignación de puesto formalizada con todas las prestaciones de ley.",
   },
@@ -65,18 +68,21 @@ const STAGES = [
 
 function getStageInfo(status: string) {
   const st = (status || "").toLowerCase().trim();
-  const isRejected = ["descartado", "rejected", "finalizado"].includes(st);
+  const isRejected = ["descartado", "rechazado", "rejected", "finalizado"].includes(st);
 
-  let currentStageIndex = 0; // 0 = Postulado, 1 = CV Visto, 2 = En proceso / Pruebas, 3 = Finalista / Contratado
+  let currentStageIndex = 0; // 0 = 1. Postulado, 1 = 2. CV en Revisión, 2 = 3. Poligrafía / Evaluación, 3 = 4. Resultado Final
 
   if (isRejected) {
     currentStageIndex = 3;
-  } else if (["contratado", "hired", "accepted"].includes(st)) {
+  } else if (["finalista", "contratado", "seleccionado", "hired", "accepted"].includes(st)) {
     currentStageIndex = 3;
   } else if (
     [
-      "citado_entrevista",
+      "poligrafo",
+      "estudio_seguridad",
       "en_estudio_seguridad",
+      "entrevista",
+      "citado_entrevista",
       "interview",
       "in_process",
       "pruebas",
@@ -85,7 +91,7 @@ function getStageInfo(status: string) {
   ) {
     currentStageIndex = 2;
   } else if (
-    ["preseleccionado", "viewed", "reviewing", "en_revision", "leido"].includes(st)
+    ["en_revision", "revisado", "preseleccionado", "viewed", "reviewing", "leido"].includes(st)
   ) {
     currentStageIndex = 1;
   } else {
@@ -95,6 +101,61 @@ function getStageInfo(status: string) {
   return {
     currentStageIndex,
     isRejected,
+  };
+}
+
+function getStatusPillMeta(status: string): {
+  label: string;
+  className: string;
+  dotColor: string;
+} {
+  const st = (status || "").toLowerCase().trim();
+  if (["contratado", "seleccionado", "hired", "accepted"].includes(st)) {
+    return {
+      label: "Contratado / Seleccionado",
+      className: "bg-emerald-50 text-emerald-800 border-emerald-200",
+      dotColor: "bg-emerald-500",
+    };
+  }
+  if (st === "finalista") {
+    return {
+      label: "Finalista",
+      className: "bg-emerald-50 text-emerald-800 border-emerald-200",
+      dotColor: "bg-emerald-500",
+    };
+  }
+  if (["descartado", "rechazado", "rejected", "finalizado"].includes(st)) {
+    return {
+      label: "Proceso Finalizado",
+      className: "bg-slate-100 text-slate-600 border-slate-300",
+      dotColor: "bg-slate-400",
+    };
+  }
+  if (["poligrafo", "estudio_seguridad", "en_estudio_seguridad", "estudio", "pruebas"].includes(st)) {
+    return {
+      label: "En Poligrafía / Estudio",
+      className: "bg-indigo-50 text-indigo-800 border-indigo-200",
+      dotColor: "bg-indigo-500",
+    };
+  }
+  if (["entrevista", "citado_entrevista", "interview", "in_process"].includes(st)) {
+    return {
+      label: "Citado a Entrevista",
+      className: "bg-amber-50 text-amber-800 border-amber-200",
+      dotColor: "bg-amber-500",
+    };
+  }
+  if (["en_revision", "revisado", "preseleccionado", "viewed", "reviewing", "leido"].includes(st)) {
+    return {
+      label: "CV en Revisión",
+      className: "bg-[#EAF3FA] text-[#0B3B70] border-[#D5E6F5]",
+      dotColor: "bg-[#005DA4]",
+    };
+  }
+  return {
+    label: "Postulado",
+    className: "bg-slate-50 text-slate-700 border-slate-200",
+    dotColor: "bg-[#005DA4]",
   };
 }
 
@@ -110,13 +171,49 @@ function formatRelativeDate(isoDate?: string): string {
   return `Postulado el ${date.toLocaleDateString("es-CO", { day: "numeric", month: "short" })}`;
 }
 
+function formatStatusToastLabel(status: string): string {
+  const st = (status || "").toLowerCase().trim();
+  if (st === "preseleccionado") return "En Revisión / CV Visto por la empresa";
+  if (st === "citado_entrevista") return "Citado a Entrevista Presencial";
+  if (st === "en_estudio_seguridad") return "En Estudio de Seguridad & Poligrafía";
+  if (st === "contratado") return "¡Contratado!";
+  if (st === "descartado") return "Proceso Finalizado";
+  return "Postulado (En cola de revisión)";
+}
+
 export default function PostulacionesPage() {
   const [applications, setApplications] = useState<SavedApp[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [realtimeToast, setRealtimeToast] = useState<string | null>(null);
+  const prevStatusMapRef = useRef<Map<string, string>>(new Map());
+  const hasLoadedOnceRef = useRef(false);
 
-  useEffect(() => {
-    async function loadApplications() {
-      setIsLoading(true);
+  const applyResolvedApplications = useCallback((nextApps: SavedApp[]) => {
+    if (hasLoadedOnceRef.current) {
+      for (const app of nextApps) {
+        const prevStatus = prevStatusMapRef.current.get(app.id);
+        if (prevStatus && prevStatus !== app.status) {
+          setRealtimeToast(
+            `Actualización en tiempo real: "${app.job_title}" (${app.company_name}) cambió a ${formatStatusToastLabel(
+              String(app.status)
+            )}.`
+          );
+          setTimeout(() => setRealtimeToast(null), 6000);
+          break;
+        }
+      }
+    }
+
+    const nextMap = new Map<string, string>();
+    nextApps.forEach((a) => nextMap.set(a.id, String(a.status)));
+    prevStatusMapRef.current = nextMap;
+    hasLoadedOnceRef.current = true;
+    setApplications(nextApps);
+  }, []);
+
+  const loadApplications = useCallback(
+    async (showSpinner = false) => {
+      if (showSpinner) setIsLoading(true);
       const supabase = createClient();
 
       try {
@@ -144,9 +241,13 @@ export default function PostulacionesPage() {
           }
 
           if (!error && data && data.length > 0) {
-            setApplications(
+            applyResolvedApplications(
               data.map((app: any) => {
                 const jobObj = app.job_posts || app.jobs;
+                const rawPhone =
+                  jobObj?.companies?.contact_phone ||
+                  jobObj?.companies?.phone ||
+                  "3133778276";
                 return {
                   id: app.id,
                   job_id: app.job_id,
@@ -155,17 +256,22 @@ export default function PostulacionesPage() {
                     jobObj?.companies?.company_name ||
                     jobObj?.companies?.commercial_name ||
                     "Empresa de Seguridad",
+                  company_phone: String(rawPhone).replace(/\D/g, "") || "3133778276",
                   shift: jobObj?.shift || "Turno rotativo",
                   salary_monthly: Number(jobObj?.salary_monthly) || 0,
                   interview_address:
-                    jobObj?.zone_neighborhood || jobObj?.city || "Oficina principal",
+                    jobObj?.interview_address ||
+                    jobObj?.zone_neighborhood ||
+                    jobObj?.city ||
+                    "Oficina principal",
                   match_score: app.match_score ?? app.compatibility_score ?? 90,
                   status: app.status as ApplicationStatus,
                   created_at: app.created_at,
+                  updated_at: app.updated_at,
                 };
               })
             );
-            setIsLoading(false);
+            if (showSpinner) setIsLoading(false);
             return;
           }
 
@@ -179,15 +285,17 @@ export default function PostulacionesPage() {
           if (directApps && directApps.length > 0) {
             const jobIds = directApps.map((d: any) => d.job_id).filter(Boolean);
 
-            let { data: rawJobs } = await supabase
+            const { data: rawJobsPrimary } = await supabase
               .from("job_posts")
-              .select("id, company_id, title, shift, salary_monthly, zone_neighborhood, city")
+              .select("*")
               .in("id", jobIds);
+
+            let rawJobs: any[] | null = rawJobsPrimary;
 
             if (!rawJobs || rawJobs.length === 0) {
               const { data: rawJobs2 } = await supabase
                 .from("jobs")
-                .select("id, company_id, title, shift, salary_monthly, zone_neighborhood, city")
+                .select("*")
                 .in("id", jobIds);
               rawJobs = rawJobs2;
             }
@@ -199,55 +307,152 @@ export default function PostulacionesPage() {
               compIds.length > 0
                 ? await supabase
                     .from("companies")
-                    .select("id, company_name")
+                    .select("id, company_name, contact_phone")
                     .in("id", compIds)
                 : { data: [] as any[] };
-            const compMap = new Map((rawComps || []).map((c: any) => [c.id, c.company_name]));
+            const compMap = new Map((rawComps || []).map((c: any) => [c.id, c]));
 
-            setApplications(
+            applyResolvedApplications(
               directApps.map((app: any) => {
                 const job = jobMap.get(app.job_id);
-                const compName = job?.company_id ? compMap.get(job.company_id) : "Empresa de Seguridad";
+                const comp = job?.company_id ? compMap.get(job.company_id) : null;
+                const rawPhone = comp?.contact_phone || "3133778276";
                 return {
                   id: app.id,
                   job_id: app.job_id,
                   job_title: job?.title || "Vacante de Seguridad",
-                  company_name: compName || "Empresa de Seguridad",
+                  company_name: comp?.company_name || "Empresa de Seguridad",
+                  company_phone: String(rawPhone).replace(/\D/g, "") || "3133778276",
                   shift: job?.shift || "Turno rotativo",
                   salary_monthly: Number(job?.salary_monthly) || 0,
                   interview_address:
-                    job?.zone_neighborhood || job?.city || "Oficina principal",
+                    job?.interview_address ||
+                    job?.zone_neighborhood ||
+                    job?.city ||
+                    "Oficina principal",
                   match_score: app.match_score ?? 90,
                   status: app.status as ApplicationStatus,
                   created_at: app.created_at,
+                  updated_at: app.updated_at,
                 };
               })
             );
-            setIsLoading(false);
+            if (showSpinner) setIsLoading(false);
             return;
           }
         }
 
-        setApplications([]);
+        applyResolvedApplications([]);
       } catch (err) {
         console.error("Error loading candidate applications:", err);
-        setApplications([]);
       } finally {
-        setIsLoading(false);
+        if (showSpinner) setIsLoading(false);
       }
+    },
+    [applyResolvedApplications]
+  );
+
+  useEffect(() => {
+    loadApplications(true);
+
+    const supabase = createClient();
+    let activeChannel: ReturnType<typeof supabase.channel> | null = null;
+
+    // 1. Suscripción WebSocket en tiempo real (Supabase Realtime postgres_changes)
+    async function setupRealtime() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      activeChannel = supabase
+        .channel(`candidate-apps-${user.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "applications",
+            filter: `candidate_id=eq.${user.id}`,
+          },
+          (payload) => {
+            if (payload.eventType === "UPDATE" && payload.new) {
+              const updated = payload.new as any;
+              setApplications((prev) =>
+                prev.map((app) =>
+                  app.id === updated.id
+                    ? {
+                        ...app,
+                        status: updated.status as ApplicationStatus,
+                        updated_at: updated.updated_at,
+                      }
+                    : app
+                )
+              );
+            }
+            loadApplications(false);
+          }
+        )
+        .subscribe();
     }
 
-    loadApplications();
-  }, []);
+    setupRealtime();
+
+    // 2. Respaldo en vivo por foco/visibilidad y sincronización silenciosa cada 5s
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === "visible") {
+        loadApplications(false);
+      }
+    };
+
+    window.addEventListener("focus", handleVisibilityOrFocus);
+    document.addEventListener("visibilitychange", handleVisibilityOrFocus);
+
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        loadApplications(false);
+      }
+    }, 5000);
+
+    return () => {
+      window.removeEventListener("focus", handleVisibilityOrFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
+      clearInterval(intervalId);
+      if (activeChannel) {
+        supabase.removeChannel(activeChannel);
+      }
+    };
+  }, [loadApplications]);
+
+  // Contadores Superiores Sincronizados en Tiempo Real
+  const totalCount = applications.length;
+  const revisionCount = applications.filter((a) => {
+    const { currentStageIndex, isRejected } = getStageInfo(a.status);
+    return !isRejected && currentStageIndex === 1;
+  }).length;
+  const evaluacionCount = applications.filter((a) => {
+    const { currentStageIndex, isRejected } = getStageInfo(a.status);
+    return !isRejected && currentStageIndex === 2;
+  }).length;
+  const contratadoCount = applications.filter((a) => {
+    const { currentStageIndex, isRejected } = getStageInfo(a.status);
+    return !isRejected && currentStageIndex === 3;
+  }).length;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-            Seguimiento de Mis Postulaciones
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+              Seguimiento de Mis Postulaciones
+            </h1>
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              En vivo
+            </span>
+          </div>
           <p className="text-xs text-slate-500 font-normal mt-1">
             Rastreador en tiempo real del estado de tus procesos de selección con empresas de vigilancia y seguridad privada.
           </p>
@@ -261,6 +466,81 @@ export default function PostulacionesPage() {
           <span>Explorar Más Vacantes</span>
         </Link>
       </div>
+
+      {/* CONTADORES SUPERIORES SINCRONIZADOS (ESTILO COMPUTRABAJO) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-semibold text-slate-500 block">
+              Total Postulaciones
+            </span>
+            <span className="text-xl font-bold font-mono text-[#0B3B70] tabular-nums">
+              {totalCount}
+            </span>
+          </div>
+          <div className="w-9 h-9 rounded-full bg-[#EAF3FA] border border-[#D5E6F5] flex items-center justify-center text-[#005DA4]">
+            <Briefcase className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-semibold text-slate-500 block">
+              CV en Revisión
+            </span>
+            <span className="text-xl font-bold font-mono text-[#005DA4] tabular-nums">
+              {revisionCount}
+            </span>
+          </div>
+          <div className="w-9 h-9 rounded-full bg-[#EAF3FA] border border-[#D5E6F5] flex items-center justify-center text-[#005DA4]">
+            <Eye className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-semibold text-slate-500 block">
+              Poligrafía / Entrevista
+            </span>
+            <span className="text-xl font-bold font-mono text-amber-700 tabular-nums">
+              {evaluacionCount}
+            </span>
+          </div>
+          <div className="w-9 h-9 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700">
+            <Shield className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-semibold text-slate-500 block">
+              Seleccionado / Finalista
+            </span>
+            <span className="text-xl font-bold font-mono text-emerald-700 tabular-nums">
+              {contratadoCount}
+            </span>
+          </div>
+          <div className="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700">
+            <CheckCircle className="w-4 h-4" />
+          </div>
+        </div>
+      </div>
+
+      {realtimeToast && (
+        <div className="p-4 rounded-2xl bg-[#0B3B70] text-white text-xs font-semibold flex items-center justify-between gap-3 shadow-md border border-slate-700">
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="w-4 h-4 text-[#FFE066] shrink-0" strokeWidth={2.2} />
+            <span>{realtimeToast}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setRealtimeToast(null)}
+            className="text-[11px] text-slate-200 hover:text-white underline shrink-0"
+          >
+            Cerrar
+          </button>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="p-12 text-center bg-white border border-slate-200 rounded-2xl space-y-3 shadow-2xs">
@@ -288,6 +568,7 @@ export default function PostulacionesPage() {
         <div className="space-y-4">
           {applications.map((app) => {
             const { currentStageIndex, isRejected } = getStageInfo(app.status);
+            const statusPill = getStatusPillMeta(app.status);
 
             return (
               <div
@@ -305,6 +586,12 @@ export default function PostulacionesPage() {
                       <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#005DA4] bg-[#EAF3FA] px-2.5 py-0.5 rounded-full border border-[#D5E6F5]">
                         <BadgeCheck className="w-3.5 h-3.5 text-[#005DA4]" />
                         Empresa Verificada
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${statusPill.className}`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${statusPill.dotColor}`} />
+                        {statusPill.label}
                       </span>
                       <span className="text-[11px] text-slate-500 font-medium">
                         • {formatRelativeDate(app.created_at)}
@@ -355,7 +642,11 @@ export default function PostulacionesPage() {
 
                     <div className="pt-1">
                       <a
-                        href={`https://wa.me/573133778276?text=Hola,%20confirmo%20mi%20asistencia%20a%20la%20entrevista%20para%20la%20vacante%20de%20${encodeURIComponent(
+                        href={`https://wa.me/${
+                          (app.company_phone || "3133778276").startsWith("57")
+                            ? app.company_phone || "573133778276"
+                            : `57${app.company_phone || "3133778276"}`
+                        }?text=Hola,%20confirmo%20mi%20asistencia%20a%20la%20entrevista%20para%20la%20vacante%20de%20${encodeURIComponent(
                           app.job_title
                         )}`}
                         target="_blank"
@@ -383,6 +674,24 @@ export default function PostulacionesPage() {
                     </div>
                     <p className="text-xs text-slate-300 leading-relaxed font-normal">
                       La empresa ha ordenado la verificación de antecedentes, visita domiciliaria y prueba de poligrafía preempleo a través del protocolo certificado de FuerzaVerificada.
+                    </p>
+                  </div>
+                )}
+
+                {/* AVISO CONTRATACIÓN EXITOSA */}
+                {app.status === "contratado" && (
+                  <div className="p-4 rounded-xl bg-emerald-50/90 border border-emerald-200 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-xs font-bold text-emerald-900">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" strokeWidth={2.2} />
+                        <span>¡Felicitaciones! Has sido seleccionado y contratado</span>
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 border border-emerald-300 px-2.5 py-0.5 rounded-full">
+                        Contratado
+                      </span>
+                    </div>
+                    <p className="text-xs text-emerald-800 leading-relaxed">
+                      El equipo de selección de <strong>{app.company_name}</strong> ha formalizado tu admisión para el cargo de <strong>{app.job_title}</strong>.
                     </p>
                   </div>
                 )}

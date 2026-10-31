@@ -340,9 +340,46 @@ export default function ATSVacantePage() {
     }
 
     loadVacancyAndCandidates();
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`ats-vacancy-${vacancyId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "applications",
+          filter: `job_id=eq.${vacancyId}`,
+        },
+        (payload) => {
+          if (payload.eventType === "UPDATE" && payload.new) {
+            const updated = payload.new as any;
+            setCandidates((prev) =>
+              prev.map((c) =>
+                c.id === updated.id
+                  ? { ...c, status: (updated.status as ApplicationStatus) || c.status }
+                  : c
+              )
+            );
+            setSelectedCandidate((prev) =>
+              prev && prev.id === updated.id
+                ? { ...prev, status: (updated.status as ApplicationStatus) || prev.status }
+                : prev
+            );
+          } else if (payload.eventType === "INSERT") {
+            loadVacancyAndCandidates();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [vacancyId]);
 
-  // Actualizar estado de aplicación en Supabase con feedback visual
+  // Actualizar estado de aplicación en Supabase con feedback visual y sincronización inmediata con el candidato
   const handleStatusChange = async (appId: string, nextStatus: ApplicationStatus) => {
     setCandidates((prev) =>
       prev.map((c) => (c.id === appId ? { ...c, status: nextStatus } : c))
@@ -353,7 +390,7 @@ export default function ATSVacantePage() {
 
     const supabase = createClient();
     try {
-      const { error } = await supabase
+      let { error } = await supabase
         .from("applications")
         .update({
           status: nextStatus,
@@ -361,23 +398,42 @@ export default function ATSVacantePage() {
         })
         .eq("id", appId);
 
+      // Respaldo por si la columna updated_at no existiera en algún entorno
+      if (error) {
+        const fallbackUpdate = await supabase
+          .from("applications")
+          .update({
+            status: nextStatus,
+          })
+          .eq("id", appId);
+        error = fallbackUpdate.error;
+      }
+
       if (error) throw error;
 
-      let msg = "Estado actualizado con éxito";
+      let msg = "Estado actualizado y sincronizado en tiempo real con el candidato.";
       if (nextStatus === "citado_entrevista") {
-        msg = "Candidato movido a Entrevista. Se ha generado la plantilla de citación.";
+        msg = "Candidato movido a 'Citado a Entrevista'. El aspirante ya ve la citación en Mis Aplicaciones.";
+      } else if (nextStatus === "en_estudio_seguridad") {
+        msg = "Candidato movido a 'En Estudio & Polígrafo'. Estado sincronizado con el aspirante.";
       } else if (nextStatus === "contratado") {
-        msg = "¡Candidato Contratado! Convocatoria actualizada.";
+        msg = "¡Candidato Contratado! Notificación reflejada en el panel del aspirante.";
       } else if (nextStatus === "descartado") {
-        msg = "Candidato archivado como descartado.";
+        msg = "Candidato archivado como 'Descartado'. Estado actualizado en Mis Aplicaciones.";
       } else if (nextStatus === "preseleccionado") {
-        msg = "Candidato marcado como 'CV Visto / En Revisión'.";
+        msg = "Candidato marcado como 'CV Visto / En Revisión' (sincronizado con el aspirante).";
+      } else if (nextStatus === "postulado") {
+        msg = "Candidato devuelto a 'Postulado (Sin revisar)'.";
       }
 
       setNotificationToast(msg);
-      setTimeout(() => setNotificationToast(null), 3500);
-    } catch (err) {
+      setTimeout(() => setNotificationToast(null), 4000);
+    } catch (err: any) {
       console.error("Error updating application status:", err);
+      setNotificationToast(
+        `No se pudo guardar el cambio en Supabase: ${err?.message || "Verifica permisos RLS en public.applications"}`
+      );
+      setTimeout(() => setNotificationToast(null), 5000);
     }
   };
 
@@ -1065,6 +1121,22 @@ export default function ATSVacantePage() {
                       {isNew ? (
                         <span className="bg-rose-50 text-rose-600 border border-rose-200 rounded-full px-2.5 py-0.5 text-[10px] font-bold animate-pulse">
                           Nuevo
+                        </span>
+                      ) : cand.status === "citado_entrevista" ? (
+                        <span className="bg-amber-50 text-amber-800 border border-amber-200 rounded-full px-2.5 py-0.5 text-[10px] font-bold">
+                          Citado a Entrevista
+                        </span>
+                      ) : cand.status === "en_estudio_seguridad" ? (
+                        <span className="bg-[#EAF3FA] text-[#0B3B70] border border-[#D5E6F5] rounded-full px-2.5 py-0.5 text-[10px] font-bold">
+                          En Estudio & Polígrafo
+                        </span>
+                      ) : cand.status === "contratado" ? (
+                        <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full px-2.5 py-0.5 text-[10px] font-bold">
+                          Contratado
+                        </span>
+                      ) : cand.status === "descartado" ? (
+                        <span className="bg-slate-100 text-slate-500 border border-slate-200 rounded-full px-2.5 py-0.5 text-[10px] font-semibold">
+                          Descartado
                         </span>
                       ) : (
                         <span className="border border-slate-300 rounded-full px-2.5 py-0.5 text-[10px] text-slate-500 font-semibold">

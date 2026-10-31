@@ -25,6 +25,7 @@ import {
   Coins,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { ensureRoleProvisioning, UserRole } from "@/lib/supabase/useAuth";
 
 export default function AdminLayout({
   children,
@@ -44,32 +45,32 @@ export default function AdminLayout({
 
   // Authentication & Route Protection States
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
-  const [isDevOrDemo, setIsDevOrDemo] = useState(false);
+  const [, setIsDevOrDemo] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
 
     async function verifyAdminAuthorization() {
       try {
-        // 1. Respaldo local demo role
-        if (typeof window !== "undefined") {
-          const demoRole = localStorage.getItem("fv_demo_role");
-          if (demoRole === "admin") {
-            if (isMounted) {
-              setIsAuthorized(true);
-              setIsDevOrDemo(true);
-              setAdminName("SuperAdmin B2B (Demo)");
-            }
-            return;
-          }
-        }
-
         const supabase = createClient();
         const {
           data: { session },
         } = await supabase.auth.getSession();
 
         if (!session?.user) {
+          // Respaldo local demo role únicamente cuando no existe sesión de Supabase
+          if (typeof window !== "undefined") {
+            const demoRole = localStorage.getItem("fv_demo_role");
+            if (demoRole === "admin") {
+              if (isMounted) {
+                setIsAuthorized(true);
+                setIsDevOrDemo(true);
+                setAdminName("SuperAdmin B2B (Demo)");
+              }
+              return;
+            }
+          }
+
           if (isMounted) {
             setIsAuthorized(false);
             router.replace("/login?error=unauthorized_admin");
@@ -77,42 +78,63 @@ export default function AdminLayout({
           return;
         }
 
-        // 2. Comprobación rápida por email o metadata del usuario
-        if (
-          session.user.email === "admin@fuerzaverificada.com" ||
-          session.user.user_metadata?.role === "admin"
-        ) {
-          if (isMounted) {
-            if (session.user.user_metadata?.full_name) {
-              setAdminName(session.user.user_metadata.full_name);
-            }
-            setIsAuthorized(true);
-          }
-          return;
-        }
-
-        // 3. Consulta a public.profiles con maybeSingle() para evitar excepciones
-        const { data: profile } = await supabase
+        // Única Fuente de la Verdad: consultar directamente public.profiles sin caché estático
+        let profile: any = null;
+        const { data: primaryProfile, error: primaryErr } = await supabase
           .from("profiles")
-          .select("role, full_name")
+          .select("role, full_name, avatar_url")
           .eq("id", session.user.id)
-          .maybeSingle();
+          .single();
 
-        if (profile?.role === "admin") {
+        if (!primaryErr && primaryProfile) {
+          profile = primaryProfile;
+        } else {
+          const { data: fallbackProfile } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", session.user.id)
+            .maybeSingle();
+          profile = fallbackProfile;
+        }
+
+        const canonicalRole: UserRole =
+          profile?.role === "admin" ||
+          profile?.role === "company" ||
+          profile?.role === "candidate"
+            ? (profile.role as UserRole)
+            : session.user.email === "admin@fuerzaverificada.com" ||
+              session.user.user_metadata?.role === "admin"
+            ? "admin"
+            : (session.user.user_metadata?.role as UserRole) || "candidate";
+
+        if (canonicalRole && typeof window !== "undefined") {
+          localStorage.setItem("fv_demo_role", canonicalRole);
+        }
+
+        await ensureRoleProvisioning(
+          supabase,
+          session.user,
+          canonicalRole,
+          profile?.full_name,
+          profile?.phone_whatsapp
+        );
+
+        if (canonicalRole === "admin") {
           if (isMounted) {
-            if (profile.full_name) setAdminName(profile.full_name);
+            const resolvedName =
+              profile?.full_name || session.user.user_metadata?.full_name;
+            if (resolvedName) setAdminName(resolvedName);
             setIsAuthorized(true);
           }
           return;
         }
 
-        // 4. Redirección si no es admin
+        // Redirección inteligente si public.profiles.role cambió a 'company' o 'candidate'
         if (isMounted) {
           setIsAuthorized(false);
-          const userRole = profile?.role || session.user.user_metadata?.role;
-          if (userRole === "company") {
+          if (canonicalRole === "company") {
             router.replace("/empresa/dashboard");
-          } else if (userRole === "candidate") {
+          } else if (canonicalRole === "candidate") {
             router.replace("/guarda/vacantes");
           } else {
             router.replace("/login?error=unauthorized_admin");
@@ -127,6 +149,9 @@ export default function AdminLayout({
     }
 
     verifyAdminAuthorization();
+
+    const handleFocus = () => verifyAdminAuthorization();
+    window.addEventListener("focus", handleFocus);
 
     // Sync metric counts from Supabase and local storage
     async function loadAdminCounts() {
@@ -174,6 +199,7 @@ export default function AdminLayout({
 
     return () => {
       isMounted = false;
+      window.removeEventListener("focus", handleFocus);
     };
   }, [pathname, router]);
 
