@@ -36,7 +36,13 @@ interface ResumeDrawerModalProps {
     has_own_motorcycle: boolean;
     motorcycle_cc?: number | null;
     available_immediately: boolean;
+    avatar_url?: string | null;
     resume_pdf_url?: string | null;
+    diploma_pdf_url?: string | null;
+    cedula_pdf_url?: string | null;
+    has_resume_pdf?: boolean;
+    has_diploma_pdf?: boolean;
+    has_cedula_pdf?: boolean;
     course_name?: string | null;
     completion_date?: string | null;
     expiration_date?: string | null;
@@ -98,9 +104,18 @@ export function ResumeDrawerModal({
               </div>
 
               <div className="flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-md bg-slate-800 border border-slate-700 flex items-center justify-center font-semibold text-white text-base shrink-0">
-                  {candidate.full_name.charAt(0)}
-                </div>
+                {candidate.avatar_url ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={candidate.avatar_url}
+                    alt={candidate.full_name}
+                    className="w-11 h-11 rounded-full object-cover border border-slate-700 shrink-0"
+                  />
+                ) : (
+                  <div className="w-11 h-11 rounded-full bg-[#0B3B70] border border-slate-700 flex items-center justify-center font-semibold text-white text-base shrink-0">
+                    {candidate.full_name.charAt(0).toUpperCase()}
+                  </div>
+                )}
                 <div>
                   <h3 className="text-base font-semibold tracking-tight text-white leading-tight">
                     {candidate.full_name}
@@ -141,9 +156,9 @@ export function ResumeDrawerModal({
 
               <div className="space-y-2 text-xs">
                 {/* 1. PDF Resume */}
-                <div className="p-3.5 rounded-lg border border-slate-200/90 bg-slate-50/70 flex items-center justify-between">
+                <div className="p-3.5 rounded-lg border border-slate-200/90 bg-slate-50/70 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-md bg-white border border-slate-200/90 flex items-center justify-center text-slate-700">
+                    <div className="w-8 h-8 rounded-md bg-white border border-slate-200/90 flex items-center justify-center text-slate-700 shrink-0">
                       <FileText className="w-4 h-4 text-slate-700" strokeWidth={1.75} />
                     </div>
                     <div>
@@ -156,24 +171,25 @@ export function ResumeDrawerModal({
                     </div>
                   </div>
                   {candidate.resume_pdf_url ? (
-                    <a
-                      href={candidate.resume_pdf_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn-secondary text-xs h-8 px-3 font-semibold text-slate-800 hover:text-slate-950 inline-flex items-center gap-1.5 transition-colors"
+                    <button
+                      type="button"
+                      onClick={() => openSecureDocument(candidate.resume_pdf_url!)}
+                      className="btn-secondary text-xs h-8 px-3 font-semibold text-slate-800 hover:text-slate-950 inline-flex items-center gap-1.5 transition-colors shrink-0"
                     >
                       <Download className="w-3.5 h-3.5 text-slate-700" strokeWidth={1.75} />
-                      Ver / Descargar Hoja de Vida cargada
-                    </a>
+                      Ver / Descargar PDF
+                    </button>
                   ) : (
-                    <span className="text-xs text-slate-400 italic">No adjuntado</span>
+                    <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full font-medium shrink-0">
+                      ⚠️ Pendiente
+                    </span>
                   )}
                 </div>
 
                 {/* 2. Course Diploma */}
-                <div className="p-3.5 rounded-lg border border-slate-200/90 bg-slate-50/70 flex items-center justify-between">
+                <div className="p-3.5 rounded-lg border border-slate-200/90 bg-slate-50/70 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-md bg-white border border-slate-200/90 flex items-center justify-center text-emerald-600">
+                    <div className="w-8 h-8 rounded-md bg-white border border-slate-200/90 flex items-center justify-center text-emerald-600 shrink-0">
                       <FileCheck className="w-4 h-4 text-emerald-600" strokeWidth={1.75} />
                     </div>
                     <div>
@@ -181,19 +197,34 @@ export function ResumeDrawerModal({
                         Certificado / Diploma de Curso de Vigilancia
                       </strong>
                       <span className="text-[11px] text-slate-500">
-                        Expedido por Academia con aval MinDefensa
+                        {candidate.course_name || "Expedido por Academia con aval MinDefensa"}
                       </span>
                     </div>
                   </div>
-                  <span className="badge-emerald text-[11px] font-mono">
-                    Registrado
-                  </span>
+                  {candidate.diploma_pdf_url ? (
+                    <button
+                      type="button"
+                      onClick={() => openSecureDocument(candidate.diploma_pdf_url!)}
+                      className="btn-secondary text-xs h-8 px-3 font-semibold text-slate-800 hover:text-slate-950 inline-flex items-center gap-1.5 transition-colors shrink-0"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5 text-slate-700" strokeWidth={1.75} />
+                      Ver Diploma
+                    </button>
+                  ) : candidate.has_diploma_pdf === false ? (
+                    <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full font-medium shrink-0">
+                      ⚠️ Pendiente
+                    </span>
+                  ) : (
+                    <span className="badge-emerald text-[11px] font-mono shrink-0">
+                      ✅ Registrado
+                    </span>
+                  )}
                 </div>
 
                 {/* 3. Cédula */}
-                <div className="p-3.5 rounded-lg border border-slate-200/90 bg-slate-50/70 flex items-center justify-between">
+                <div className="p-3.5 rounded-lg border border-slate-200/90 bg-slate-50/70 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-md bg-white border border-slate-200/90 flex items-center justify-center text-slate-700">
+                    <div className="w-8 h-8 rounded-md bg-white border border-slate-200/90 flex items-center justify-center text-slate-700 shrink-0">
                       <CreditCard className="w-4 h-4 text-slate-600" strokeWidth={1.75} />
                     </div>
                     <div>
@@ -201,13 +232,28 @@ export function ResumeDrawerModal({
                         Cédula de Ciudadanía (Cotejo de Identidad)
                       </strong>
                       <span className="text-[11px] text-slate-500">
-                        Copia digital verificada
+                        Copia digital de documento de identidad
                       </span>
                     </div>
                   </div>
-                  <span className="text-[11px] text-emerald-700 font-medium bg-emerald-50/80 px-2 py-0.5 rounded-md border border-emerald-200/60">
-                    Auditada
-                  </span>
+                  {candidate.cedula_pdf_url ? (
+                    <button
+                      type="button"
+                      onClick={() => openSecureDocument(candidate.cedula_pdf_url!)}
+                      className="btn-secondary text-xs h-8 px-3 font-semibold text-slate-800 hover:text-slate-950 inline-flex items-center gap-1.5 transition-colors shrink-0"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5 text-slate-700" strokeWidth={1.75} />
+                      Ver Cédula
+                    </button>
+                  ) : candidate.has_cedula_pdf === false ? (
+                    <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full font-medium shrink-0">
+                      ⚠️ Pendiente
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-emerald-700 font-medium bg-emerald-50/80 px-2 py-0.5 rounded-md border border-emerald-200/60 shrink-0">
+                      ✅ Auditada
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
