@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { CookieBanner } from "@/components/CookieBanner";
 import { Analytics } from "@/components/Analytics";
+import { PwaInstaller } from "@/components/public/PwaInstaller";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -12,6 +13,13 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://fuerza-verificada.vercel.app";
+
+export const viewport: Viewport = {
+  themeColor: "#0B3B70",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -36,6 +44,11 @@ export const metadata: Metadata = {
   authors: [{ name: "FuerzaVerificada", url: siteUrl }],
   creator: "FuerzaVerificada",
   publisher: "FuerzaVerificada",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "FuerzaVerificada",
+  },
   formatDetection: {
     email: false,
     address: false,
@@ -81,6 +94,7 @@ export default function RootLayout({
     <html lang="es" className={jakarta.variable}>
       <body className="font-sans antialiased bg-white text-[#1E293B] selection:bg-[#0F172A] selection:text-white">
         {children}
+        <PwaInstaller />
         <CookieBanner />
         <Analytics />
       </body>
