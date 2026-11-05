@@ -31,6 +31,13 @@ import {
   UserCheck,
   Compass,
   Users,
+  ShieldCheck,
+  Monitor,
+  Crown,
+  Dog,
+  Headset,
+  FileSearch,
+  UserCog,
 } from "lucide-react";
 import Image from "next/image";
 import { Navbar } from "@/components/public/Navbar";
@@ -38,6 +45,27 @@ import { Footer } from "@/components/public/Footer";
 import { CityAutocompleteInput } from "@/components/ui/CityAutocompleteInput";
 import { useAuth } from "@/lib/supabase/useAuth";
 import { createClient } from "@/lib/supabase/client";
+import {
+  OFFICIAL_SECURITY_PROFILES,
+  matchesOfficialSecurityProfile,
+  OfficialSecurityIconName,
+} from "@/lib/utils/shiftNormalizer";
+
+const PROFILE_ICON_COMPONENTS: Record<OfficialSecurityIconName, any> = {
+  Shield,
+  ShieldCheck,
+  UserCheck,
+  Monitor,
+  Crown,
+  Dog,
+  Headset,
+  Building2,
+  FileSearch,
+  Search,
+  UserCog,
+  Users,
+  Briefcase,
+};
 
 const HERO_SCENES = [
   {
@@ -74,6 +102,7 @@ export default function HomePage() {
   const [warningToast, setWarningToast] = useState<string | null>(null);
   const [featuredJobs, setFeaturedJobs] = useState<any[]>([]);
   const [totalActiveJobs, setTotalActiveJobs] = useState<number>(0);
+  const [profileCounts, setProfileCounts] = useState<Record<string, number>>({});
   const [activeDirectoryTab, setActiveDirectoryTab] = useState<"localizacion" | "cargos">("localizacion");
   const [activeSceneIndex, setActiveSceneIndex] = useState(0);
 
@@ -91,24 +120,32 @@ export default function HomePage() {
       try {
         const supabase = createClient();
 
-        // 1. Conteo total de vacantes activas
-        const { count } = await supabase
+        // 1. Conteo total y distribución real por los 13 perfiles oficiales en public.job_posts
+        let { data: allActiveJobs, error: allActiveErr } = await supabase
           .from("job_posts")
-          .select("*", { count: "exact", head: true })
+          .select("id, title, role_required")
           .eq("is_active", true);
 
-        if (count && count > 0) {
-          setTotalActiveJobs(count);
-        } else {
-          // Intentar conteo en tabla fallback
-          const fallbackCount = await supabase
+        if (allActiveErr || !allActiveJobs || allActiveJobs.length === 0) {
+          const fallbackActive = await supabase
             .from("jobs")
-            .select("*", { count: "exact", head: true })
+            .select("id, title, role_required")
             .eq("is_active", true);
-          if (fallbackCount.count) {
-            setTotalActiveJobs(fallbackCount.count);
+          if (!fallbackActive.error && fallbackActive.data) {
+            allActiveJobs = fallbackActive.data;
           }
         }
+
+        const activeList = allActiveJobs || [];
+        setTotalActiveJobs(activeList.length);
+
+        const computedCounts: Record<string, number> = {};
+        for (const prof of OFFICIAL_SECURITY_PROFILES) {
+          computedCounts[prof.id] = activeList.filter((j: any) =>
+            matchesOfficialSecurityProfile(prof.label, j.role_required, j.title)
+          ).length;
+        }
+        setProfileCounts(computedCounts);
 
         // 2. Carga de vacantes destacadas recientes
         let { data, error } = await supabase
@@ -385,6 +422,68 @@ export default function HomePage() {
           Convocatorias verificadas con respaldo normativo y validación SuperVigilancia
         </p>
       </div>
+
+      {/* ========================================================================= */}
+      {/* CATÁLOGO OFICIAL DE 13 PERFILES ESPECIALIZADOS EN SEGURIDAD PRIVADA        */}
+      {/* ========================================================================= */}
+      <section className="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#0B3B70]">
+              Perfiles Especializados en Seguridad Privada
+            </h2>
+            <p className="text-xs sm:text-sm text-[#627384] mt-0.5">
+              Selecciona tu cargo operativo o administrativo para explorar las vacantes activas en Colombia
+            </p>
+          </div>
+          <Link
+            href="/guarda/vacantes"
+            className="text-xs font-bold text-[#005DA4] hover:text-[#0B3B70] inline-flex items-center gap-1 transition-colors"
+          >
+            <span>Explorar todas las categorías</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {OFFICIAL_SECURITY_PROFILES.map((perfil) => {
+            const IconComponent = PROFILE_ICON_COMPONENTS[perfil.icon] || Shield;
+            const count = profileCounts[perfil.id] ?? 0;
+
+            return (
+              <div
+                key={perfil.id}
+                onClick={() =>
+                  router.push(
+                    `/guarda/vacantes?categoria=${encodeURIComponent(perfil.label)}`
+                  )
+                }
+                className="bg-white rounded-2xl border border-slate-200/80 p-6 hover:border-[#005DA4] hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
+              >
+                <div>
+                  <div className="w-11 h-11 rounded-xl bg-[#F2F5F8] text-[#0B3B70] flex items-center justify-center mb-4">
+                    <IconComponent className="w-5 h-5" strokeWidth={2} />
+                  </div>
+                  <h3 className="text-base font-bold text-[#0B3B70] leading-snug">
+                    {perfil.label}
+                  </h3>
+                </div>
+                <p
+                  className={
+                    count > 0
+                      ? "text-xs font-medium text-[#005DA4] mt-2"
+                      : "text-xs text-slate-400 mt-2"
+                  }
+                >
+                  {count > 0
+                    ? `${count} ${count === 1 ? "vacante publicada" : "vacantes publicadas"}`
+                    : "Sin vacantes publicadas"}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       {/* VACANTES DESTACADAS RECIENTES (CONSULTA REAL DE SUPABASE) */}
       {featuredJobs.length > 0 && (

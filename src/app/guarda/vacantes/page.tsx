@@ -39,6 +39,8 @@ import {
 import {
   formatShiftLabel,
   SHIFT_OPTIONS,
+  OFFICIAL_SECURITY_PROFILES,
+  matchesOfficialSecurityProfile,
 } from "@/lib/utils/shiftNormalizer";
 import { JobPost, CourseSemaphore } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
@@ -151,6 +153,14 @@ function VacantesContent() {
       searchParams.get("role") ||
       "";
     setSearchTerm(roleParam);
+
+    const catParam =
+      searchParams.get("categoria") ||
+      searchParams.get("category") ||
+      "";
+    if (catParam.trim()) {
+      setCategoryFilter(normalizeSecurityRole(catParam));
+    }
 
     const applyParam = searchParams.get("apply");
     if (applyParam) setSelectedJobId(applyParam);
@@ -439,44 +449,11 @@ function VacantesContent() {
 
       let matchesCategory = true;
       if (categoryFilter !== "todas") {
-        const norm = normalizeSecurityRole(j.role_required);
-        const roleRaw = normalizeFilterStr(j.role_required);
-        const titleL = normalizeFilterStr(j.title);
-        if (categoryFilter === "vigilante") {
-          matchesCategory =
-            norm.includes("vigilante") ||
-            roleRaw.includes("vigilante") ||
-            titleL.includes("vigilante") ||
-            titleL.includes("guarda");
-        } else if (categoryFilter === "escolta") {
-          matchesCategory =
-            norm.includes("escolta") ||
-            roleRaw.includes("escolta") ||
-            titleL.includes("escolta") ||
-            titleL.includes("proteccion");
-        } else if (categoryFilter === "cctv") {
-          matchesCategory =
-            norm.includes("medios") ||
-            roleRaw.includes("cctv") ||
-            roleRaw.includes("medios") ||
-            titleL.includes("cctv") ||
-            titleL.includes("operador") ||
-            titleL.includes("camaras") ||
-            titleL.includes("monitoreo");
-        } else if (categoryFilter === "supervisor") {
-          matchesCategory =
-            norm.includes("supervisor") ||
-            roleRaw.includes("supervisor") ||
-            titleL.includes("supervisor") ||
-            titleL.includes("motorizado");
-        } else if (categoryFilter === "manejador_canino") {
-          matchesCategory =
-            norm === "manejador_canino" ||
-            norm.includes("canino") ||
-            roleRaw.includes("canino") ||
-            titleL.includes("canino") ||
-            titleL.includes("guia canino");
-        }
+        matchesCategory = matchesOfficialSecurityProfile(
+          categoryFilter,
+          j.role_required,
+          j.title
+        );
       }
 
       let matchesDate = true;
@@ -775,29 +752,20 @@ function VacantesContent() {
                 }`}
               >
                 <span>
-                  {categoryFilter === "vigilante"
-                    ? "Vigilante Fijo / Móvil"
-                    : categoryFilter === "escolta"
-                    ? "Escolta VIP / Mercancía"
-                    : categoryFilter === "cctv"
-                    ? "Operador CCTV"
-                    : categoryFilter === "supervisor"
-                    ? "Supervisor Motorizado / Zona"
-                    : categoryFilter === "manejador_canino"
-                    ? "Manejador Canino"
+                  {categoryFilter !== "todas"
+                    ? normalizeSecurityRole(categoryFilter)
                     : "Categoría / Cargo"}
                 </span>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
               {openDropdown === "cat" && (
-                <div className="absolute left-0 mt-2 w-60 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+                <div className="absolute left-0 mt-2 w-64 max-h-80 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
                   {[
                     { id: "todas", label: "Todas las categorías" },
-                    { id: "vigilante", label: "Vigilante Fijo / Móvil" },
-                    { id: "escolta", label: "Escolta VIP / Mercancía" },
-                    { id: "cctv", label: "Operador CCTV" },
-                    { id: "supervisor", label: "Supervisor Motorizado / Zona" },
-                    { id: "manejador_canino", label: "Manejador Canino" },
+                    ...OFFICIAL_SECURITY_PROFILES.map((p) => ({
+                      id: p.label,
+                      label: p.label,
+                    })),
                   ].map((c) => (
                     <button
                       key={c.id}
@@ -807,7 +775,10 @@ function VacantesContent() {
                         setOpenDropdown(null);
                       }}
                       className={`w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors ${
-                        categoryFilter === c.id
+                        categoryFilter === c.id ||
+                        (categoryFilter !== "todas" &&
+                          c.id !== "todas" &&
+                          normalizeSecurityRole(categoryFilter) === c.id)
                           ? "bg-[#EAF3FA] text-[#0B3B70] font-bold"
                           : "hover:bg-slate-50 text-slate-700"
                       }`}

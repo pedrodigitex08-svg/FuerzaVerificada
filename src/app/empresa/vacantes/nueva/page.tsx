@@ -24,10 +24,11 @@ import {
 } from "lucide-react";
 import { SecurityRoleType } from "@/types/database";
 import {
+  OFFICIAL_SECURITY_PROFILES,
   SECURITY_ROLE_OPTIONS,
   normalizeSecurityRole,
   formatSecurityRoleLabel,
-} from "@/lib/utils/roleNormalizer";
+} from "@/lib/utils/shiftNormalizer";
 import {
   DbShiftTypeEnum,
   SHIFT_OPTIONS,
@@ -111,7 +112,7 @@ export default function NuevaVacantePage() {
 
   // Form Fields
   const [title, setTitle] = useState("");
-  const [roleRequired, setRoleRequired] = useState<SecurityRoleType>("vigilante_fijo");
+  const [roleRequired, setRoleRequired] = useState<SecurityRoleType>("Guarda de seguridad");
   const [city, setCity] = useState("Bogotá D.C.");
   const [zone, setZone] = useState("");
   const [shift, setShift] = useState<DbShiftTypeEnum>("2x2x2");
@@ -441,21 +442,21 @@ export default function NuevaVacantePage() {
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-2">
-                Cargo Operativo Requerido:
+                Cargo / Categoría Requerida (13 Perfiles Oficiales):
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {SECURITY_ROLE_OPTIONS.map((opt) => (
+                {OFFICIAL_SECURITY_PROFILES.map((prof) => (
                   <button
-                    key={opt.value}
+                    key={prof.id}
                     type="button"
-                    onClick={() => setRoleRequired(opt.value)}
-                    className={`p-2.5 rounded-xl text-xs font-semibold border text-left transition-all ${
-                      normalizeSecurityRole(roleRequired) === opt.value
+                    onClick={() => setRoleRequired(prof.label)}
+                    className={`p-2.5 rounded-xl text-xs font-semibold border text-left transition-all cursor-pointer ${
+                      normalizeSecurityRole(roleRequired) === prof.label
                         ? "bg-[#0B3B70] text-white border-[#0B3B70] shadow-xs"
                         : "bg-white text-slate-700 border-slate-200 hover:border-[#005DA4] hover:bg-[#EAF3FA]/30"
                     }`}
                   >
-                    {opt.label}
+                    {prof.label}
                   </button>
                 ))}
               </div>

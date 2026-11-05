@@ -30,10 +30,11 @@ import {
 } from "lucide-react";
 import { SecurityRoleType } from "@/types/database";
 import {
+  OFFICIAL_SECURITY_PROFILES,
   SECURITY_ROLE_OPTIONS,
   normalizeSecurityRole,
   formatSecurityRoleLabel,
-} from "@/lib/utils/roleNormalizer";
+} from "@/lib/utils/shiftNormalizer";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/supabase/useAuth";
 import { openSecureDocument } from "@/lib/utils/storageSecurity";
@@ -64,7 +65,7 @@ export default function PerfilGuardaPage() {
   const [avatarUrl, setAvatarUrl] = useState<string>("");
 
   // Perfil Operativo y Especialidad
-  const [primaryRole, setPrimaryRole] = useState<SecurityRoleType>("vigilante_fijo");
+  const [primaryRole, setPrimaryRole] = useState<SecurityRoleType>("Guarda de seguridad");
   const [yearsExperience, setYearsExperience] = useState(2);
   const [bioSummary, setBioSummary] = useState("");
 
@@ -887,15 +888,17 @@ export default function PerfilGuardaPage() {
               <div className="space-y-4 bg-[#F2F5F8]/70 p-5 rounded-2xl border border-slate-200 mt-2">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Especialidad Principal</label>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Especialidad Principal (13 Perfiles Oficiales)
+                    </label>
                     <select
-                      value={primaryRole}
+                      value={normalizeSecurityRole(primaryRole)}
                       onChange={(e) => setPrimaryRole(e.target.value as SecurityRoleType)}
                       className="w-full h-9 bg-white border border-slate-300 rounded-xl px-2.5 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#005DA4]"
                     >
-                      {SECURITY_ROLE_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
+                      {OFFICIAL_SECURITY_PROFILES.map((prof) => (
+                        <option key={prof.id} value={prof.label}>
+                          {prof.label}
                         </option>
                       ))}
                     </select>

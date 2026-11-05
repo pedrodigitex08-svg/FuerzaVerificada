@@ -120,3 +120,17 @@ export function formatShiftLabel(shift?: string | null): string {
   const normalized = normalizeShift(shift);
   return SHIFT_LABELS[normalized] || shift;
 }
+
+export {
+  OFFICIAL_SECURITY_PROFILES,
+  SECURITY_ROLE_OPTIONS,
+  normalizeSecurityRole,
+  formatSecurityRoleLabel,
+  matchesOfficialSecurityProfile,
+} from "./roleNormalizer";
+export type {
+  OfficialSecurityProfile,
+  OfficialSecurityIconName,
+  SecurityRoleOption,
+  DbSecurityRoleEnum,
+} from "./roleNormalizer";

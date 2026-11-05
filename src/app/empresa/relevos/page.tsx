@@ -30,9 +30,11 @@ import { ResumeDrawerModal } from "@/components/empresa/ResumeDrawerModal";
 import { OrderSecurityStudyModal } from "@/components/empresa/OrderSecurityStudyModal";
 import { SecurityRoleType, SecurityStudyStatus } from "@/types/database";
 import {
+  OFFICIAL_SECURITY_PROFILES,
   normalizeSecurityRole,
   formatSecurityRoleLabel,
-} from "@/lib/utils/roleNormalizer";
+  matchesOfficialSecurityProfile,
+} from "@/lib/utils/shiftNormalizer";
 import { generatePackageRechargeLink } from "@/lib/utils/whatsappTemplates";
 import { createClient } from "@/lib/supabase/client";
 
@@ -81,14 +83,10 @@ const CITY_FILTER_OPTIONS = [
 
 const ROLE_PILL_OPTIONS: { value: string; label: string }[] = [
   { value: "Todos", label: "Todos" },
-  { value: "vigilante_fijo", label: "Vigilante Fijo" },
-  { value: "vigilante_movil", label: "Vigilante Móvil" },
-  { value: "escolta_vip", label: "Escolta VIP" },
-  { value: "escolta_mercancia", label: "Escolta Mercancía" },
-  { value: "supervisor_motorizado", label: "Supervisor Motorizado" },
-  { value: "supervisor_zona", label: "Supervisor de Zona" },
-  { value: "operador_medios_tecnologicos", label: "Operador CCTV" },
-  { value: "manejador_canino", label: "Manejador Canino" },
+  ...OFFICIAL_SECURITY_PROFILES.map((p) => ({
+    value: p.label,
+    label: p.label,
+  })),
 ];
 
 const COURSE_FILTER_OPTIONS: { value: string; label: string }[] = [
@@ -415,10 +413,10 @@ export default function RadarRelevosPage() {
       targetCity.includes(guardCity) ||
       guardLocality.includes(targetCity.replace(" d.c.", ""));
 
-    // 3. Filtro por Cargo / Especialidad
+    // 3. Filtro por Cargo / Especialidad (13 Perfiles Oficiales + Retrocompatibilidad)
     const matchRole =
       selectedRole === "Todos" ||
-      normalizeSecurityRole(g.primary_role) === normalizeSecurityRole(selectedRole);
+      matchesOfficialSecurityProfile(selectedRole, g.primary_role);
 
     // 4. Filtro por Vigencia de Curso SuperVigilancia
     let matchCourse = true;
