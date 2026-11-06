@@ -34,6 +34,7 @@ import {
   MoreVertical,
   ChevronDown,
   ShieldAlert,
+  Stethoscope,
   X,
 } from "lucide-react";
 import { ResumeDrawerModal } from "@/components/empresa/ResumeDrawerModal";
@@ -74,6 +75,7 @@ type FunnelTabKey =
   | "nuevos"
   | "revision"
   | "proceso"
+  | "examenes"
   | "contratados"
   | "descartados";
 
@@ -81,6 +83,7 @@ function getCandidateCategory(status: string): FunnelTabKey {
   const st = (status || "").toLowerCase().trim();
   if (["contratado", "hired", "accepted"].includes(st)) return "contratados";
   if (["descartado", "rejected", "finalizado"].includes(st)) return "descartados";
+  if (["examenes_medicos", "medicos", "examenes"].includes(st)) return "examenes";
   if (
     [
       "citado_entrevista",
@@ -416,6 +419,8 @@ export default function ATSVacantePage() {
         msg = "Candidato movido a 'Citado a Entrevista'. El aspirante ya ve la citación en Mis Aplicaciones.";
       } else if (nextStatus === "en_estudio_seguridad") {
         msg = "Candidato movido a 'En Estudio & Polígrafo'. Estado sincronizado con el aspirante.";
+      } else if (nextStatus === "examenes_medicos") {
+        msg = "Candidato avanzado a 'Exámenes Médicos'. Estado sincronizado con el aspirante.";
       } else if (nextStatus === "contratado") {
         msg = "¡Candidato Contratado! Notificación reflejada en el panel del aspirante.";
       } else if (nextStatus === "descartado") {
@@ -606,6 +611,7 @@ export default function ATSVacantePage() {
     nuevos: candidates.filter((c) => getCandidateCategory(c.status) === "nuevos").length,
     revision: candidates.filter((c) => getCandidateCategory(c.status) === "revision").length,
     proceso: candidates.filter((c) => getCandidateCategory(c.status) === "proceso").length,
+    examenes: candidates.filter((c) => getCandidateCategory(c.status) === "examenes").length,
     contratados: candidates.filter((c) => getCandidateCategory(c.status) === "contratados").length,
     descartados: candidates.filter((c) => getCandidateCategory(c.status) === "descartados").length,
   };
@@ -721,6 +727,7 @@ export default function ATSVacantePage() {
             { key: "nuevos" as FunnelTabKey, label: "Nuevos / Sin leer", count: counts.nuevos },
             { key: "revision" as FunnelTabKey, label: "CV Visto / En revisión", count: counts.revision },
             { key: "proceso" as FunnelTabKey, label: "Entrevista / Polígrafo", count: counts.proceso },
+            { key: "examenes" as FunnelTabKey, label: "Exámenes Médicos", count: counts.examenes },
             { key: "contratados" as FunnelTabKey, label: "Contratados", count: counts.contratados },
             { key: "descartados" as FunnelTabKey, label: "Descartados", count: counts.descartados },
           ].map((tab) => {
@@ -1130,6 +1137,10 @@ export default function ATSVacantePage() {
                         <span className="bg-[#EAF3FA] text-[#0B3B70] border border-[#D5E6F5] rounded-full px-2.5 py-0.5 text-[10px] font-bold">
                           En Estudio & Polígrafo
                         </span>
+                      ) : cand.status === "examenes_medicos" ? (
+                        <span className="bg-purple-50 text-purple-800 border border-purple-200 rounded-full px-2.5 py-0.5 text-[10px] font-bold">
+                          Exámenes Médicos
+                        </span>
                       ) : cand.status === "contratado" ? (
                         <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full px-2.5 py-0.5 text-[10px] font-bold">
                           Contratado
@@ -1207,6 +1218,7 @@ export default function ATSVacantePage() {
                     <option value="preseleccionado">En Revisión / CV Visto</option>
                     <option value="citado_entrevista">Citado a Entrevista</option>
                     <option value="en_estudio_seguridad">En Estudio & Polígrafo</option>
+                    <option value="examenes_medicos">Exámenes Médicos</option>
                     <option value="contratado">Contratado</option>
                     <option value="descartado">Descartado</option>
                   </select>
@@ -1257,6 +1269,16 @@ export default function ATSVacantePage() {
                   >
                     <ShieldAlert className="w-3.5 h-3.5 text-[#005DA4]" strokeWidth={2} />
                     <span>Solicitar Polígrafo</span>
+                  </button>
+
+                  {/* Botón Exámenes Médicos */}
+                  <button
+                    type="button"
+                    onClick={() => handleStatusChange(selectedCandidate.id, "examenes_medicos")}
+                    className="rounded-full bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 text-xs font-semibold px-4 py-2.5 inline-flex items-center gap-1.5 shadow-2xs transition-colors"
+                  >
+                    <Stethoscope className="w-3.5 h-3.5 text-purple-600" strokeWidth={2} />
+                    <span>Exámenes Médicos</span>
                   </button>
 
                   {/* Botón Contratar */}

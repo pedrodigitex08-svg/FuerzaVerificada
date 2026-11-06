@@ -19,6 +19,7 @@ import {
   CheckCircle,
   BadgeCheck,
   Sparkles,
+  Stethoscope,
 } from "lucide-react";
 import { ApplicationStatus } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
@@ -38,7 +39,7 @@ interface SavedApp {
   updated_at?: string;
 }
 
-// 4 ETAPAS ESTILO COMPUTRABAJO
+// 5 ETAPAS ESTILO COMPUTRABAJO
 const STAGES = [
   {
     stage: 1,
@@ -54,13 +55,19 @@ const STAGES = [
   },
   {
     stage: 3,
-    title: "3. Poligrafía / Evaluación",
+    title: "3. Poligrafía / Estudio",
     subtitle: "Entrevista o estudio",
     desc: "Fuiste seleccionado para pruebas técnicas, citación presencial o estudio de seguridad / poligrafía.",
   },
   {
     stage: 4,
-    title: "4. Resultado Final",
+    title: "4. Exámenes Médicos",
+    subtitle: "Evaluación ocupacional",
+    desc: "Has sido programado para valoración médica ocupacional de ingreso y aptitud psicofísica.",
+  },
+  {
+    stage: 5,
+    title: "5. Resultado Final",
     subtitle: "Vinculación laboral",
     desc: "¡Proceso culminado exitosamente! Asignación de puesto formalizada con todas las prestaciones de ley.",
   },
@@ -70,11 +77,13 @@ function getStageInfo(status: string) {
   const st = (status || "").toLowerCase().trim();
   const isRejected = ["descartado", "rechazado", "rejected", "finalizado"].includes(st);
 
-  let currentStageIndex = 0; // 0 = 1. Postulado, 1 = 2. CV en Revisión, 2 = 3. Poligrafía / Evaluación, 3 = 4. Resultado Final
+  let currentStageIndex = 0; // 0 = Postulado, 1 = Revisión, 2 = Poligrafía / Estudio, 3 = Exámenes Médicos, 4 = Resultado Final
 
   if (isRejected) {
-    currentStageIndex = 3;
+    currentStageIndex = 4;
   } else if (["finalista", "contratado", "seleccionado", "hired", "accepted"].includes(st)) {
+    currentStageIndex = 4;
+  } else if (["examenes_medicos"].includes(st)) {
     currentStageIndex = 3;
   } else if (
     [
@@ -127,8 +136,15 @@ function getStatusPillMeta(status: string): {
   if (["descartado", "rechazado", "rejected", "finalizado"].includes(st)) {
     return {
       label: "Proceso Finalizado",
-      className: "bg-slate-100 text-slate-600 border-slate-300",
+      className: "bg-slate-200 text-slate-600 border-slate-300",
       dotColor: "bg-slate-400",
+    };
+  }
+  if (st === "examenes_medicos") {
+    return {
+      label: "Exámenes Médicos",
+      className: "bg-purple-50 text-purple-800 border-purple-200",
+      dotColor: "bg-purple-500",
     };
   }
   if (["poligrafo", "estudio_seguridad", "en_estudio_seguridad", "estudio", "pruebas"].includes(st)) {
@@ -176,6 +192,7 @@ function formatStatusToastLabel(status: string): string {
   if (st === "preseleccionado") return "En Revisión / CV Visto por la empresa";
   if (st === "citado_entrevista") return "Citado a Entrevista Presencial";
   if (st === "en_estudio_seguridad") return "En Estudio de Seguridad & Poligrafía";
+  if (st === "examenes_medicos") return "Exámenes Médicos Ocupacionales";
   if (st === "contratado") return "¡Contratado!";
   if (st === "descartado") return "Proceso Finalizado";
   return "Postulado (En cola de revisión)";
@@ -457,9 +474,13 @@ export default function PostulacionesPage() {
     const { currentStageIndex, isRejected } = getStageInfo(a.status);
     return !isRejected && currentStageIndex === 2;
   }).length;
-  const contratadoCount = applications.filter((a) => {
+  const examenesCount = applications.filter((a) => {
     const { currentStageIndex, isRejected } = getStageInfo(a.status);
     return !isRejected && currentStageIndex === 3;
+  }).length;
+  const contratadoCount = applications.filter((a) => {
+    const { currentStageIndex, isRejected } = getStageInfo(a.status);
+    return !isRejected && currentStageIndex === 4;
   }).length;
 
   return (
@@ -491,7 +512,7 @@ export default function PostulacionesPage() {
       </div>
 
       {/* CONTADORES SUPERIORES SINCRONIZADOS (ESTILO COMPUTRABAJO) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs flex items-center justify-between">
           <div>
             <span className="text-[11px] font-semibold text-slate-500 block">
@@ -523,7 +544,7 @@ export default function PostulacionesPage() {
         <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs flex items-center justify-between">
           <div>
             <span className="text-[11px] font-semibold text-slate-500 block">
-              Poligrafía / Entrevista
+              Poligrafía / Estudio
             </span>
             <span className="text-xl font-bold font-mono text-amber-700 tabular-nums">
               {evaluacionCount}
@@ -535,6 +556,20 @@ export default function PostulacionesPage() {
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-semibold text-slate-500 block">
+              Exámenes Médicos
+            </span>
+            <span className="text-xl font-bold font-mono text-purple-700 tabular-nums">
+              {examenesCount}
+            </span>
+          </div>
+          <div className="w-9 h-9 rounded-full bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-700">
+            <Stethoscope className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs flex items-center justify-between col-span-2 sm:col-span-1">
           <div>
             <span className="text-[11px] font-semibold text-slate-500 block">
               Seleccionado / Finalista
@@ -596,7 +631,11 @@ export default function PostulacionesPage() {
             return (
               <div
                 key={app.id}
-                className="bg-white border border-slate-200 rounded-2xl p-6 space-y-5 shadow-2xs hover:border-slate-300 transition-all"
+                className={`rounded-2xl p-6 space-y-5 transition-all ${
+                  isRejected
+                    ? "bg-slate-100/60 opacity-60 grayscale border border-slate-200/80"
+                    : "bg-white border border-slate-200 shadow-2xs hover:border-slate-300"
+                }`}
               >
                 {/* Header row */}
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
@@ -719,14 +758,32 @@ export default function PostulacionesPage() {
                   </div>
                 )}
 
-                {/* RASTREADOR VISUAL EN 4 ETAPAS (Estilo Computrabajo) */}
+                {/* AVISO EXÁMENES MÉDICOS */}
+                {app.status === "examenes_medicos" && (
+                  <div className="p-4 rounded-xl bg-purple-50/80 border border-purple-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-xs font-bold text-purple-900">
+                        <Stethoscope className="w-4 h-4 text-purple-700" strokeWidth={2} />
+                        <span>Convocado a Exámenes Médicos Ocupacionales</span>
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-purple-800 bg-purple-100 border border-purple-300 px-2.5 py-0.5 rounded-full">
+                        En Proceso Médico
+                      </span>
+                    </div>
+                    <p className="text-xs text-purple-900 leading-relaxed font-normal">
+                      Has superado los filtros anteriores y has sido agendado para tus valoraciones médicas ocupacionales y pruebas de aptitud psicofísica. Mantente atento a las indicaciones de la empresa sobre ayuno, lugar y horario.
+                    </p>
+                  </div>
+                )}
+
+                {/* RASTREADOR VISUAL EN 5 ETAPAS (Estilo Computrabajo) */}
                 <div className="pt-3 border-t border-slate-100">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                      Progreso de la Postulación ({currentStageIndex + 1} de 4)
+                      Progreso de la Postulación ({currentStageIndex + 1} de 5)
                     </span>
                     {isRejected ? (
-                      <span className="text-xs font-medium text-slate-500 bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded-full">
+                      <span className="text-xs font-medium text-slate-600 bg-slate-200 border border-slate-300 px-2.5 py-0.5 rounded-full">
                         Proceso Finalizado
                       </span>
                     ) : (
@@ -747,12 +804,12 @@ export default function PostulacionesPage() {
                         isRejected ? "bg-slate-400" : "bg-[#005DA4]"
                       }`}
                       style={{
-                        width: `${(currentStageIndex / 3) * 100}%`,
+                        width: `${(currentStageIndex / 4) * 100}%`,
                         maxWidth: "calc(100% - 4rem)",
                       }}
                     />
 
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 relative z-10">
+                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5 relative z-10">
                       {STAGES.map((st, idx) => {
                         const isPast = idx < currentStageIndex;
                         const isCurrent = idx === currentStageIndex;
@@ -760,21 +817,24 @@ export default function PostulacionesPage() {
                         let circleStyle = "bg-white border-2 border-slate-300 text-slate-400";
                         let cardStyle = "bg-slate-50/70 border-slate-200 text-slate-500";
 
-                        if (isCurrent) {
-                          if (isRejected && idx === 3) {
-                            circleStyle = "bg-slate-700 border-2 border-slate-700 text-white shadow-xs";
-                            cardStyle = "bg-slate-100 border-slate-300 text-slate-800 shadow-xs";
+                        if (isRejected) {
+                          if (idx === 4) {
+                            circleStyle = "bg-slate-400 border-2 border-slate-400 text-white";
+                            cardStyle = "bg-slate-200/70 border-slate-300 text-slate-600";
                           } else {
-                            circleStyle = "bg-[#0B3B70] border-2 border-[#0B3B70] text-white shadow-xs ring-4 ring-[#EAF3FA]";
-                            cardStyle = "bg-[#0B3B70] text-white border-[#0B3B70] shadow-xs";
+                            circleStyle = "bg-slate-100 border-2 border-slate-200 text-slate-400";
+                            cardStyle = "bg-slate-50/50 border-slate-200 text-slate-400";
                           }
+                        } else if (isCurrent) {
+                          circleStyle = "bg-[#0B3B70] border-2 border-[#0B3B70] text-white shadow-xs ring-4 ring-[#EAF3FA]";
+                          cardStyle = "bg-[#0B3B70] text-white border-[#0B3B70] shadow-xs";
                         } else if (isPast) {
                           circleStyle = "bg-emerald-600 border-2 border-emerald-600 text-white";
                           cardStyle = "bg-emerald-50/70 border-emerald-200 text-emerald-950";
                         }
 
-                        const stageTitle = idx === 3 && isRejected ? "Proceso Finalizado" : st.title;
-                        const stageSub = idx === 3 && isRejected ? "Perfil en base de datos" : st.subtitle;
+                        const stageTitle = idx === 4 && isRejected ? "Proceso Finalizado" : st.title;
+                        const stageSub = idx === 4 && isRejected ? "Perfil en base de datos" : st.subtitle;
 
                         return (
                           <div
@@ -816,9 +876,11 @@ export default function PostulacionesPage() {
                   <div
                     className={`mt-3 p-3.5 rounded-xl text-xs border ${
                       isRejected
-                        ? "bg-slate-50 border-slate-200 text-slate-600"
-                        : currentStageIndex === 3
+                        ? "bg-slate-100/80 border-slate-200 text-slate-600"
+                        : currentStageIndex === 4
                         ? "bg-emerald-50/80 border-emerald-200 text-emerald-900"
+                        : currentStageIndex === 3
+                        ? "bg-purple-50/80 border-purple-200 text-purple-900"
                         : "bg-[#EAF3FA] border-[#D5E6F5] text-[#0B3B70]"
                     }`}
                   >

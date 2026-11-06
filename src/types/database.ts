@@ -13,6 +13,7 @@ export type ApplicationStatus =
   | "preseleccionado"
   | "citado_entrevista"
   | "en_estudio_seguridad"
+  | "examenes_medicos"
   | "contratado"
   | "descartado";
 
