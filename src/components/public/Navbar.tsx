@@ -413,7 +413,7 @@ export function Navbar() {
                         : "text-slate-700 hover:text-[#0B3B70] border-transparent hover:border-[#0B3B70]"
                     }`}
                   >
-                    Credencial & Cursos
+                    Configuración de HV & Soportes
                   </Link>
                   <Link
                     href="/guarda/academias"
@@ -705,7 +705,7 @@ export function Navbar() {
                           className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 hover:text-[#0B3B70] hover:bg-[#EAF3FA] rounded-xl transition-colors"
                         >
                           <FileCheck className="w-4 h-4 text-[#0B3B70] shrink-0" strokeWidth={1.75} />
-                          <span>Credencial & Cursos Vigentes</span>
+                          <span>Configuración de HV & Soportes</span>
                         </Link>
                         <Link
                           href="/guarda/academias"
@@ -993,7 +993,7 @@ export function Navbar() {
                     className="flex items-center justify-between p-3 rounded-xl border border-slate-200/90 hover:border-[#0B3B70] hover:bg-[#EAF3FA] transition-all"
                   >
                     <div>
-                      <p className="text-xs font-bold text-slate-900">Credencial & Cursos</p>
+                      <p className="text-xs font-bold text-slate-900">Configuración de HV & Soportes</p>
                       <p className="text-[11px] text-slate-500">SuperVigilancia y vigencias</p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-slate-400" />

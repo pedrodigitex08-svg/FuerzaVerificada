@@ -22,16 +22,16 @@ import {
   ExternalLink,
   Lightbulb,
   Camera,
-  ChevronRight,
   X,
-  Bike,
   Sparkles,
-  Info,
+  GraduationCap,
+  Car,
+  Trash2,
+  Calendar,
 } from "lucide-react";
 import { SecurityRoleType } from "@/types/database";
 import {
   OFFICIAL_SECURITY_PROFILES,
-  SECURITY_ROLE_OPTIONS,
   normalizeSecurityRole,
   formatSecurityRoleLabel,
 } from "@/lib/utils/shiftNormalizer";
@@ -50,8 +50,61 @@ const DEFAULT_SKILLS = [
   "Defensa Personal y Uso Proporcional de la Fuerza",
 ];
 
+const EDUCATION_LEVEL_OPTIONS = [
+  "Educación Básica primaria",
+  "Educación Básica secundaria",
+  "Bachillerato / Educación Media",
+  "Universidad / Carrera técnica",
+  "Universidad / Carrera tecnológica",
+  "Universidad / Carrera profesional",
+  "Postgrado / Especialización",
+  "Postgrado / Maestría",
+  "Postgrado / Doctorado",
+] as const;
+
+const VEHICLE_TYPE_OPTIONS = ["Motocicleta", "Automóvil", "Camioneta"] as const;
+
+const MONTHS_ES = [
+  { value: "01", label: "Enero" },
+  { value: "02", label: "Febrero" },
+  { value: "03", label: "Marzo" },
+  { value: "04", label: "Abril" },
+  { value: "05", label: "Mayo" },
+  { value: "06", label: "Junio" },
+  { value: "07", label: "Julio" },
+  { value: "08", label: "Agosto" },
+  { value: "09", label: "Septiembre" },
+  { value: "10", label: "Octubre" },
+  { value: "11", label: "Noviembre" },
+  { value: "12", label: "Diciembre" },
+];
+
+interface ProfileWorkExperience {
+  id: string;
+  company: string;
+  startDate: string;
+  endDate: string | null;
+  currentlyWorking: boolean;
+  functions: string;
+  role?: string;
+}
+
+function formatReadableDate(dateStr?: string | null): string {
+  if (!dateStr) return "";
+  const clean = dateStr.trim().split("T")[0];
+  const parts = clean.split("-");
+  if (parts.length === 3) {
+    const [y, m, d] = parts;
+    const monthObj = MONTHS_ES.find((item) => item.value === m.padStart(2, "0"));
+    if (monthObj && y && d) {
+      return `${parseInt(d, 10)} de ${monthObj.label} de ${y}`;
+    }
+  }
+  return dateStr;
+}
+
 export default function PerfilGuardaPage() {
-  const { role, fullName: authName, email: authEmail, avatarUrl: authAvatar } = useAuth();
+  const { fullName: authName, email: authEmail, avatarUrl: authAvatar } = useAuth();
   const supabase = createClient();
 
   // Estados del candidato
@@ -64,17 +117,50 @@ export default function PerfilGuardaPage() {
   const [locality, setLocality] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string>("");
 
-  // Perfil Operativo y Especialidad
-  const [primaryRole, setPrimaryRole] = useState<SecurityRoleType>("Guarda de seguridad");
+  // Perfil Operativo y Especialidades (hasta 5 opciones en selected_roles + primary_role)
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([
+    "Guarda de seguridad",
+  ]);
+  const [primaryRole, setPrimaryRole] = useState<SecurityRoleType>(
+    "Guarda de seguridad"
+  );
+  const [roleLimitNotice, setRoleLimitNotice] = useState<string | null>(null);
   const [yearsExperience, setYearsExperience] = useState(2);
   const [bioSummary, setBioSummary] = useState("");
+  const [hasMilitaryBooklet, setHasMilitaryBooklet] = useState(false);
 
-  // Estudios y Curso SuperVigilancia
+  // Formación Académica
+  const [educationLevel, setEducationLevel] = useState<string>(
+    "Bachillerato / Educación Media"
+  );
+  const [educationTitle, setEducationTitle] = useState("");
+  const [educationInstitution, setEducationInstitution] = useState("");
+  const [educationCurrentlyStudying, setEducationCurrentlyStudying] =
+    useState(false);
+  const [educationStartDate, setEducationStartDate] = useState("");
+  const [educationEndDate, setEducationEndDate] = useState("");
+
+  // Estudios y Curso SuperVigilancia + Curso SIMETRIC
   const [courseName, setCourseName] = useState("Reentrenamiento en Vigilancia");
-  const [academyName, setAcademyName] = useState("Academia Superior de Seguridad");
-  const [courseCompletionDate, setCourseCompletionDate] = useState<string | null>(null);
-  const [nroCredencial, setNroCredencial] = useState("SIN REGISTRAR");
+  const [academyName, setAcademyName] = useState(
+    "Academia Superior de Seguridad"
+  );
+  const [courseCompletionDate, setCourseCompletionDate] = useState<
+    string | null
+  >(null);
   const [courseId, setCourseId] = useState<string | null>(null);
+  const [hasSimetricCourse, setHasSimetricCourse] = useState(false);
+  const [simetricCourseNumber, setSimetricCourseNumber] = useState("");
+
+  // Experiencia Laboral Múltiple (work_experiences JSONB)
+  const [workExperiences, setWorkExperiences] = useState<
+    ProfileWorkExperience[]
+  >([]);
+  const [newExpCompany, setNewExpCompany] = useState("");
+  const [newExpStartDate, setNewExpStartDate] = useState("");
+  const [newExpEndDate, setNewExpEndDate] = useState("");
+  const [newExpCurrentlyWorking, setNewExpCurrentlyWorking] = useState(false);
+  const [newExpFunctions, setNewExpFunctions] = useState("");
 
   // Competencias y Dotación
   const [shirtSize, setShirtSize] = useState("M");
@@ -87,14 +173,19 @@ export default function PerfilGuardaPage() {
     "Monitoreo de Cámaras y Alarmas CCTV",
   ]);
 
-  // Movilidad e Identificación
-  const [hasMotorcycle, setHasMotorcycle] = useState(false);
+  // Vehículo propio (Reemplaza "Moto propia") y Movilidad
+  const [hasOwnVehicle, setHasOwnVehicle] = useState(false);
+  const [vehicleType, setVehicleType] = useState<string>("Motocicleta");
+  const [driverLicenseClass, setDriverLicenseClass] = useState("");
   const [motorcycleCc, setMotorcycleCc] = useState<number | null>(null);
-  const [shiftAvailability, setShiftAvailability] = useState("Turnos rotativos 2x2x2 y relevos");
+  const [shiftAvailability, setShiftAvailability] = useState(
+    "Turnos rotativos 2x2x2 y relevos"
+  );
 
-  // Documentos adjuntos (3 soportes individuales)
+  // 4 Documentos adjuntos (Hoja de Vida, Cédula, Libreta Militar y Diplomas)
   const [resumeUrl, setResumeUrl] = useState<string | null>(null);
   const [idCardUrl, setIdCardUrl] = useState<string | null>(null);
+  const [libretaUrl, setLibretaUrl] = useState<string | null>(null);
   const [diplomaUrl, setDiplomaUrl] = useState<string | null>(null);
 
   // Estados de control UI y carga
@@ -103,7 +194,7 @@ export default function PerfilGuardaPage() {
   const [successToast, setSuccessToast] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Estado de edición por sección ("none" | "header" | "role" | "course" | "competencies" | "mobility")
+  // Estado de edición por sección ("none" | "header" | "role" | "course" | "experience" | "competencies" | "mobility")
   const [editingSection, setEditingSection] = useState<string | null>(null);
 
   // Estados de carga individual de archivos
@@ -116,7 +207,17 @@ export default function PerfilGuardaPage() {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const resumeInputRef = useRef<HTMLInputElement>(null);
   const idCardInputRef = useRef<HTMLInputElement>(null);
+  const libretaInputRef = useRef<HTMLInputElement>(null);
   const diplomaInputRef = useRef<HTMLInputElement>(null);
+
+  // Regla condicional: Personal administrativo o Conserje oculta libreta militar
+  const isExemptFromMilitaryBooklet =
+    selectedRoles.includes("Personal administrativo") ||
+    selectedRoles.includes("Conserje");
+
+  const requiresEducationTitle =
+    educationLevel.startsWith("Universidad") ||
+    educationLevel.startsWith("Postgrado");
 
   // 1. CARGA DE DATOS DESDE SUPABASE
   useEffect(() => {
@@ -134,7 +235,9 @@ export default function PerfilGuardaPage() {
           // Foto de perfil desde localStorage o metadatos
           const cachedAvatar =
             typeof window !== "undefined"
-              ? localStorage.getItem("fv_user_avatar") || user.user_metadata?.avatar_url || user.user_metadata?.picture
+              ? localStorage.getItem("fv_user_avatar") ||
+                user.user_metadata?.avatar_url ||
+                user.user_metadata?.picture
               : "";
           if (cachedAvatar) setAvatarUrl(cachedAvatar);
 
@@ -149,8 +252,8 @@ export default function PerfilGuardaPage() {
             if (profile.full_name) setFullName(profile.full_name);
             if (profile.phone_whatsapp) setPhone(profile.phone_whatsapp);
             if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
-          } else if (user.user_metadata?.full_name) {
-            setFullName(user.user_metadata.full_name);
+          } else if (user.user_metadata?.full_name || authName) {
+            setFullName(user.user_metadata?.full_name || authName || "");
           }
 
           // Cargar public.candidate_profiles
@@ -161,38 +264,158 @@ export default function PerfilGuardaPage() {
             .maybeSingle();
 
           if (candProfile) {
-            if (candProfile.national_id) setNationalId(candProfile.national_id);
-            if (candProfile.city) setCity(candProfile.city);
-            if (candProfile.locality_neighborhood) setLocality(candProfile.locality_neighborhood);
-            if (candProfile.primary_role) {
-              setPrimaryRole(normalizeSecurityRole(candProfile.primary_role));
+            const cp = candProfile as any;
+
+            if (cp.national_id && !String(cp.national_id).startsWith("CC-")) {
+              setNationalId(cp.national_id);
+            } else if (cp.national_id) {
+              setNationalId(cp.national_id);
             }
-            if (candProfile.years_experience !== undefined) {
-              setYearsExperience(candProfile.years_experience);
-            }
-            if (candProfile.bio_summary) {
-              setBioSummary(candProfile.bio_summary);
-            }
-            if (candProfile.has_own_motorcycle !== undefined) {
-              setHasMotorcycle(candProfile.has_own_motorcycle);
-            }
-            if (candProfile.motorcycle_cc) {
-              setMotorcycleCc(candProfile.motorcycle_cc);
-            }
-            if (candProfile.resume_pdf_url) {
-              setResumeUrl(candProfile.resume_pdf_url);
+            if (cp.city) setCity(cp.city);
+            if (cp.locality_neighborhood) setLocality(cp.locality_neighborhood);
+
+            // Especialidades seleccionadas (selected_roles hasta 5 + primary_role)
+            if (
+              Array.isArray(cp.selected_roles) &&
+              cp.selected_roles.length > 0
+            ) {
+              const normalizedRoles = Array.from(
+                new Set(
+                  cp.selected_roles
+                    .map((r: string) => normalizeSecurityRole(r))
+                    .filter(Boolean)
+                )
+              ).slice(0, 5) as string[];
+              if (normalizedRoles.length > 0) {
+                setSelectedRoles(normalizedRoles);
+                setPrimaryRole(normalizedRoles[0] as SecurityRoleType);
+              }
+            } else if (cp.primary_role) {
+              const normPrimary = normalizeSecurityRole(cp.primary_role);
+              setPrimaryRole(normPrimary);
+              setSelectedRoles([normPrimary]);
             }
 
-            // Parsear dotación y habilidades desde work_experience_json
-            if (candProfile.work_experience_json) {
-              const expData = candProfile.work_experience_json as any;
+            if (
+              cp.years_experience !== undefined &&
+              cp.years_experience !== null
+            ) {
+              setYearsExperience(Number(cp.years_experience) || 0);
+            }
+            if (cp.bio_summary) {
+              setBioSummary(cp.bio_summary);
+            }
+            if (cp.has_military_booklet !== undefined) {
+              setHasMilitaryBooklet(Boolean(cp.has_military_booklet));
+            }
+
+            // Formación Académica
+            if (cp.education_level) setEducationLevel(cp.education_level);
+            if (cp.education_title) setEducationTitle(cp.education_title);
+            if (cp.education_institution) {
+              setEducationInstitution(cp.education_institution);
+            }
+            if (cp.education_currently_studying !== undefined) {
+              setEducationCurrentlyStudying(
+                Boolean(cp.education_currently_studying)
+              );
+            }
+            if (cp.education_start_date) {
+              setEducationStartDate(cp.education_start_date);
+            }
+            if (cp.education_end_date) {
+              setEducationEndDate(cp.education_end_date);
+            }
+
+            // Vehículo propio y licencia
+            if (cp.has_own_vehicle !== undefined && cp.has_own_vehicle !== null) {
+              setHasOwnVehicle(Boolean(cp.has_own_vehicle));
+            } else if (cp.has_own_motorcycle || cp.has_motorcycle) {
+              setHasOwnVehicle(true);
+              setVehicleType("Motocicleta");
+            }
+            if (cp.vehicle_type) {
+              setVehicleType(cp.vehicle_type);
+            }
+            if (cp.driver_license_class) {
+              setDriverLicenseClass(cp.driver_license_class);
+            } else if (cp.license_category) {
+              setDriverLicenseClass(cp.license_category);
+            }
+            if (cp.motorcycle_cc) {
+              setMotorcycleCc(cp.motorcycle_cc);
+            }
+
+            // Curso SIMETRIC
+            if (cp.has_simetric_course !== undefined) {
+              setHasSimetricCourse(Boolean(cp.has_simetric_course));
+            }
+            if (cp.simetric_course_number) {
+              setSimetricCourseNumber(cp.simetric_course_number);
+            }
+
+            // 4 Soportes en candidate_profiles
+            if (cp.document_cv_url || cp.resume_pdf_url) {
+              setResumeUrl(cp.document_cv_url || cp.resume_pdf_url);
+            }
+            if (cp.document_cedula_url) {
+              setIdCardUrl(cp.document_cedula_url);
+            }
+            if (cp.document_libreta_url) {
+              setLibretaUrl(cp.document_libreta_url);
+            }
+            if (cp.document_diplomas_url) {
+              setDiplomaUrl(cp.document_diplomas_url);
+            }
+
+            // Experiencias laborales desde work_experiences (o work_experience_json si es arreglo)
+            const rawWorkExps = Array.isArray(cp.work_experiences)
+              ? cp.work_experiences
+              : Array.isArray(cp.work_experience_json)
+              ? cp.work_experience_json
+              : Array.isArray(cp.work_experience_json?.experiences)
+              ? cp.work_experience_json.experiences
+              : [];
+
+            if (rawWorkExps.length > 0) {
+              setWorkExperiences(
+                rawWorkExps.map((item: any, idx: number) => ({
+                  id: item.id || `exp-${idx}-${Date.now()}`,
+                  company: item.company || "",
+                  startDate: item.startDate || item.start_date || "",
+                  endDate: item.endDate || item.end_date || null,
+                  currentlyWorking: Boolean(
+                    item.currentlyWorking ?? item.current ?? false
+                  ),
+                  functions: String(
+                    item.functions || item.description || item.role || ""
+                  ).slice(0, 500),
+                  role: item.role || item.functions || "",
+                }))
+              );
+            }
+
+            // Parsear dotación y habilidades desde work_experience_json si es objeto
+            if (
+              cp.work_experience_json &&
+              !Array.isArray(cp.work_experience_json)
+            ) {
+              const expData = cp.work_experience_json as any;
               if (expData?.uniform_sizes) {
-                if (expData.uniform_sizes.shirt) setShirtSize(expData.uniform_sizes.shirt);
-                if (expData.uniform_sizes.pants) setPantsSize(expData.uniform_sizes.pants);
-                if (expData.uniform_sizes.shoes) setShoesSize(expData.uniform_sizes.shoes);
-                if (expData.uniform_sizes.booklet) setBookletType(expData.uniform_sizes.booklet);
+                if (expData.uniform_sizes.shirt)
+                  setShirtSize(expData.uniform_sizes.shirt);
+                if (expData.uniform_sizes.pants)
+                  setPantsSize(expData.uniform_sizes.pants);
+                if (expData.uniform_sizes.shoes)
+                  setShoesSize(expData.uniform_sizes.shoes);
+                if (expData.uniform_sizes.booklet)
+                  setBookletType(expData.uniform_sizes.booklet);
               }
-              if (expData?.skills && Array.isArray(expData.skills) && expData.skills.length > 0) {
+              if (
+                expData?.skills &&
+                Array.isArray(expData.skills) &&
+                expData.skills.length > 0
+              ) {
                 setSelectedSkills(expData.skills);
               }
               if (expData?.shift_availability) {
@@ -214,10 +437,17 @@ export default function PerfilGuardaPage() {
             setCourseId(course.id);
             if (course.course_name) setCourseName(course.course_name);
             if (course.academy_name) setAcademyName(course.academy_name);
-            if (course.completion_date) setCourseCompletionDate(course.completion_date);
-            const regNumber = course.nro_credencial_supervigilancia || (course as any).credential_number;
-            if (regNumber) setNroCredencial(regNumber);
-            if (course.certificate_file_url) setDiplomaUrl(course.certificate_file_url);
+            if (course.completion_date)
+              setCourseCompletionDate(course.completion_date);
+            const regNumber =
+              course.nro_credencial_supervigilancia ||
+              (course as any).credential_number;
+            if (regNumber && !simetricCourseNumber) {
+              setSimetricCourseNumber(regNumber);
+            }
+            if (course.certificate_file_url) {
+              setDiplomaUrl((prev) => prev || course.certificate_file_url);
+            }
           }
 
           // Cargar soportes documentales desde public.candidate_documents
@@ -230,11 +460,13 @@ export default function PerfilGuardaPage() {
             docs.forEach((doc: any) => {
               const type = doc.doc_type || doc.document_type;
               if (type === "hoja_de_vida_pdf" && doc.file_url) {
-                setResumeUrl(doc.file_url);
+                setResumeUrl((prev) => prev || doc.file_url);
               } else if (type === "cedula_ciudadania" && doc.file_url) {
-                setIdCardUrl(doc.file_url);
+                setIdCardUrl((prev) => prev || doc.file_url);
+              } else if (type === "libreta_militar" && doc.file_url) {
+                setLibretaUrl((prev) => prev || doc.file_url);
               } else if (type === "diploma_curso" && doc.file_url) {
-                setDiplomaUrl(doc.file_url);
+                setDiplomaUrl((prev) => prev || doc.file_url);
               }
             });
           }
@@ -254,6 +486,33 @@ export default function PerfilGuardaPage() {
   const showToast = (msg: string) => {
     setSuccessToast(msg);
     setTimeout(() => setSuccessToast(null), 3500);
+  };
+
+  // Alternar selección de hasta 5 especialidades
+  const handleToggleRoleInProfile = (roleLabel: string) => {
+    setRoleLimitNotice(null);
+    setSelectedRoles((prev) => {
+      const exists = prev.includes(roleLabel);
+      if (exists) {
+        if (prev.length === 1) {
+          setRoleLimitNotice("Debes mantener al menos 1 especialidad activa.");
+          return prev;
+        }
+        const next = prev.filter((r) => r !== roleLabel);
+        setPrimaryRole(next[0] as SecurityRoleType);
+        return next;
+      } else {
+        if (prev.length >= 5) {
+          setRoleLimitNotice(
+            "Puedes seleccionar máximo 5 especialidades al mismo tiempo."
+          );
+          return prev;
+        }
+        const next = [...prev, roleLabel];
+        setPrimaryRole(next[0] as SecurityRoleType);
+        return next;
+      }
+    });
   };
 
   // 2. SUBIDA INDIVIDUAL DE FOTO DE PERFIL
@@ -281,9 +540,13 @@ export default function PerfilGuardaPage() {
         localStorage.setItem("fv_user_avatar", publicUrl);
       }
 
-      // Actualizar en profiles y metadatos
-      await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("id", userId);
-      await supabase.auth.updateUser({ data: { avatar_url: publicUrl, picture: publicUrl } });
+      await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("id", userId);
+      await supabase.auth.updateUser({
+        data: { avatar_url: publicUrl, picture: publicUrl },
+      });
 
       showToast("Foto de perfil actualizada correctamente.");
     } catch (err: any) {
@@ -317,20 +580,22 @@ export default function PerfilGuardaPage() {
 
       setResumeUrl(publicUrl);
 
-      // Actualizar en candidate_profiles
       await supabase
         .from("candidate_profiles")
-        .update({ resume_pdf_url: publicUrl, updated_at: new Date().toISOString() })
+        .update({
+          resume_pdf_url: publicUrl,
+          document_cv_url: publicUrl,
+          updated_at: new Date().toISOString(),
+        } as any)
         .eq("user_id", userId);
 
-      // Registrar en candidate_documents
       await supabase.from("candidate_documents").insert({
         candidate_id: userId,
         doc_type: "hoja_de_vida_pdf",
         file_url: publicUrl,
       });
 
-      showToast("Hoja de Vida en PDF cargada con éxito.");
+      showToast("Hoja de Vida cargada con éxito.");
     } catch (err: any) {
       console.error("Error al subir Hoja de Vida:", err);
       setErrorMessage(err.message || "Error al subir la Hoja de Vida.");
@@ -362,7 +627,14 @@ export default function PerfilGuardaPage() {
 
       setIdCardUrl(publicUrl);
 
-      // Registrar en candidate_documents
+      await supabase
+        .from("candidate_profiles")
+        .update({
+          document_cedula_url: publicUrl,
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq("user_id", userId);
+
       await supabase.from("candidate_documents").insert({
         candidate_id: userId,
         doc_type: "cedula_ciudadania",
@@ -372,22 +644,74 @@ export default function PerfilGuardaPage() {
       showToast("Cédula de Ciudadanía cargada con éxito.");
     } catch (err: any) {
       console.error("Error al subir Cédula:", err);
-      setErrorMessage(err.message || "Error al subir documento de identidad.");
+      setErrorMessage(
+        err.message || "Error al subir documento de identidad."
+      );
     } finally {
       setUploadingDoc(null);
       if (e.target) e.target.value = "";
     }
   };
 
-  // 5. SUBIDA INDIVIDUAL DE DIPLOMA DE CURSO SUPERVIGILANCIA
-  const handleUploadDiploma = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 5. SUBIDA INDIVIDUAL DE LIBRETA MILITAR
+  const handleUploadLibreta = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file || !userId) return;
+
+    try {
+      setUploadingDoc("libreta");
+      const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const filePath = `military_booklets/${userId}/${Date.now()}_${cleanName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("documents")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("documents").getPublicUrl(filePath);
+
+      setLibretaUrl(publicUrl);
+
+      await supabase
+        .from("candidate_profiles")
+        .update({
+          document_libreta_url: publicUrl,
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq("user_id", userId);
+
+      await supabase.from("candidate_documents").insert({
+        candidate_id: userId,
+        doc_type: "libreta_militar",
+        file_url: publicUrl,
+      });
+
+      showToast("Libreta Militar cargada con éxito.");
+    } catch (err: any) {
+      console.error("Error al subir Libreta Militar:", err);
+      setErrorMessage(err.message || "Error al subir la Libreta Militar.");
+    } finally {
+      setUploadingDoc(null);
+      if (e.target) e.target.value = "";
+    }
+  };
+
+  // 6. SUBIDA INDIVIDUAL DE DIPLOMAS
+  const handleUploadDiploma = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = e.target.files?.[0];
     if (!file || !userId) return;
 
     try {
       setUploadingDoc("diploma");
       const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const filePath = `certificates/${userId}/${Date.now()}_${cleanName}`;
+      const filePath = `diplomas/${userId}/${Date.now()}_${cleanName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("documents")
@@ -401,7 +725,14 @@ export default function PerfilGuardaPage() {
 
       setDiplomaUrl(publicUrl);
 
-      // Actualizar en candidate_courses si existe
+      await supabase
+        .from("candidate_profiles")
+        .update({
+          document_diplomas_url: publicUrl,
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq("user_id", userId);
+
       if (courseId) {
         await supabase
           .from("candidate_courses")
@@ -409,24 +740,23 @@ export default function PerfilGuardaPage() {
           .eq("id", courseId);
       }
 
-      // Registrar en candidate_documents
       await supabase.from("candidate_documents").insert({
         candidate_id: userId,
         doc_type: "diploma_curso",
         file_url: publicUrl,
       });
 
-      showToast("Diploma del Curso de Seguridad cargado con éxito.");
+      showToast("Diplomas y certificados cargados con éxito.");
     } catch (err: any) {
-      console.error("Error al subir Diploma:", err);
-      setErrorMessage(err.message || "Error al subir diploma del curso.");
+      console.error("Error al subir Diplomas:", err);
+      setErrorMessage(err.message || "Error al subir diplomas.");
     } finally {
       setUploadingDoc(null);
       if (e.target) e.target.value = "";
     }
   };
 
-  // 6. GUARDAR SECCIÓN A: CABECERA Y CONTACTO
+  // 7. GUARDAR SECCIÓN A: CABECERA Y CONTACTO
   const handleSaveHeader = async () => {
     if (!userId) return;
     setIsSaving(true);
@@ -451,89 +781,174 @@ export default function PerfilGuardaPage() {
 
       setEditingSection(null);
       showToast("Datos de contacto actualizados.");
-    } catch (err: any) {
+    } catch {
       setErrorMessage("Error al guardar datos de contacto.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  // 7. GUARDAR SECCIÓN B: ESPECIALIDAD Y DESCRIPCIÓN
+  // 8. GUARDAR SECCIÓN B: ESPECIALIDADES (HASTA 5) Y DESCRIPCIÓN
   const handleSaveRole = async () => {
     if (!userId) return;
     setIsSaving(true);
     try {
-      const normalized = normalizeSecurityRole(primaryRole);
+      const validRoles =
+        selectedRoles.length > 0
+          ? selectedRoles.slice(0, 5)
+          : ["Guarda de seguridad"];
+      const firstRole = normalizeSecurityRole(validRoles[0]);
+      setPrimaryRole(firstRole);
+
       await supabase
         .from("candidate_profiles")
         .update({
-          primary_role: normalized,
+          selected_roles: validRoles,
+          primary_role: firstRole,
           years_experience: yearsExperience,
           bio_summary: bioSummary.trim(),
+          has_military_booklet: isExemptFromMilitaryBooklet
+            ? false
+            : hasMilitaryBooklet,
           updated_at: new Date().toISOString(),
-        })
+        } as any)
         .eq("user_id", userId);
 
       setEditingSection(null);
-      showToast("Especialidad y descripción guardadas.");
-    } catch (err: any) {
-      setErrorMessage("Error al guardar especialidad.");
+      showToast("Especialidades y descripción guardadas.");
+    } catch {
+      setErrorMessage("Error al guardar especialidades.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  // 8. GUARDAR SECCIÓN C: CURSO SUPERVIGILANCIA
-  const handleSaveCourse = async () => {
+  // 9. GUARDAR SECCIÓN C: FORMACIÓN ACADÉMICA, CURSO SUPERVIGILANCIA Y SIMETRIC
+  const handleSaveCourseAndEducation = async () => {
     if (!userId) return;
     setIsSaving(true);
     try {
-      const completion = courseCompletionDate || new Date().toISOString().split("T")[0];
-      // Calcular vigencia exacta a 1 año
-      const compDateObj = new Date(completion);
-      const expDateObj = new Date(compDateObj);
-      expDateObj.setFullYear(expDateObj.getFullYear() + 1);
-      const expirationDate = expDateObj.toISOString().split("T")[0];
+      await supabase
+        .from("candidate_profiles")
+        .update({
+          education_level: educationLevel,
+          education_title: requiresEducationTitle
+            ? educationTitle.trim() || null
+            : null,
+          education_institution: educationInstitution.trim() || null,
+          education_currently_studying: educationCurrentlyStudying,
+          education_start_date: educationStartDate || null,
+          education_end_date: educationCurrentlyStudying
+            ? null
+            : educationEndDate || null,
+          has_simetric_course: hasSimetricCourse,
+          simetric_course_number: hasSimetricCourse
+            ? simetricCourseNumber.trim() || null
+            : null,
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq("user_id", userId);
 
-      if (courseId) {
-        await supabase
-          .from("candidate_courses")
-          .update({
-            course_name: courseName,
-            academy_name: academyName,
-            completion_date: completion,
-            expiration_date: expirationDate,
-            nro_credencial_supervigilancia: nroCredencial.trim(),
-          })
-          .eq("id", courseId);
-      } else {
-        const { data: newCourse } = await supabase
-          .from("candidate_courses")
-          .insert({
-            candidate_id: userId,
-            course_name: courseName,
-            academy_name: academyName,
-            completion_date: completion,
-            expiration_date: expirationDate,
-            nro_credencial_supervigilancia: nroCredencial.trim(),
-            certificate_file_url: diplomaUrl,
-          })
-          .select("id")
-          .single();
+      if (courseCompletionDate) {
+        const compDateObj = new Date(courseCompletionDate);
+        const expDateObj = new Date(compDateObj);
+        expDateObj.setFullYear(expDateObj.getFullYear() + 1);
+        const expirationDate = expDateObj.toISOString().split("T")[0];
 
-        if (newCourse) setCourseId(newCourse.id);
+        if (courseId) {
+          await supabase
+            .from("candidate_courses")
+            .update({
+              course_name: courseName,
+              academy_name: academyName,
+              completion_date: courseCompletionDate,
+              expiration_date: expirationDate,
+              nro_credencial_supervigilancia: hasSimetricCourse
+                ? simetricCourseNumber.trim() || null
+                : null,
+            })
+            .eq("id", courseId);
+        } else {
+          const { data: newCourse } = await supabase
+            .from("candidate_courses")
+            .insert({
+              candidate_id: userId,
+              course_name: courseName,
+              academy_name: academyName,
+              completion_date: courseCompletionDate,
+              expiration_date: expirationDate,
+              nro_credencial_supervigilancia: hasSimetricCourse
+                ? simetricCourseNumber.trim() || null
+                : null,
+              certificate_file_url: diplomaUrl,
+            })
+            .select("id")
+            .single();
+
+          if (newCourse) setCourseId(newCourse.id);
+        }
       }
 
       setEditingSection(null);
-      showToast("Información del curso de seguridad actualizada.");
-    } catch (err: any) {
-      setErrorMessage("Error al guardar información del curso.");
+      showToast("Formación académica y cursos actualizados.");
+    } catch {
+      setErrorMessage("Error al guardar formación y cursos.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  // 9. GUARDAR SECCIÓN D: COMPETENCIAS Y DOTACIÓN
+  // 10. GUARDAR SECCIÓN EXPERIENCIA LABORAL MÚLTIPLE
+  const handleAddExperienceInProfile = async () => {
+    if (!newExpCompany.trim() || !newExpFunctions.trim()) {
+      setErrorMessage("Ingresa el nombre de la Empresa y el rol o funciones.");
+      return;
+    }
+    const nextExp: ProfileWorkExperience = {
+      id: `exp-${Date.now()}`,
+      company: newExpCompany.trim(),
+      startDate: newExpStartDate || "",
+      endDate: newExpCurrentlyWorking ? null : newExpEndDate || null,
+      currentlyWorking: newExpCurrentlyWorking,
+      functions: newExpFunctions.trim().slice(0, 500),
+      role: newExpFunctions.trim().slice(0, 120),
+    };
+    const updatedList = [...workExperiences, nextExp];
+    setWorkExperiences(updatedList);
+    setNewExpCompany("");
+    setNewExpStartDate("");
+    setNewExpEndDate("");
+    setNewExpCurrentlyWorking(false);
+    setNewExpFunctions("");
+
+    if (userId) {
+      await supabase
+        .from("candidate_profiles")
+        .update({
+          work_experiences: updatedList,
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq("user_id", userId);
+      showToast("Experiencia laboral añadida.");
+    }
+  };
+
+  const handleRemoveExperienceInProfile = async (expId: string) => {
+    const updatedList = workExperiences.filter((e) => e.id !== expId);
+    setWorkExperiences(updatedList);
+    if (userId) {
+      await supabase
+        .from("candidate_profiles")
+        .update({
+          work_experiences: updatedList,
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq("user_id", userId);
+      showToast("Experiencia laboral eliminada.");
+    }
+  };
+
+  // 11. GUARDAR SECCIÓN D: COMPETENCIAS Y DOTACIÓN
   const handleSaveCompetencies = async () => {
     if (!userId) return;
     setIsSaving(true);
@@ -543,93 +958,165 @@ export default function PerfilGuardaPage() {
           shirt: shirtSize,
           pants: pantsSize,
           shoes: shoesSize,
-          booklet: bookletType,
+          booklet: isExemptFromMilitaryBooklet ? "No aplica" : bookletType,
         },
         skills: selectedSkills,
         shift_availability: shiftAvailability,
+        experiences: workExperiences,
       };
 
       await supabase
         .from("candidate_profiles")
         .update({
-          work_experience_json: payloadJson,
+          work_experience_json: payloadJson as any,
           updated_at: new Date().toISOString(),
         })
         .eq("user_id", userId);
 
       setEditingSection(null);
       showToast("Dotación y competencias actualizadas.");
-    } catch (err: any) {
+    } catch {
       setErrorMessage("Error al guardar dotación.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  // 10. GUARDAR SECCIÓN E: MOVILIDAD E IDENTIFICACIÓN
+  // 12. GUARDAR SECCIÓN E: VEHÍCULO PROPIO, LICENCIA, LIBRETA E IDENTIFICACIÓN
   const handleSaveMobility = async () => {
     if (!userId) return;
     setIsSaving(true);
     try {
+      const isMoto = hasOwnVehicle && vehicleType === "Motocicleta";
       const payloadJson = {
         uniform_sizes: {
           shirt: shirtSize,
           pants: pantsSize,
           shoes: shoesSize,
-          booklet: bookletType,
+          booklet: isExemptFromMilitaryBooklet ? "No aplica" : bookletType,
         },
         skills: selectedSkills,
         shift_availability: shiftAvailability,
+        experiences: workExperiences,
       };
 
-      await supabase
+      const baseUpdate: Record<string, any> = {
+        national_id: nationalId.trim(),
+        has_military_booklet: isExemptFromMilitaryBooklet
+          ? false
+          : hasMilitaryBooklet,
+        has_own_vehicle: hasOwnVehicle,
+        vehicle_type: hasOwnVehicle ? vehicleType : null,
+        driver_license_class: hasOwnVehicle
+          ? driverLicenseClass.trim() || null
+          : null,
+        has_own_motorcycle: isMoto,
+        has_driving_license:
+          hasOwnVehicle && Boolean(driverLicenseClass.trim()),
+        license_category: hasOwnVehicle
+          ? driverLicenseClass.trim() || null
+          : null,
+        motorcycle_cc: isMoto ? motorcycleCc : null,
+        work_experience_json: payloadJson,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error: firstErr } = await supabase
         .from("candidate_profiles")
         .update({
-          national_id: nationalId.trim(),
-          has_own_motorcycle: hasMotorcycle,
-          motorcycle_cc: hasMotorcycle ? motorcycleCc : null,
-          work_experience_json: payloadJson,
-          updated_at: new Date().toISOString(),
-        })
+          ...baseUpdate,
+          has_motorcycle: isMoto,
+        } as any)
         .eq("user_id", userId);
 
+      if (firstErr) {
+        await supabase
+          .from("candidate_profiles")
+          .update(baseUpdate as any)
+          .eq("user_id", userId);
+      }
+
       setEditingSection(null);
-      showToast("Datos de movilidad e identificación actualizados.");
-    } catch (err: any) {
+      showToast("Datos de vehículo propio e identificación actualizados.");
+    } catch {
       setErrorMessage("Error al guardar movilidad.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  // 11. CÁLCULO DINÁMICO EN VIVO DE COMPLETITUD (0% A 100%)
+  // 13. CÁLCULO DINÁMICO EN VIVO DE COMPLETITUD (0% A 100%)
   const hasAvatar = Boolean(avatarUrl && avatarUrl.trim().length > 0);
-  const hasPersonalInfo = Boolean(fullName.trim().length >= 3 && phone.trim().length >= 7);
-  const hasRoleAndBio = Boolean(primaryRole && (bioSummary.trim().length > 15 || yearsExperience > 0));
-  const hasNationalId = Boolean(nationalId && nationalId.trim().length >= 6 && !nationalId.startsWith("TEMP-"));
-  const hasCourse = Boolean(courseCompletionDate && courseCompletionDate.trim().length > 0);
+  const hasPersonalInfo = Boolean(
+    fullName.trim().length >= 3 && phone.trim().length >= 7
+  );
+  const hasRoleAndBio = Boolean(
+    selectedRoles.length > 0 &&
+      (bioSummary.trim().length > 15 ||
+        yearsExperience > 0 ||
+        workExperiences.length > 0)
+  );
+  const hasNationalId = Boolean(
+    nationalId &&
+      nationalId.trim().length >= 5 &&
+      !nationalId.startsWith("TEMP-")
+  );
+  const hasCourse = Boolean(
+    (courseCompletionDate && courseCompletionDate.trim().length > 0) ||
+      hasSimetricCourse ||
+      Boolean(educationInstitution.trim())
+  );
   const hasResume = Boolean(resumeUrl && resumeUrl.trim().length > 0);
   const hasIdCard = Boolean(idCardUrl && idCardUrl.trim().length > 0);
   const hasDiploma = Boolean(diplomaUrl && diplomaUrl.trim().length > 0);
 
   const checklist = [
     { label: "Foto de perfil cargada", done: hasAvatar, weight: 12 },
-    { label: "Datos de contacto (Nombre y WhatsApp)", done: hasPersonalInfo, weight: 13 },
-    { label: "Especialidad y resumen profesional", done: hasRoleAndBio, weight: 15 },
-    { label: "Cédula de Ciudadanía registrada", done: hasNationalId, weight: 15 },
-    { label: "Curso SuperVigilancia validado", done: hasCourse, weight: 15 },
-    { label: "Hoja de Vida en PDF adjunta", done: hasResume, weight: 10 },
+    {
+      label: "Datos de contacto (Nombre y WhatsApp)",
+      done: hasPersonalInfo,
+      weight: 13,
+    },
+    {
+      label: "Especialidades (hasta 5) y perfil",
+      done: hasRoleAndBio,
+      weight: 15,
+    },
+    {
+      label: "Cédula de Ciudadanía registrada",
+      done: hasNationalId,
+      weight: 15,
+    },
+    {
+      label: "Formación y Cursos / SIMETRIC",
+      done: hasCourse,
+      weight: 15,
+    },
+    { label: "Hoja de Vida adjunta", done: hasResume, weight: 10 },
     { label: "Copia de Cédula adjunta", done: hasIdCard, weight: 10 },
-    { label: "Diploma del Curso adjunto", done: hasDiploma, weight: 10 },
+    { label: "Diplomas adjuntos", done: hasDiploma, weight: 10 },
   ];
 
-  const totalPercentage = checklist.reduce((acc, item) => (item.done ? acc + item.weight : acc), 0);
+  const totalPercentage = checklist.reduce(
+    (acc, item) => (item.done ? acc + item.weight : acc),
+    0
+  );
   const pendingCount = checklist.filter((item) => !item.done).length;
 
   // Cálculo de círculo SVG
   const radius = 24;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (totalPercentage / 100) * circumference;
+  const strokeDashoffset =
+    circumference - (totalPercentage / 100) * circumference;
+
+  if (isLoading) {
+    return (
+      <div className="p-12 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
+        <div className="w-4 h-4 border-2 border-[#0B3B70] border-t-transparent rounded-full animate-spin" />
+        <span>Sincronizando tu Hoja de Vida...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-20">
@@ -674,7 +1161,7 @@ export default function PerfilGuardaPage() {
           href="/guarda/documentos"
           className="text-slate-700 hover:text-[#0B3B70] hover:bg-white/90 rounded-full px-4 sm:px-5 py-2 text-xs font-medium shrink-0 transition-colors"
         >
-          Credencial & Cursos
+          Configuración de HV & Soportes
         </Link>
         <Link
           href="/guarda/academias"
@@ -707,10 +1194,11 @@ export default function PerfilGuardaPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span>{fullName ? fullName.slice(0, 2).toUpperCase() : "PO"}</span>
+                      <span>
+                        {fullName ? fullName.slice(0, 2).toUpperCase() : "PO"}
+                      </span>
                     )}
                   </div>
-                  {/* Botón '+' circular para subir foto */}
                   <button
                     type="button"
                     onClick={() => avatarInputRef.current?.click()}
@@ -742,11 +1230,13 @@ export default function PerfilGuardaPage() {
                       </h2>
                       <p className="text-xs font-semibold text-slate-600 flex items-center justify-center sm:justify-start gap-1 mt-0.5">
                         <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{city}{locality ? ` • ${locality}` : ""}</span>
+                        <span>
+                          {city}
+                          {locality ? ` • ${locality}` : ""}
+                        </span>
                       </p>
                     </div>
 
-                    {/* Botón Lápiz Azul */}
                     <button
                       type="button"
                       onClick={() => setEditingSection("header")}
@@ -764,7 +1254,9 @@ export default function PerfilGuardaPage() {
                     </span>
                     <span className="inline-flex items-center gap-1.5 text-slate-800 font-bold font-mono">
                       <Phone className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>{phone ? `+57 ${phone}` : "Sin celular registrado"}</span>
+                      <span>
+                        {phone ? `+57 ${phone}` : "Sin celular registrado"}
+                      </span>
                     </span>
                   </div>
                 </div>
@@ -787,7 +1279,9 @@ export default function PerfilGuardaPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Nombre Completo</label>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Nombre Completo
+                    </label>
                     <input
                       type="text"
                       value={fullName}
@@ -797,7 +1291,9 @@ export default function PerfilGuardaPage() {
                     />
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">WhatsApp / Teléfono</label>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      WhatsApp / Teléfono
+                    </label>
                     <input
                       type="tel"
                       value={phone}
@@ -807,7 +1303,9 @@ export default function PerfilGuardaPage() {
                     />
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Ciudad Principal</label>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Ciudad Principal
+                    </label>
                     <select
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
@@ -823,7 +1321,9 @@ export default function PerfilGuardaPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Barrio o Localidad</label>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Barrio o Localidad
+                    </label>
                     <input
                       type="text"
                       value={locality}
@@ -856,23 +1356,56 @@ export default function PerfilGuardaPage() {
           </div>
 
           {/* --------------------------------------------------------------------- */}
-          {/* SECCIÓN B: ESPECIALIDAD PRINCIPAL Y DESCRIPCIÓN DEL PERFIL (✏️)        */}
+          {/* SECCIÓN B: ESPECIALIDADES SELECCIONADAS (HASTA 5) Y DESCRIPCIÓN (✏️)  */}
           {/* --------------------------------------------------------------------- */}
-          <div className="space-y-2 pb-6 border-b border-slate-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                  {formatSecurityRoleLabel(primaryRole)}
-                </h3>
-                <span className="text-xs text-[#005DA4] font-semibold">
-                  {yearsExperience} año{yearsExperience !== 1 ? "s" : ""} de experiencia certificada
-                </span>
+          <div className="space-y-3 pb-6 border-b border-slate-100">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-2">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                    {formatSecurityRoleLabel(
+                      (selectedRoles[0] as SecurityRoleType) || primaryRole
+                    )}
+                  </h3>
+                  <span className="text-xs text-[#005DA4] font-semibold">
+                    {yearsExperience} año{yearsExperience !== 1 ? "s" : ""} de
+                    experiencia certificada
+                  </span>
+                </div>
+
+                {/* Píldoras de las especialidades seleccionadas (selected_roles, hasta 5) */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                  {selectedRoles.map((roleItem, idx) => (
+                    <span
+                      key={roleItem}
+                      className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border ${
+                        idx === 0
+                          ? "bg-[#0B3B70] text-white border-[#0B3B70]"
+                          : "bg-[#EAF3FA] text-[#0B3B70] border-[#D5E6F5]"
+                      }`}
+                    >
+                      <span
+                        className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+                          idx === 0
+                            ? "bg-[#FFE066] text-[#0B3B70]"
+                            : "bg-white text-[#005DA4]"
+                        }`}
+                      >
+                        {idx === 0 ? "1° Principal" : `${idx + 1}°`}
+                      </span>
+                      <span>{roleItem}</span>
+                    </span>
+                  ))}
+                </div>
               </div>
+
               <button
                 type="button"
-                onClick={() => setEditingSection(editingSection === "role" ? null : "role")}
-                className="p-2 rounded-full text-[#005DA4] hover:bg-[#EAF3FA] transition-colors cursor-pointer"
-                title="Editar especialidad y descripción"
+                onClick={() =>
+                  setEditingSection(editingSection === "role" ? null : "role")
+                }
+                className="p-2 rounded-full text-[#005DA4] hover:bg-[#EAF3FA] transition-colors cursor-pointer shrink-0"
+                title="Editar especialidades y descripción"
               >
                 <Pencil className="w-4 h-4" />
               </button>
@@ -884,33 +1417,68 @@ export default function PerfilGuardaPage() {
                   "Personal de seguridad privada con vocación de servicio, disciplina y cumplimiento normativo ante la SuperVigilancia. Experiencia en control de acceso, rondas y protección de activos en instalaciones corporativas y residenciales."}
               </p>
             ) : (
-              /* MODO EDICIÓN SECCIÓN B */
+              /* MODO EDICIÓN SECCIÓN B (Hasta 5 especialidades entre los 13 perfiles oficiales) */
               <div className="space-y-4 bg-[#F2F5F8]/70 p-5 rounded-2xl border border-slate-200 mt-2">
+                <div className="flex items-center justify-between">
+                  <label className="block font-bold text-slate-800 text-xs">
+                    Especialidades en Seguridad Privada (Selecciona hasta 5):
+                  </label>
+                  <span className="text-[11px] font-bold text-[#0B3B70] bg-[#EAF3FA] px-2.5 py-0.5 rounded-full border border-[#D5E6F5]">
+                    {selectedRoles.length} / 5 seleccionadas
+                  </span>
+                </div>
+
+                {roleLimitNotice && (
+                  <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-xs font-semibold text-amber-800">
+                    {roleLimitNotice}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                  {OFFICIAL_SECURITY_PROFILES.map((prof) => {
+                    const idx = selectedRoles.indexOf(prof.label);
+                    const isSel = idx !== -1;
+                    return (
+                      <button
+                        key={prof.id}
+                        type="button"
+                        onClick={() => handleToggleRoleInProfile(prof.label)}
+                        className={`p-2.5 rounded-xl text-xs font-semibold border text-left flex items-center justify-between gap-1.5 transition-all cursor-pointer ${
+                          isSel
+                            ? "bg-[#0B3B70] text-white border-[#0B3B70]"
+                            : "bg-white text-slate-700 border-slate-200 hover:border-[#005DA4]"
+                        }`}
+                      >
+                        <span className="truncate">{prof.label}</span>
+                        {isSel && (
+                          <span
+                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
+                              idx === 0
+                                ? "bg-[#FFE066] text-[#0B3B70]"
+                                : "bg-white/20 text-white"
+                            }`}
+                          >
+                            {idx === 0 ? "1°" : `${idx + 1}°`}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">
-                      Especialidad Principal (13 Perfiles Oficiales)
+                      Años de Experiencia
                     </label>
-                    <select
-                      value={normalizeSecurityRole(primaryRole)}
-                      onChange={(e) => setPrimaryRole(e.target.value as SecurityRoleType)}
-                      className="w-full h-9 bg-white border border-slate-300 rounded-xl px-2.5 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#005DA4]"
-                    >
-                      {OFFICIAL_SECURITY_PROFILES.map((prof) => (
-                        <option key={prof.id} value={prof.label}>
-                          {prof.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Años de Experiencia</label>
                     <input
                       type="number"
                       min="0"
                       max="40"
                       value={yearsExperience}
-                      onChange={(e) => setYearsExperience(parseInt(e.target.value, 10) || 0)}
+                      onChange={(e) =>
+                        setYearsExperience(parseInt(e.target.value, 10) || 0)
+                      }
                       className="w-full h-9 bg-white border border-slate-300 rounded-xl px-3 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-[#005DA4]"
                     />
                   </div>
@@ -951,61 +1519,124 @@ export default function PerfilGuardaPage() {
           </div>
 
           {/* --------------------------------------------------------------------- */}
-          {/* SECCIÓN C: MIS ESTUDIOS Y CURSOS SUPERVIGILANCIA (✏️)                  */}
+          {/* SECCIÓN C: FORMACIÓN ACADÉMICA, CURSOS SUPERVIGILANCIA Y SIMETRIC (✏️) */}
           {/* --------------------------------------------------------------------- */}
           <div className="space-y-4 pb-6 border-b border-slate-100">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                Mis estudios y Cursos SuperVigilancia
+                Formación Académica, Cursos y Registro SIMETRIC
               </h3>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEditingSection(editingSection === "course" ? null : "course")}
-                  className="p-2 rounded-full text-[#005DA4] hover:bg-[#EAF3FA] transition-colors cursor-pointer"
-                  title="Editar curso de seguridad"
-                >
-                  <Pencil className="w-4 h-4" />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setEditingSection(
+                    editingSection === "course" ? null : "course"
+                  )
+                }
+                className="p-2 rounded-full text-[#005DA4] hover:bg-[#EAF3FA] transition-colors cursor-pointer"
+                title="Editar formación académica y cursos"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
             </div>
 
             {editingSection !== "course" ? (
-              <div className="space-y-3">
-                {/* Línea de tiempo vertical con punto azul */}
+              <div className="space-y-4">
+                {/* Tarjeta Formación Académica */}
+                <div className="p-4 rounded-2xl border border-slate-200 bg-[#F2F5F8] space-y-1.5">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0B3B70]">
+                      <GraduationCap className="w-4 h-4 text-[#005DA4]" />
+                      <span>{educationLevel}</span>
+                    </span>
+                    <span className="text-[11px] font-semibold text-[#005DA4] bg-[#EAF3FA] border border-[#D5E6F5] px-2.5 py-0.5 rounded-full">
+                      {educationCurrentlyStudying
+                        ? "Cursando actualmente"
+                        : educationEndDate
+                        ? `Finalizado: ${formatReadableDate(educationEndDate)}`
+                        : "Estudio registrado"}
+                    </span>
+                  </div>
+
+                  {requiresEducationTitle && educationTitle && (
+                    <p className="text-xs font-bold text-slate-900">
+                      Título recibido: {educationTitle}
+                    </p>
+                  )}
+
+                  <p className="text-xs text-slate-600 font-medium">
+                    Institución:{" "}
+                    <strong className="text-slate-800">
+                      {educationInstitution || "Por especificar"}
+                    </strong>
+                  </p>
+
+                  {(educationStartDate ||
+                    educationEndDate ||
+                    educationCurrentlyStudying) && (
+                    <p className="text-[11px] text-slate-500 font-mono">
+                      Periodo:{" "}
+                      {educationStartDate
+                        ? formatReadableDate(educationStartDate)
+                        : "Inicio no registrado"}{" "}
+                      —{" "}
+                      {educationCurrentlyStudying
+                        ? "Cursando actualmente"
+                        : educationEndDate
+                        ? formatReadableDate(educationEndDate)
+                        : "Completado"}
+                    </p>
+                  )}
+                </div>
+
+                {/* Línea de tiempo Curso SuperVigilancia & SIMETRIC */}
                 <div className="relative pl-6 space-y-3">
                   <div className="absolute left-[7px] top-2 bottom-1 w-0.5 bg-slate-200" />
                   <div className="relative">
                     <div className="w-3.5 h-3.5 rounded-full bg-[#005DA4] ring-4 ring-[#EAF3FA] absolute -left-[23px] top-1" />
                     <div>
-                      <h4 className="text-sm font-bold text-slate-900">{courseName}</h4>
-                      <p className="text-xs text-slate-600 font-medium mt-0.5">{academyName}</p>
+                      <h4 className="text-sm font-bold text-slate-900">
+                        {courseName}
+                      </h4>
+                      <p className="text-xs text-slate-600 font-medium mt-0.5">
+                        {academyName}
+                      </p>
                       <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-1 font-mono">
                         <span>
-                          Fecha: <strong className="text-slate-800">{courseCompletionDate || "Sin registrar"}</strong>
+                          Fecha:{" "}
+                          <strong className="text-slate-800">
+                            {courseCompletionDate || "Sin registrar"}
+                          </strong>
                         </span>
                         <span>•</span>
                         <span>
-                          Registro NRO: <strong className="text-slate-800">{nroCredencial}</strong>
+                          Curso SIMETRIC:{" "}
+                          <strong className="text-[#0B3B70]">
+                            {hasSimetricCourse
+                              ? `Sí (Registro: ${
+                                  simetricCourseNumber || "Activo"
+                                })`
+                              : "No registrado"}
+                          </strong>
                         </span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Caja de sugerencia azul suave con bombillo */}
+                {/* Caja de sugerencia azul suave */}
                 <div className="bg-[#EAF3FA]/60 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-slate-700 border border-[#D5E6F5]">
                   <div className="flex items-start gap-2.5">
                     <Lightbulb className="w-4 h-4 text-[#005DA4] shrink-0 mt-0.5" />
                     <p className="leading-relaxed">
-                      Mantén al día tu reentrenamiento anual ante la SuperVigilancia. Las empresas verifican vigencias antes de contratar.
+                      Mantén al día tu reentrenamiento anual y tu certificación SIMETRIC. Puedes gestionar el formulario paso a paso en Configuración de HV & Soportes.
                     </p>
                   </div>
                   <Link
-                    href="/guarda/academias"
+                    href="/guarda/documentos"
                     className="font-bold text-[#0B3B70] hover:underline whitespace-nowrap shrink-0 self-end sm:self-auto"
                   >
-                    Ver convenios (15% OFF) →
+                    Abrir Configuración de HV →
                   </Link>
                 </div>
               </div>
@@ -1013,11 +1644,103 @@ export default function PerfilGuardaPage() {
               /* MODO EDICIÓN SECCIÓN C */
               <div className="space-y-4 bg-[#F2F5F8]/70 p-5 rounded-2xl border border-slate-200">
                 <span className="text-xs font-bold text-[#0B3B70] uppercase tracking-wider block">
-                  Actualizar Acreditación de Seguridad Privada
+                  Editar Formación Académica y Cursos
                 </span>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Nombre del Curso</label>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Formación Académica
+                    </label>
+                    <select
+                      value={educationLevel}
+                      onChange={(e) => setEducationLevel(e.target.value)}
+                      className="w-full h-9 bg-white border border-slate-300 rounded-xl px-2.5 text-xs font-medium text-slate-900 focus:outline-none focus:border-[#005DA4]"
+                    >
+                      {EDUCATION_LEVEL_OPTIONS.map((lvl) => (
+                        <option key={lvl} value={lvl}>
+                          {lvl}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Nombre de la institución
+                    </label>
+                    <input
+                      type="text"
+                      value={educationInstitution}
+                      onChange={(e) => setEducationInstitution(e.target.value)}
+                      placeholder="Colegio / SENA / Universidad"
+                      className="w-full h-9 bg-white border border-slate-300 rounded-xl px-3 text-xs font-medium text-slate-900 focus:outline-none focus:border-[#005DA4]"
+                    />
+                  </div>
+
+                  {requiresEducationTitle && (
+                    <div className="sm:col-span-2">
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Nombre del título que recibió
+                      </label>
+                      <input
+                        type="text"
+                        value={educationTitle}
+                        onChange={(e) => setEducationTitle(e.target.value)}
+                        placeholder="Ej. Tecnólogo en Seguridad / Profesional..."
+                        className="w-full h-9 bg-white border border-slate-300 rounded-xl px-3 text-xs font-medium text-slate-900 focus:outline-none focus:border-[#005DA4]"
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Fecha de inicio (Estudios)
+                    </label>
+                    <input
+                      type="date"
+                      value={educationStartDate}
+                      onChange={(e) => setEducationStartDate(e.target.value)}
+                      className="w-full h-9 bg-white border border-slate-300 rounded-xl px-3 text-xs font-mono text-slate-900 focus:outline-none focus:border-[#005DA4]"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="font-semibold text-slate-700">
+                        Fecha de fin
+                      </label>
+                      <label className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#005DA4] cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={educationCurrentlyStudying}
+                          onChange={(e) =>
+                            setEducationCurrentlyStudying(e.target.checked)
+                          }
+                        />
+                        <span>Cursando actualmente</span>
+                      </label>
+                    </div>
+                    {!educationCurrentlyStudying ? (
+                      <input
+                        type="date"
+                        value={educationEndDate}
+                        onChange={(e) => setEducationEndDate(e.target.value)}
+                        className="w-full h-9 bg-white border border-slate-300 rounded-xl px-3 text-xs font-mono text-slate-900 focus:outline-none focus:border-[#005DA4]"
+                      />
+                    ) : (
+                      <div className="h-9 rounded-xl bg-slate-100 border border-slate-200 px-3 flex items-center text-xs font-semibold text-[#005DA4]">
+                        Cursando actualmente
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Nombre del Curso de Seguridad
+                    </label>
                     <input
                       type="text"
                       value={courseName}
@@ -1027,7 +1750,9 @@ export default function PerfilGuardaPage() {
                     />
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Academia Emisora</label>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Academia Emisora
+                    </label>
                     <input
                       type="text"
                       value={academyName}
@@ -1037,7 +1762,9 @@ export default function PerfilGuardaPage() {
                     />
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Fecha de Realización</label>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Fecha de Realización del Curso
+                    </label>
                     <input
                       type="date"
                       value={courseCompletionDate || ""}
@@ -1046,14 +1773,31 @@ export default function PerfilGuardaPage() {
                     />
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Número de Credencial / Registro</label>
-                    <input
-                      type="text"
-                      value={nroCredencial}
-                      onChange={(e) => setNroCredencial(e.target.value)}
-                      placeholder="NRO SuperVigilancia"
-                      className="w-full h-9 bg-white border border-slate-300 rounded-xl px-3 text-xs font-mono font-medium text-slate-900 focus:outline-none focus:border-[#005DA4]"
-                    />
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="font-semibold text-slate-700">
+                        ¿Cuenta con curso SIMETRIC?
+                      </label>
+                      <input
+                        type="checkbox"
+                        checked={hasSimetricCourse}
+                        onChange={(e) => setHasSimetricCourse(e.target.checked)}
+                      />
+                    </div>
+                    {hasSimetricCourse ? (
+                      <input
+                        type="text"
+                        value={simetricCourseNumber}
+                        onChange={(e) =>
+                          setSimetricCourseNumber(e.target.value)
+                        }
+                        placeholder="Número de registro SIMETRIC"
+                        className="w-full h-9 bg-white border border-slate-300 rounded-xl px-3 text-xs font-mono font-medium text-slate-900 focus:outline-none focus:border-[#005DA4]"
+                      />
+                    ) : (
+                      <div className="h-9 rounded-xl bg-slate-100 border border-slate-200 px-3 flex items-center text-xs text-slate-500">
+                        Sin curso SIMETRIC activo
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1067,11 +1811,196 @@ export default function PerfilGuardaPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={handleSaveCourse}
+                    onClick={handleSaveCourseAndEducation}
                     disabled={isSaving}
                     className="px-5 py-1.5 rounded-full bg-[#0B3B70] text-white text-xs font-semibold hover:bg-[#082B54] shadow-xs"
                   >
                     Guardar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* --------------------------------------------------------------------- */}
+          {/* SECCIÓN EXPERIENCIAS LABORALES MÚLTIPLES (work_experiences)           */}
+          {/* --------------------------------------------------------------------- */}
+          <div className="space-y-4 pb-6 border-b border-slate-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                  Experiencia Laboral
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Historial de empresas, fechas laboradas y funciones desempeñadas.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setEditingSection(
+                    editingSection === "experience" ? null : "experience"
+                  )
+                }
+                className="rounded-full border border-[#0B3B70] text-[#0B3B70] hover:bg-[#EAF3FA] px-4 py-1.5 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                {editingSection === "experience"
+                  ? "Cerrar"
+                  : "+ Añadir experiencia"}
+              </button>
+            </div>
+
+            {workExperiences.length === 0 ? (
+              <div className="p-4 rounded-2xl bg-[#F2F5F8] border border-slate-200 text-xs text-slate-500 flex items-center justify-between">
+                <span>Aún no has registrado experiencias laborales.</span>
+                <Link
+                  href="/guarda/documentos"
+                  className="font-bold text-[#005DA4] hover:underline"
+                >
+                  Agregar en Configuración de HV →
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {workExperiences.map((exp) => (
+                  <div
+                    key={exp.id}
+                    className="p-4 rounded-2xl border border-slate-200 bg-[#F2F5F8] flex items-start justify-between gap-3"
+                  >
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-900">
+                          <Briefcase className="w-3.5 h-3.5 text-[#005DA4]" />
+                          {exp.company}
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#005DA4] bg-[#EAF3FA] border border-[#D5E6F5] px-2.5 py-0.5 rounded-full">
+                          <Calendar className="w-3 h-3" />
+                          <span>
+                            {exp.startDate
+                              ? formatReadableDate(exp.startDate)
+                              : "Inicio"}{" "}
+                            —{" "}
+                            {exp.currentlyWorking
+                              ? "Trabajando actualmente en esta empresa"
+                              : exp.endDate
+                              ? formatReadableDate(exp.endDate)
+                              : "Finalizado"}
+                          </span>
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-700 leading-relaxed break-words pt-0.5">
+                        {exp.functions}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveExperienceInProfile(exp.id)}
+                      className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors shrink-0 cursor-pointer"
+                      title="Eliminar experiencia"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {editingSection === "experience" && (
+              <div className="p-5 rounded-2xl border border-slate-200 bg-[#F2F5F8]/70 space-y-3 text-xs">
+                <span className="text-xs font-bold text-[#0B3B70] uppercase tracking-wider block">
+                  Añadir Experiencia Laboral
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="sm:col-span-1">
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Empresa
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Empresa"
+                      value={newExpCompany}
+                      onChange={(e) => setNewExpCompany(e.target.value)}
+                      className="w-full h-9 bg-white border border-slate-300 rounded-xl px-3 text-xs text-slate-900 focus:outline-none focus:border-[#005DA4]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Fecha de inicio
+                    </label>
+                    <input
+                      type="date"
+                      value={newExpStartDate}
+                      onChange={(e) => setNewExpStartDate(e.target.value)}
+                      className="w-full h-9 bg-white border border-slate-300 rounded-xl px-3 text-xs font-mono text-slate-900 focus:outline-none focus:border-[#005DA4]"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="font-semibold text-slate-700">
+                        Fecha de fin
+                      </label>
+                      <label className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#005DA4] cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={newExpCurrentlyWorking}
+                          onChange={(e) =>
+                            setNewExpCurrentlyWorking(e.target.checked)
+                          }
+                        />
+                        <span>Trabajando actualmente</span>
+                      </label>
+                    </div>
+                    {!newExpCurrentlyWorking ? (
+                      <input
+                        type="date"
+                        value={newExpEndDate}
+                        onChange={(e) => setNewExpEndDate(e.target.value)}
+                        className="w-full h-9 bg-white border border-slate-300 rounded-xl px-3 text-xs font-mono text-slate-900 focus:outline-none focus:border-[#005DA4]"
+                      />
+                    ) : (
+                      <div className="h-9 rounded-xl bg-slate-100 border border-slate-200 px-3 flex items-center text-[11px] font-semibold text-[#005DA4]">
+                        Trabajando actualmente en esta empresa
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="font-semibold text-slate-700">
+                      Rol o funciones desempeñadas
+                    </label>
+                    <span className="text-[11px] font-mono text-slate-400">
+                      {newExpFunctions.length} / 500 caracteres
+                    </span>
+                  </div>
+                  <textarea
+                    rows={3}
+                    maxLength={500}
+                    value={newExpFunctions}
+                    onChange={(e) =>
+                      setNewExpFunctions(e.target.value.slice(0, 500))
+                    }
+                    placeholder="Describe tu rol o funciones desempeñadas (máximo 500 caracteres)..."
+                    className="w-full bg-white border border-slate-300 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:border-[#005DA4]"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditingSection(null)}
+                    className="px-4 py-1.5 rounded-full text-xs font-semibold text-slate-600 hover:bg-slate-200"
+                  >
+                    Cerrar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAddExperienceInProfile}
+                    className="px-5 py-1.5 rounded-full bg-[#0B3B70] text-white text-xs font-semibold hover:bg-[#082B54] inline-flex items-center gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Guardar experiencia</span>
                   </button>
                 </div>
               </div>
@@ -1088,10 +2017,16 @@ export default function PerfilGuardaPage() {
               </h3>
               <button
                 type="button"
-                onClick={() => setEditingSection(editingSection === "competencies" ? null : "competencies")}
+                onClick={() =>
+                  setEditingSection(
+                    editingSection === "competencies" ? null : "competencies"
+                  )
+                }
                 className="rounded-full border border-[#0B3B70] text-[#0B3B70] hover:bg-[#EAF3FA] px-4 py-1.5 text-xs font-semibold transition-colors cursor-pointer"
               >
-                {editingSection === "competencies" ? "Cerrar" : "Editar / Añadir"}
+                {editingSection === "competencies"
+                  ? "Cerrar"
+                  : "Editar / Añadir"}
               </button>
             </div>
 
@@ -1104,17 +2039,31 @@ export default function PerfilGuardaPage() {
                   </span>
                   <div className="flex flex-wrap gap-2">
                     <span className="bg-[#EAF3FA] text-slate-800 rounded-full px-3.5 py-1 text-xs font-medium inline-flex items-center gap-1.5 border border-[#D5E6F5]">
-                      👕 Camisa: <strong className="text-[#0B3B70]">Talla {shirtSize}</strong>
+                      👕 Camisa:{" "}
+                      <strong className="text-[#0B3B70]">
+                        Talla {shirtSize}
+                      </strong>
                     </span>
                     <span className="bg-[#EAF3FA] text-slate-800 rounded-full px-3.5 py-1 text-xs font-medium inline-flex items-center gap-1.5 border border-[#D5E6F5]">
-                      👖 Pantalón: <strong className="text-[#0B3B70]">Talla {pantsSize}</strong>
+                      👖 Pantalón:{" "}
+                      <strong className="text-[#0B3B70]">
+                        Talla {pantsSize}
+                      </strong>
                     </span>
                     <span className="bg-[#EAF3FA] text-slate-800 rounded-full px-3.5 py-1 text-xs font-medium inline-flex items-center gap-1.5 border border-[#D5E6F5]">
-                      🥾 Calzado / Botas: <strong className="text-[#0B3B70]">Talla {shoesSize}</strong>
+                      🥾 Calzado / Botas:{" "}
+                      <strong className="text-[#0B3B70]">
+                        Talla {shoesSize}
+                      </strong>
                     </span>
-                    <span className="bg-[#EAF3FA] text-slate-800 rounded-full px-3.5 py-1 text-xs font-medium inline-flex items-center gap-1.5 border border-[#D5E6F5]">
-                      🪖 Libreta Militar: <strong className="text-[#0B3B70]">{bookletType}</strong>
-                    </span>
+                    {!isExemptFromMilitaryBooklet && (
+                      <span className="bg-[#EAF3FA] text-slate-800 rounded-full px-3.5 py-1 text-xs font-medium inline-flex items-center gap-1.5 border border-[#D5E6F5]">
+                        🪖 Libreta Militar:{" "}
+                        <strong className="text-[#0B3B70]">
+                          {bookletType}
+                        </strong>
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -1144,7 +2093,9 @@ export default function PerfilGuardaPage() {
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Camisa</label>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Camisa
+                    </label>
                     <select
                       value={shirtSize}
                       onChange={(e) => setShirtSize(e.target.value)}
@@ -1158,7 +2109,9 @@ export default function PerfilGuardaPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Pantalón</label>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Pantalón
+                    </label>
                     <select
                       value={pantsSize}
                       onChange={(e) => setPantsSize(e.target.value)}
@@ -1172,31 +2125,39 @@ export default function PerfilGuardaPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Calzado</label>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Calzado
+                    </label>
                     <select
                       value={shoesSize}
                       onChange={(e) => setShoesSize(e.target.value)}
                       className="w-full h-9 bg-white border border-slate-300 rounded-xl px-2 text-xs font-bold text-slate-900 focus:outline-none"
                     >
-                      {["37", "38", "39", "40", "41", "42", "43", "44"].map((s) => (
-                        <option key={s} value={s}>
-                          Talla {s}
-                        </option>
-                      ))}
+                      {["37", "38", "39", "40", "41", "42", "43", "44"].map(
+                        (s) => (
+                          <option key={s} value={s}>
+                            Talla {s}
+                          </option>
+                        )
+                      )}
                     </select>
                   </div>
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Libreta Militar</label>
-                    <select
-                      value={bookletType}
-                      onChange={(e) => setBookletType(e.target.value)}
-                      className="w-full h-9 bg-white border border-slate-300 rounded-xl px-2 text-xs font-bold text-slate-900 focus:outline-none"
-                    >
-                      <option value="Primera Clase">Primera Clase</option>
-                      <option value="Segunda Clase">Segunda Clase</option>
-                      <option value="No aplica">No aplica</option>
-                    </select>
-                  </div>
+                  {!isExemptFromMilitaryBooklet && (
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Libreta Militar
+                      </label>
+                      <select
+                        value={bookletType}
+                        onChange={(e) => setBookletType(e.target.value)}
+                        className="w-full h-9 bg-white border border-slate-300 rounded-xl px-2 text-xs font-bold text-slate-900 focus:outline-none"
+                      >
+                        <option value="Primera Clase">Primera Clase</option>
+                        <option value="Segunda Clase">Segunda Clase</option>
+                        <option value="No aplica">No aplica</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
 
                 <div className="pt-2">
@@ -1212,7 +2173,9 @@ export default function PerfilGuardaPage() {
                           type="button"
                           onClick={() => {
                             if (isChecked) {
-                              setSelectedSkills(selectedSkills.filter((s) => s !== sk));
+                              setSelectedSkills(
+                                selectedSkills.filter((s) => s !== sk)
+                              );
                             } else {
                               setSelectedSkills([...selectedSkills, sk]);
                             }
@@ -1225,7 +2188,9 @@ export default function PerfilGuardaPage() {
                         >
                           <div
                             className={`w-4 h-4 rounded-md flex items-center justify-center border text-[10px] ${
-                              isChecked ? "bg-white text-[#0B3B70] border-white" : "border-slate-300"
+                              isChecked
+                                ? "bg-white text-[#0B3B70] border-white"
+                                : "border-slate-300"
                             }`}
                           >
                             {isChecked && <Check className="w-3 h-3" />}
@@ -1259,18 +2224,22 @@ export default function PerfilGuardaPage() {
           </div>
 
           {/* --------------------------------------------------------------------- */}
-          {/* SECCIÓN E: DESPLAZAMIENTO, MOVILIDAD E IDENTIFICACIÓN (✏️)            */}
+          {/* SECCIÓN E: VEHÍCULO PROPIO, LICENCIA, MOVILIDAD E IDENTIFICACIÓN (✏️) */}
           {/* --------------------------------------------------------------------- */}
           <div className="space-y-3 pb-6 border-b border-slate-100">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                Desplazamiento, movilidad e identificación
+                Vehículo propio, movilidad e identificación
               </h3>
               <button
                 type="button"
-                onClick={() => setEditingSection(editingSection === "mobility" ? null : "mobility")}
+                onClick={() =>
+                  setEditingSection(
+                    editingSection === "mobility" ? null : "mobility"
+                  )
+                }
                 className="p-2 rounded-full text-[#005DA4] hover:bg-[#EAF3FA] transition-colors cursor-pointer"
-                title="Editar movilidad e identificación"
+                title="Editar vehículo propio e identificación"
               >
                 <Pencil className="w-4 h-4" />
               </button>
@@ -1283,21 +2252,39 @@ export default function PerfilGuardaPage() {
                   <span>
                     <strong>Cédula de Ciudadanía:</strong>{" "}
                     <span className="font-mono text-slate-900">
-                      {nationalId && !nationalId.startsWith("TEMP-") ? nationalId : "Sin registrar"}
+                      {nationalId && !nationalId.startsWith("TEMP-")
+                        ? nationalId
+                        : "Sin registrar"}
                     </span>
                   </span>
                 </li>
+                {!isExemptFromMilitaryBooklet && (
+                  <li className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#005DA4] shrink-0" />
+                    <span>
+                      <strong>Situación Libreta Militar:</strong>{" "}
+                      {hasMilitaryBooklet ? "Sí posee libreta militar" : "No registrada"}
+                    </span>
+                  </li>
+                )}
                 <li className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-[#005DA4] shrink-0" />
                   <span>
-                    <strong>Medio de transporte / Vehículo propio:</strong>{" "}
-                    {hasMotorcycle ? `Moto propia (${motorcycleCc || 150} cc)` : "Sin vehículo propio / Transporte público"}
+                    <strong>Vehículo propio:</strong>{" "}
+                    {hasOwnVehicle
+                      ? `${vehicleType}${
+                          driverLicenseClass
+                            ? ` • Licencia de conducción: ${driverLicenseClass}`
+                            : ""
+                        }`
+                      : "Sin vehículo propio / Transporte público"}
                   </span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-[#005DA4] shrink-0" />
                   <span>
-                    <strong>Disponibilidad de turno y relevos:</strong> {shiftAvailability}
+                    <strong>Disponibilidad de turno y relevos:</strong>{" "}
+                    {shiftAvailability}
                   </span>
                 </li>
               </ul>
@@ -1306,7 +2293,9 @@ export default function PerfilGuardaPage() {
               <div className="space-y-4 bg-[#F2F5F8]/70 p-5 rounded-2xl border border-slate-200">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Cédula de Ciudadanía</label>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Cédula de Ciudadanía
+                    </label>
                     <input
                       type="text"
                       value={nationalId}
@@ -1316,43 +2305,97 @@ export default function PerfilGuardaPage() {
                     />
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Disponibilidad de Turno</label>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Disponibilidad de Turno
+                    </label>
                     <select
                       value={shiftAvailability}
                       onChange={(e) => setShiftAvailability(e.target.value)}
                       className="w-full h-9 bg-white border border-slate-300 rounded-xl px-2.5 text-xs font-medium text-slate-900 focus:outline-none"
                     >
-                      <option value="Turnos rotativos 2x2x2 y relevos">Turnos rotativos 2x2x2 y relevos</option>
-                      <option value="Turnos 4x4x2 rotativo">Turnos 4x4x2 rotativo</option>
-                      <option value="Exclusivo turno nocturno">Exclusivo turno nocturno</option>
-                      <option value="Exclusivo turno diurno">Exclusivo turno diurno</option>
-                      <option value="Disponibilidad inmediata total">Disponibilidad inmediata total</option>
+                      <option value="Turnos rotativos 2x2x2 y relevos">
+                        Turnos rotativos 2x2x2 y relevos
+                      </option>
+                      <option value="Turnos 4x4x2 rotativo">
+                        Turnos 4x4x2 rotativo
+                      </option>
+                      <option value="Exclusivo turno nocturno">
+                        Exclusivo turno nocturno
+                      </option>
+                      <option value="Exclusivo turno diurno">
+                        Exclusivo turno diurno
+                      </option>
+                      <option value="Disponibilidad inmediata total">
+                        Disponibilidad inmediata total
+                      </option>
                     </select>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 pt-1">
-                  <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                {/* Switch Vehículo propio y Libreta Militar condicional */}
+                <div className="flex flex-wrap items-center gap-6 pt-1 text-xs">
+                  {!isExemptFromMilitaryBooklet && (
+                    <label className="flex items-center gap-2 font-semibold text-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={hasMilitaryBooklet}
+                        onChange={(e) =>
+                          setHasMilitaryBooklet(e.target.checked)
+                        }
+                      />
+                      <span>¿Cuenta con Libreta Militar?</span>
+                    </label>
+                  )}
+
+                  <label className="flex items-center gap-2 font-semibold text-slate-700 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={hasMotorcycle}
-                      onChange={(e) => setHasMotorcycle(e.target.checked)}
-                      className="rounded-sm border-slate-300 text-[#005DA4]"
+                      checked={hasOwnVehicle}
+                      onChange={(e) => setHasOwnVehicle(e.target.checked)}
                     />
-                    <span>¿Posee moto propia?</span>
+                    <Car className="w-3.5 h-3.5 text-[#005DA4]" />
+                    <span>Vehículo propio</span>
                   </label>
-                  {hasMotorcycle && (
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="text-slate-600 font-medium">Cilindraje (cc):</span>
+                </div>
+
+                {hasOwnVehicle && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-2 border-t border-slate-200">
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Tipo de vehículo propio
+                      </label>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {VEHICLE_TYPE_OPTIONS.map((vType) => (
+                          <button
+                            key={vType}
+                            type="button"
+                            onClick={() => setVehicleType(vType)}
+                            className={`py-2 px-2 rounded-lg text-xs font-semibold border cursor-pointer ${
+                              vehicleType === vType
+                                ? "bg-[#0B3B70] text-white border-[#0B3B70]"
+                                : "bg-white text-slate-700 border-slate-300"
+                            }`}
+                          >
+                            {vType}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Clase de licencia de conducción
+                      </label>
                       <input
-                        type="number"
-                        value={motorcycleCc || 150}
-                        onChange={(e) => setMotorcycleCc(parseInt(e.target.value, 10) || 150)}
-                        className="w-20 h-8 bg-white border border-slate-300 rounded-lg px-2 text-xs font-mono font-bold text-slate-900"
+                        type="text"
+                        value={driverLicenseClass}
+                        onChange={(e) => setDriverLicenseClass(e.target.value)}
+                        placeholder="Ej: A2, B1, C1..."
+                        className="w-full h-9 bg-white border border-slate-300 rounded-xl px-3 text-xs font-bold text-slate-900 focus:outline-none"
                       />
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-end gap-2 pt-1">
                   <button
@@ -1376,20 +2419,29 @@ export default function PerfilGuardaPage() {
           </div>
 
           {/* --------------------------------------------------------------------- */}
-          {/* SECCIÓN F: DOCUMENTOS ADJUNTOS (3 SOPORTES INDIVIDUALES SEPARADOS)    */}
+          {/* SECCIÓN F: DOCUMENTOS ADJUNTOS (LOS 4 SOPORTES SINCRONIZADOS)         */}
           {/* --------------------------------------------------------------------- */}
           <div className="space-y-4">
-            <div>
-              <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                Documentos adjuntos (3 soportes obligatorios)
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Carga y consulta cada documento de forma individual para que las empresas verifiquen tu perfil al 100%.
-              </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                  Documentos adjuntos ({isExemptFromMilitaryBooklet ? "3" : "4"} soportes)
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Enlaces directos y actualización sincronizada de Hoja de Vida, Cédula
+                  {!isExemptFromMilitaryBooklet ? ", Libreta Militar" : ""} y Diplomas.
+                </p>
+              </div>
+              <Link
+                href="/guarda/documentos"
+                className="text-xs font-bold text-[#005DA4] hover:underline shrink-0"
+              >
+                Ir al asistente de Soportes →
+              </Link>
             </div>
 
             <div className="space-y-3 pt-1">
-              {/* DOCUMENTO 1: HOJA DE VIDA EN PDF */}
+              {/* DOCUMENTO 1: HOJA DE VIDA */}
               <div className="p-4 rounded-2xl border border-slate-200 bg-[#F2F5F8] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#005DA4] shrink-0" />
@@ -1397,14 +2449,19 @@ export default function PerfilGuardaPage() {
                     <FileText className="w-4 h-4 text-[#005DA4]" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-slate-900">Hoja de Vida (PDF)</h4>
+                    <h4 className="text-xs font-bold text-slate-900">
+                      Hoja de Vida
+                    </h4>
                     <span className="text-[11px] font-medium block">
                       {resumeUrl ? (
                         <span className="text-emerald-700 font-semibold flex items-center gap-1">
-                          <Check className="w-3 h-3 text-emerald-600" /> Archivo cargado y activo
+                          <Check className="w-3 h-3 text-emerald-600" /> Archivo
+                          cargado y activo
                         </span>
                       ) : (
-                        <span className="text-amber-700 font-semibold">Pendiente por adjuntar</span>
+                        <span className="text-amber-700 font-semibold">
+                          Pendiente por adjuntar
+                        </span>
                       )}
                     </span>
                   </div>
@@ -1428,7 +2485,13 @@ export default function PerfilGuardaPage() {
                     className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs px-4 py-1.5 font-semibold inline-flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
                   >
                     <Upload className="w-3.5 h-3.5" />
-                    <span>{uploadingDoc === "resume" ? "Subiendo..." : resumeUrl ? "Reemplazar" : "Subir PDF"}</span>
+                    <span>
+                      {uploadingDoc === "resume"
+                        ? "Subiendo..."
+                        : resumeUrl
+                        ? "Reemplazar"
+                        : "Subir Hoja de Vida"}
+                    </span>
                   </button>
                   <input
                     type="file"
@@ -1440,7 +2503,7 @@ export default function PerfilGuardaPage() {
                 </div>
               </div>
 
-              {/* DOCUMENTO 2: CÉDULA DE CIUDADANÍA */}
+              {/* DOCUMENTO 2: CÉDULA */}
               <div className="p-4 rounded-2xl border border-slate-200 bg-[#F2F5F8] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#005DA4] shrink-0" />
@@ -1448,14 +2511,19 @@ export default function PerfilGuardaPage() {
                     <CreditCard className="w-4 h-4 text-[#005DA4]" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-slate-900">Cédula de Ciudadanía (PDF o Imagen)</h4>
+                    <h4 className="text-xs font-bold text-slate-900">
+                      Cédula de Ciudadanía
+                    </h4>
                     <span className="text-[11px] font-medium block">
                       {idCardUrl ? (
                         <span className="text-emerald-700 font-semibold flex items-center gap-1">
-                          <Check className="w-3 h-3 text-emerald-600" /> Documento cargado
+                          <Check className="w-3 h-3 text-emerald-600" />{" "}
+                          Documento cargado
                         </span>
                       ) : (
-                        <span className="text-amber-700 font-semibold">Pendiente por adjuntar</span>
+                        <span className="text-amber-700 font-semibold">
+                          Pendiente por adjuntar
+                        </span>
                       )}
                     </span>
                   </div>
@@ -1479,7 +2547,13 @@ export default function PerfilGuardaPage() {
                     className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs px-4 py-1.5 font-semibold inline-flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
                   >
                     <Upload className="w-3.5 h-3.5" />
-                    <span>{uploadingDoc === "idCard" ? "Subiendo..." : idCardUrl ? "Reemplazar" : "Subir Cédula"}</span>
+                    <span>
+                      {uploadingDoc === "idCard"
+                        ? "Subiendo..."
+                        : idCardUrl
+                        ? "Reemplazar"
+                        : "Subir Cédula"}
+                    </span>
                   </button>
                   <input
                     type="file"
@@ -1491,7 +2565,71 @@ export default function PerfilGuardaPage() {
                 </div>
               </div>
 
-              {/* DOCUMENTO 3: DIPLOMA / CERTIFICADO CURSO SUPERVIGILANCIA */}
+              {/* DOCUMENTO 3: LIBRETA MILITAR (Oculta si es Personal administrativo o Conserje) */}
+              {!isExemptFromMilitaryBooklet && (
+                <div className="p-4 rounded-2xl border border-slate-200 bg-[#F2F5F8] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#005DA4] shrink-0" />
+                    <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-[#0B3B70] shrink-0 shadow-2xs">
+                      <Shield className="w-4 h-4 text-[#005DA4]" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900">
+                        Libreta Militar
+                      </h4>
+                      <span className="text-[11px] font-medium block">
+                        {libretaUrl ? (
+                          <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                            <Check className="w-3 h-3 text-emerald-600" />{" "}
+                            Libreta cargada
+                          </span>
+                        ) : (
+                          <span className="text-amber-700 font-semibold">
+                            Pendiente por adjuntar
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                    {libretaUrl && (
+                      <button
+                        type="button"
+                        onClick={() => openSecureDocument(libretaUrl)}
+                        className="rounded-full bg-white text-slate-700 hover:text-[#0B3B70] border border-slate-300 text-xs px-3.5 py-1.5 font-semibold inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Ver</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => libretaInputRef.current?.click()}
+                      disabled={uploadingDoc === "libreta"}
+                      className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs px-4 py-1.5 font-semibold inline-flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>
+                        {uploadingDoc === "libreta"
+                          ? "Subiendo..."
+                          : libretaUrl
+                          ? "Reemplazar"
+                          : "Subir Libreta"}
+                      </span>
+                    </button>
+                    <input
+                      type="file"
+                      ref={libretaInputRef}
+                      accept=".pdf,image/*"
+                      onChange={handleUploadLibreta}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* DOCUMENTO 4: DIPLOMAS */}
               <div className="p-4 rounded-2xl border border-slate-200 bg-[#F2F5F8] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#005DA4] shrink-0" />
@@ -1499,14 +2637,19 @@ export default function PerfilGuardaPage() {
                     <FileCheck className="w-4 h-4 text-emerald-600" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-slate-900">Diploma / Certificado Curso SuperVigilancia</h4>
+                    <h4 className="text-xs font-bold text-slate-900">
+                      Diplomas y Certificados de Cursos
+                    </h4>
                     <span className="text-[11px] font-medium block">
                       {diplomaUrl ? (
                         <span className="text-emerald-700 font-semibold flex items-center gap-1">
-                          <Check className="w-3 h-3 text-emerald-600" /> Certificado cargado
+                          <Check className="w-3 h-3 text-emerald-600" />{" "}
+                          Diplomas cargados
                         </span>
                       ) : (
-                        <span className="text-amber-700 font-semibold">Pendiente por adjuntar</span>
+                        <span className="text-amber-700 font-semibold">
+                          Pendiente por adjuntar
+                        </span>
                       )}
                     </span>
                   </div>
@@ -1530,7 +2673,13 @@ export default function PerfilGuardaPage() {
                     className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs px-4 py-1.5 font-semibold inline-flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
                   >
                     <Upload className="w-3.5 h-3.5" />
-                    <span>{uploadingDoc === "diploma" ? "Subiendo..." : diplomaUrl ? "Reemplazar" : "Subir Diploma"}</span>
+                    <span>
+                      {uploadingDoc === "diploma"
+                        ? "Subiendo..."
+                        : diplomaUrl
+                        ? "Reemplazar"
+                        : "Subir Diplomas"}
+                    </span>
                   </button>
                   <input
                     type="file"
@@ -1549,25 +2698,25 @@ export default function PerfilGuardaPage() {
         {/* COLUMNA DERECHA LATERAL (lg:col-span-4) - ESTADO Y DESTACADO CORPORATIVO  */}
         {/* ========================================================================= */}
         <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-24">
-          {/* TARJETA 1: CREDENCIAL Y ESTADO DE HDV */}
+          {/* TARJETA 1: ESTADO DE HOJA DE VIDA Y CONFIGURACIÓN */}
           <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-2xs space-y-5">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-900 tracking-tight">
-                Credencial y Estado de HdV
+                Estado de tu Hoja de Vida
               </h3>
               <span className="bg-[#FFD15C] text-slate-900 font-bold px-2 py-0.5 rounded-md text-[10px] uppercase tracking-wider">
-                Nuevo
+                Sincronizado
               </span>
             </div>
 
-            {/* Lista de completitud de elementos */}
             <div className="space-y-2 text-xs">
               <div className="flex items-center justify-between text-slate-600">
                 <span className="font-semibold">Nivel de completitud:</span>
-                <span className="font-bold text-slate-900 font-mono text-sm">{totalPercentage}%</span>
+                <span className="font-bold text-slate-900 font-mono text-sm">
+                  {totalPercentage}%
+                </span>
               </div>
 
-              {/* Barra de progreso visual */}
               <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200">
                 <div
                   className={`h-full transition-all duration-500 rounded-full ${
@@ -1583,30 +2732,43 @@ export default function PerfilGuardaPage() {
 
               <div className="pt-2 space-y-1.5 text-[11px]">
                 {checklist.map((item) => (
-                  <div key={item.label} className="flex items-center justify-between text-slate-600">
+                  <div
+                    key={item.label}
+                    className="flex items-center justify-between text-slate-600"
+                  >
                     <span className="flex items-center gap-1.5 truncate">
                       {item.done ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" strokeWidth={2.5} />
+                        <Check
+                          className="w-3.5 h-3.5 text-emerald-600 shrink-0"
+                          strokeWidth={2.5}
+                        />
                       ) : (
                         <span className="w-3.5 h-3.5 rounded-full border border-slate-300 shrink-0" />
                       )}
-                      <span className={item.done ? "text-slate-800 font-medium" : "text-slate-400"}>
+                      <span
+                        className={
+                          item.done
+                            ? "text-slate-800 font-medium"
+                            : "text-slate-400"
+                        }
+                      >
                         {item.label}
                       </span>
                     </span>
-                    <span className="text-[10px] font-mono text-slate-400">+{item.weight}%</span>
+                    <span className="text-[10px] font-mono text-slate-400">
+                      +{item.weight}%
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Botón Píldora Azul Marino 'Ver mi Credencial QR' */}
             <Link
               href="/guarda/documentos"
               className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white w-full py-3 text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
             >
               <Shield className="w-4 h-4 text-[#FFE066]" />
-              <span>Ver mi Credencial QR</span>
+              <span>Configuración de HV & Soportes</span>
             </Link>
           </div>
 
@@ -1620,8 +2782,10 @@ export default function PerfilGuardaPage() {
             </div>
 
             <p className="text-xs text-blue-100 leading-relaxed">
-              Las empresas de seguridad privada autorizadas en Colombia filtran automáticamente candidatos con{" "}
-              <strong className="text-white">Hoja de Vida al 100%</strong> y con los 3 soportes adjuntos validados.
+              Las empresas de seguridad privada autorizadas en Colombia filtran
+              automáticamente candidatos con{" "}
+              <strong className="text-white">Hoja de Vida al 100%</strong>,
+              especialidades definidas y soportes validados.
             </p>
 
             <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-xs border border-white/15 space-y-1">
@@ -1629,7 +2793,8 @@ export default function PerfilGuardaPage() {
                 Cumplimiento Decreto 356
               </span>
               <p className="text-[11px] text-white/90">
-                Tu perfil queda habilitado para postulación en 1 clic y citación inmediata a entrevista presencial.
+                Tu perfil queda habilitado para postulación en 1 clic y citación
+                inmediata a entrevista presencial.
               </p>
             </div>
           </div>
@@ -1641,13 +2806,14 @@ export default function PerfilGuardaPage() {
       {/* ========================================================================= */}
       <div className="fixed bottom-6 right-6 z-40">
         <div className="relative">
-          {/* Tooltip / Popover flotante hacia arriba al interactuar */}
           {showProgressTooltip && (
             <div className="absolute bottom-full right-0 mb-3 w-80 bg-white rounded-3xl shadow-2xl border border-slate-200 p-5 z-50 animate-in fade-in zoom-in-95 duration-200">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                 <div className="flex items-center gap-2">
                   <Award className="w-4 h-4 text-[#0B3B70]" />
-                  <span className="text-xs font-bold text-slate-900">Estado de tu Hoja de Vida</span>
+                  <span className="text-xs font-bold text-slate-900">
+                    Estado de tu Hoja de Vida
+                  </span>
                 </div>
                 <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 font-mono">
                   {totalPercentage}%
@@ -1657,19 +2823,35 @@ export default function PerfilGuardaPage() {
               <p className="text-[11px] text-slate-500 mt-2 mb-3 leading-relaxed">
                 {totalPercentage === 100
                   ? "¡Felicitaciones! Tu Hoja de Vida está al 100% y tiene máxima visibilidad ante empresas contratistas."
-                  : `Te falta${pendingCount > 1 ? "n" : ""} ${pendingCount} elemento${pendingCount > 1 ? "s" : ""} para alcanzar el 100% de visibilidad.`}
+                  : `Te falta${
+                      pendingCount > 1 ? "n" : ""
+                    } ${pendingCount} elemento${
+                      pendingCount > 1 ? "s" : ""
+                    } para alcanzar el 100% de visibilidad.`}
               </p>
 
               <div className="space-y-1.5 text-[11px]">
                 {checklist.map((item) => (
-                  <div key={item.label} className="flex items-center justify-between">
+                  <div
+                    key={item.label}
+                    className="flex items-center justify-between"
+                  >
                     <span className="flex items-center gap-1.5 truncate">
                       {item.done ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" strokeWidth={2.5} />
+                        <Check
+                          className="w-3.5 h-3.5 text-emerald-600 shrink-0"
+                          strokeWidth={2.5}
+                        />
                       ) : (
                         <span className="w-3.5 h-3.5 rounded-full border border-slate-300 shrink-0" />
                       )}
-                      <span className={item.done ? "text-slate-800 font-medium" : "text-slate-500 font-normal"}>
+                      <span
+                        className={
+                          item.done
+                            ? "text-slate-800 font-medium"
+                            : "text-slate-500 font-normal"
+                        }
+                      >
                         {item.label}
                       </span>
                     </span>
@@ -1695,7 +2877,6 @@ export default function PerfilGuardaPage() {
             </div>
           )}
 
-          {/* Círculo medidor flotante interactivo */}
           <button
             type="button"
             onClick={() => setShowProgressTooltip(!showProgressTooltip)}
@@ -1704,9 +2885,7 @@ export default function PerfilGuardaPage() {
             aria-label="Ver porcentaje de Hoja de Vida"
             title="Porcentaje de completitud de Hoja de Vida"
           >
-            {/* SVG Anillo de Progreso */}
             <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
-              {/* Círculo de fondo */}
               <circle
                 cx="28"
                 cy="28"
@@ -1715,13 +2894,18 @@ export default function PerfilGuardaPage() {
                 strokeWidth="3.5"
                 fill="transparent"
               />
-              {/* Círculo de progreso dinámico */}
               <circle
                 cx="28"
                 cy="28"
                 r={radius}
                 className="transition-all duration-700 ease-out"
-                stroke={totalPercentage === 100 ? "#10B981" : totalPercentage >= 70 ? "#005DA4" : "#F59E0B"}
+                stroke={
+                  totalPercentage === 100
+                    ? "#10B981"
+                    : totalPercentage >= 70
+                    ? "#005DA4"
+                    : "#F59E0B"
+                }
                 strokeWidth="3.5"
                 strokeDasharray={circumference}
                 strokeDashoffset={strokeDashoffset}
@@ -1730,7 +2914,6 @@ export default function PerfilGuardaPage() {
               />
             </svg>
 
-            {/* Porcentaje en el centro */}
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
               <span className="text-xs font-extrabold text-slate-900 font-mono tracking-tight leading-none">
                 {totalPercentage}%
