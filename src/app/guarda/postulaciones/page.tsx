@@ -222,106 +222,114 @@ export default function PostulacionesPage() {
         } = await supabase.auth.getUser();
 
         if (user) {
-          let { data, error } = await supabase
+          // 1. Obtener tanto user.id como el posible id de public.candidate_profiles
+          const { data: candProf } = await supabase
+            .from("candidate_profiles")
+            .select("*")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          const candidateIds = Array.from(
+            new Set(
+              [user.id, (candProf as any)?.id, candProf?.user_id].filter(
+                Boolean
+              ) as string[]
+            )
+          );
+
+          // 2. Lectura resiliente anti-fallos de Join:
+          // Primero consultar directamente public.applications (select("*")) buscando por ambos IDs (.in / .or)
+          let { data: directApps, error: directErr } = await supabase
             .from("applications")
-            .select("*, job_posts(*, companies(*))")
-            .eq("candidate_id", user.id)
+            .select("*")
+            .in("candidate_id", candidateIds)
             .order("created_at", { ascending: false });
 
-          if (error || !data || data.length === 0) {
-            const fallback = await supabase
+          if ((directErr || !directApps || directApps.length === 0) && candidateIds.length > 0) {
+            const orFilter = candidateIds
+              .map((id) => `candidate_id.eq.${id}`)
+              .join(",");
+            const { data: orApps, error: orErr } = await supabase
               .from("applications")
-              .select("*, jobs(*, companies(*))")
-              .eq("candidate_id", user.id)
+              .select("*")
+              .or(orFilter)
               .order("created_at", { ascending: false });
-            if (!fallback.error && fallback.data && fallback.data.length > 0) {
-              data = fallback.data;
-              error = null;
+
+            if (!orErr && orApps && orApps.length > 0) {
+              directApps = orApps;
+              directErr = null;
             }
           }
 
-          if (!error && data && data.length > 0) {
-            applyResolvedApplications(
-              data.map((app: any) => {
-                const jobObj = app.job_posts || app.jobs;
-                const rawPhone =
-                  jobObj?.companies?.contact_phone ||
-                  jobObj?.companies?.phone ||
-                  "3133778276";
-                return {
-                  id: app.id,
-                  job_id: app.job_id,
-                  job_title: jobObj?.title || "Vacante de Seguridad",
-                  company_name:
-                    jobObj?.companies?.company_name ||
-                    jobObj?.companies?.commercial_name ||
-                    "Empresa de Seguridad",
-                  company_phone: String(rawPhone).replace(/\D/g, "") || "3133778276",
-                  shift: jobObj?.shift || "Turno rotativo",
-                  salary_monthly: Number(jobObj?.salary_monthly) || 0,
-                  interview_address:
-                    jobObj?.interview_address ||
-                    jobObj?.zone_neighborhood ||
-                    jobObj?.city ||
-                    "Oficina principal",
-                  match_score: app.match_score ?? app.compatibility_score ?? 90,
-                  status: app.status as ApplicationStatus,
-                  created_at: app.created_at,
-                  updated_at: app.updated_at,
-                };
-              })
-            );
-            if (showSpinner) setIsLoading(false);
-            return;
-          }
-
-          // Respaldo anti-join: consulta directa a applications sin anidar tablas
-          const { data: directApps } = await supabase
-            .from("applications")
-            .select("*")
-            .eq("candidate_id", user.id)
-            .order("created_at", { ascending: false });
-
           if (directApps && directApps.length > 0) {
-            const jobIds = directApps.map((d: any) => d.job_id).filter(Boolean);
+            const jobIds = Array.from(
+              new Set(
+                directApps
+                  .map((d: any) => d.job_id || d.job_post_id)
+                  .filter(Boolean) as string[]
+              )
+            );
 
-            const { data: rawJobsPrimary } = await supabase
-              .from("job_posts")
-              .select("*")
-              .in("id", jobIds);
-
-            let rawJobs: any[] | null = rawJobsPrimary;
-
-            if (!rawJobs || rawJobs.length === 0) {
-              const { data: rawJobs2 } = await supabase
-                .from("jobs")
+            // 3. Resolver los datos de las vacantes en public.job_posts (con respaldo a public.jobs) por sus IDs
+            let rawJobs: any[] = [];
+            if (jobIds.length > 0) {
+              const { data: rawJobsPrimary } = await supabase
+                .from("job_posts")
                 .select("*")
                 .in("id", jobIds);
-              rawJobs = rawJobs2;
+
+              if (rawJobsPrimary && rawJobsPrimary.length > 0) {
+                rawJobs = rawJobsPrimary;
+              } else {
+                const { data: rawJobsFallback } = await supabase
+                  .from("jobs")
+                  .select("*")
+                  .in("id", jobIds);
+                if (rawJobsFallback) {
+                  rawJobs = rawJobsFallback;
+                }
+              }
             }
 
             const jobMap = new Map((rawJobs || []).map((j: any) => [j.id, j]));
-            const compIds = (rawJobs || []).map((j: any) => j.company_id).filter(Boolean);
+            const compIds = Array.from(
+              new Set(
+                (rawJobs || [])
+                  .map((j: any) => j.company_id)
+                  .filter(Boolean) as string[]
+              )
+            );
 
-            const { data: rawComps } =
-              compIds.length > 0
-                ? await supabase
-                    .from("companies")
-                    .select("id, company_name, contact_phone")
-                    .in("id", compIds)
-                : { data: [] as any[] };
+            // 4. Resolver los datos de las empresas en public.companies por sus IDs
+            let rawComps: any[] = [];
+            if (compIds.length > 0) {
+              const { data: compsData } = await supabase
+                .from("companies")
+                .select("*")
+                .in("id", compIds);
+              if (compsData) {
+                rawComps = compsData;
+              }
+            }
             const compMap = new Map((rawComps || []).map((c: any) => [c.id, c]));
 
             applyResolvedApplications(
               directApps.map((app: any) => {
-                const job = jobMap.get(app.job_id);
+                const jId = app.job_id || app.job_post_id;
+                const job = jId ? jobMap.get(jId) : null;
                 const comp = job?.company_id ? compMap.get(job.company_id) : null;
-                const rawPhone = comp?.contact_phone || "3133778276";
+                const rawPhone =
+                  comp?.contact_phone ||
+                  comp?.phone ||
+                  "3133778276";
                 return {
                   id: app.id,
-                  job_id: app.job_id,
+                  job_id: jId || "",
                   job_title: job?.title || "Vacante de Seguridad",
-                  company_name: comp?.company_name || "Empresa de Seguridad",
+                  company_name:
+                    comp?.company_name ||
+                    comp?.commercial_name ||
+                    "Empresa de Seguridad",
                   company_phone: String(rawPhone).replace(/\D/g, "") || "3133778276",
                   shift: job?.shift || "Turno rotativo",
                   salary_monthly: Number(job?.salary_monthly) || 0,
@@ -330,8 +338,8 @@ export default function PostulacionesPage() {
                     job?.zone_neighborhood ||
                     job?.city ||
                     "Oficina principal",
-                  match_score: app.match_score ?? 90,
-                  status: app.status as ApplicationStatus,
+                  match_score: app.match_score ?? app.compatibility_score ?? 90,
+                  status: (app.status as ApplicationStatus) || "postulado",
                   created_at: app.created_at,
                   updated_at: app.updated_at,
                 };
@@ -365,6 +373,18 @@ export default function PostulacionesPage() {
       } = await supabase.auth.getUser();
       if (!user) return;
 
+      const { data: candProf } = await supabase
+        .from("candidate_profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const candidateIdsSet = new Set(
+        [user.id, (candProf as any)?.id, candProf?.user_id].filter(
+          Boolean
+        ) as string[]
+      );
+
       activeChannel = supabase
         .channel(`candidate-apps-${user.id}`)
         .on(
@@ -373,9 +393,12 @@ export default function PostulacionesPage() {
             event: "*",
             schema: "public",
             table: "applications",
-            filter: `candidate_id=eq.${user.id}`,
           },
           (payload) => {
+            const row = (payload.new || payload.old) as any;
+            if (row?.candidate_id && !candidateIdsSet.has(row.candidate_id)) {
+              return;
+            }
             if (payload.eventType === "UPDATE" && payload.new) {
               const updated = payload.new as any;
               setApplications((prev) =>

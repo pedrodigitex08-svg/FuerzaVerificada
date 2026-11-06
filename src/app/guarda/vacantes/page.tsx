@@ -350,15 +350,23 @@ function VacantesContent() {
         }
 
         // 3. Load existing applications to prevent duplicate submissions
+        const candidateIds = Array.from(
+          new Set(
+            [user.id, (candProf as any)?.id, (candProf as any)?.user_id].filter(
+              Boolean
+            ) as string[]
+          )
+        );
         const { data: apps } = await supabase
           .from("applications")
-          .select("job_id")
-          .eq("candidate_id", user.id);
+          .select("*")
+          .in("candidate_id", candidateIds);
 
         if (apps && apps.length > 0) {
           const map: Record<string, boolean> = {};
           apps.forEach((a: any) => {
-            if (a.job_id) map[a.job_id] = true;
+            const jId = a.job_id || a.job_post_id;
+            if (jId) map[jId] = true;
           });
           setAppliedJobIds((prev) => ({ ...prev, ...map }));
         }
@@ -383,23 +391,180 @@ function VacantesContent() {
 
     const match = calculateMatchScore(job, candidateProfile);
 
-    const updated = { ...appliedJobIds, [job.id]: true };
-    setAppliedJobIds(updated);
-
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData?.user) {
-        await supabase.from("applications").insert({
-          job_id: job.id,
-          candidate_id: userData.user.id,
-          match_score: match.score,
-          status: "postulado",
-        });
+      const { data: userData, error: authErr } = await supabase.auth.getUser();
+      const user = userData?.user;
+      if (authErr || !user) {
+        router.push(`/login?redirect=${encodeURIComponent("/guarda/vacantes")}`);
+        return;
       }
-    } catch {}
 
-    setSuccessToast(`¡Postulación enviada exitosamente para: ${job.title}!`);
-    setTimeout(() => setSuccessToast(null), 4000);
+      // 1. Asegurar que exista fila en public.candidate_profiles antes de insertar en public.applications
+      let { data: candProfRow } = await supabase
+        .from("candidate_profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      // Upsert silencioso requerido si la llave foránea exige fila en public.candidate_profiles
+      const { data: silentUpsert, error: silentUpsertErr } = await supabase
+        .from("candidate_profiles")
+        .upsert({ user_id: user.id } as any, { onConflict: "user_id" })
+        .select("*")
+        .maybeSingle();
+
+      if (!silentUpsertErr && silentUpsert) {
+        candProfRow = silentUpsert;
+      } else if (!candProfRow) {
+        // Respaldo con campos NOT NULL por defecto si el usuario aún no tenía fila en candidate_profiles
+        const { data: fallbackUpsert, error: fallbackUpsertErr } = await supabase
+          .from("candidate_profiles")
+          .upsert(
+            {
+              user_id: user.id,
+              national_id: `CC-${user.id.slice(0, 8)}`,
+              city: candidateProfile.city || "Bogotá D.C.",
+              primary_role:
+                candidateProfile.primary_role || "Guarda de seguridad",
+              years_experience: candidateProfile.years_experience || 0,
+              available_immediately: true,
+            } as any,
+            { onConflict: "user_id" }
+          )
+          .select("*")
+          .maybeSingle();
+
+        if (!fallbackUpsertErr && fallbackUpsert) {
+          candProfRow = fallbackUpsert;
+        } else {
+          const { data: legacyUpsert } = await supabase
+            .from("candidate_profiles")
+            .upsert(
+              {
+                user_id: user.id,
+                national_id: `CC-${user.id.slice(0, 8)}`,
+                city: candidateProfile.city || "Bogotá D.C.",
+                primary_role: "vigilante_fijo",
+                years_experience: candidateProfile.years_experience || 0,
+                available_immediately: true,
+              } as any,
+              { onConflict: "user_id" }
+            )
+            .select("*")
+            .maybeSingle();
+          if (legacyUpsert) candProfRow = legacyUpsert;
+        }
+      }
+
+      const candidateProfileId = (candProfRow as any)?.id as string | undefined;
+      const candidateIdsToTry = Array.from(
+        new Set([user.id, candidateProfileId].filter(Boolean) as string[])
+      );
+
+      // 2. Verificar si ya existe la postulación en Supabase
+      const { data: existingApp } = await supabase
+        .from("applications")
+        .select("id")
+        .eq("job_id", job.id)
+        .in("candidate_id", candidateIdsToTry)
+        .maybeSingle();
+
+      if (existingApp) {
+        setAppliedJobIds((prev) => ({ ...prev, [job.id]: true }));
+        setSuccessToast(`¡Postulación registrada para: ${job.title}!`);
+        setTimeout(() => setSuccessToast(null), 4000);
+        return;
+      }
+
+      // 3. Insertar en public.applications enviando el ID correcto (user.id o candidateProfile.id)
+      // probando status: "aplicado" y respaldo a "postulado" si existe enum application_status en DB
+      let insertError: any = null;
+      let insertedOk = false;
+      const statusesToTry = ["aplicado", "postulado"];
+
+      for (const candId of candidateIdsToTry) {
+        if (insertedOk) break;
+        for (const st of statusesToTry) {
+          const { error } = await supabase.from("applications").insert({
+            job_id: job.id,
+            candidate_id: candId,
+            match_score: match.score,
+            status: st as any,
+          });
+
+          if (!error || error.code === "23505") {
+            insertedOk = true;
+            insertError = null;
+            break;
+          }
+          insertError = error;
+
+          // Respaldo sin match_score si la columna no existiera en algún esquema
+          if (
+            error.message?.includes("match_score") ||
+            error.code === "42703" ||
+            error.code === "PGRST204"
+          ) {
+            const { error: minErr } = await supabase
+              .from("applications")
+              .insert({
+                job_id: job.id,
+                candidate_id: candId,
+                status: st as any,
+              });
+            if (!minErr || minErr.code === "23505") {
+              insertedOk = true;
+              insertError = null;
+              break;
+            }
+            insertError = minErr;
+          }
+        }
+      }
+
+      // Intento adicional permitiendo el DEFAULT de la columna status en PostgreSQL
+      if (!insertedOk) {
+        for (const candId of candidateIdsToTry) {
+          const { error: defErr } = await supabase
+            .from("applications")
+            .insert({
+              job_id: job.id,
+              candidate_id: candId,
+              match_score: match.score,
+            } as any);
+          if (!defErr || defErr.code === "23505") {
+            insertedOk = true;
+            insertError = null;
+            break;
+          }
+          insertError = defErr;
+        }
+      }
+
+      if (!insertedOk) {
+        console.error(
+          "Error al insertar postulación en public.applications:",
+          insertError
+        );
+        alert(
+          `No se pudo guardar tu postulación en Supabase: ${
+            insertError?.message || "Verifica tu sesión o permisos de candidato."
+          }`
+        );
+        return;
+      }
+
+      setAppliedJobIds((prev) => ({ ...prev, [job.id]: true }));
+      setSuccessToast(`¡Postulación enviada exitosamente para: ${job.title}!`);
+      setTimeout(() => setSuccessToast(null), 4000);
+    } catch (err: any) {
+      console.error("Excepción al registrar postulación:", err);
+      alert(
+        `Error al procesar la postulación: ${
+          err?.message || "Intenta nuevamente."
+        }`
+      );
+    }
   };
 
   const handleToggleSave = (jobId: string) => {
