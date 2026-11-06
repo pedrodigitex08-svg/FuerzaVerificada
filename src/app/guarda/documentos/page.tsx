@@ -52,6 +52,24 @@ const EDUCATION_LEVEL_OPTIONS = [
 
 const VEHICLE_TYPE_OPTIONS = ["Motocicleta", "Automóvil", "Camioneta"] as const;
 
+const COMMON_SECURITY_COURSES = [
+  "Fundamentación en Vigilancia",
+  "Reentrenamiento en Vigilancia",
+  "Fundamentación en Medios Tecnológicos (CCTV)",
+  "Reentrenamiento en Medios Tecnológicos",
+  "Fundamentación en Escolta",
+  "Reentrenamiento en Escolta",
+  "Fundamentación Guía Canino",
+  "Reentrenamiento Guía Canino",
+  "Supervisor de Seguridad",
+  "Operador CCTV",
+  "Manejador Canino",
+  "Primeros Auxilios y Control de Emergencias",
+  "Protección VIP y Manejo Defensivo",
+  "Seguridad Física y Control de Accesos",
+  "Otro curso especializado",
+];
+
 const MONTHS_ES = [
   { value: "01", label: "Enero" },
   { value: "02", label: "Febrero" },
@@ -84,6 +102,22 @@ export interface CandidateWorkExperience {
   currentlyWorking: boolean;
   functions: string;
   role?: string;
+}
+
+export interface CandidateSecurityCourse {
+  id: string;
+  courseName: string;
+  academyName: string;
+  completionDate: string;
+  hasSimetricCourse: boolean;
+  simetricCourseNumber: string;
+}
+
+export interface CandidateDiplomaItem {
+  id?: string;
+  name: string;
+  url: string;
+  uploaded_at: string;
 }
 
 function parseIsoParts(dateStr?: string | null): {
@@ -389,20 +423,31 @@ export default function DocumentosPage() {
   const [driverLicenseClass, setDriverLicenseClass] = useState("");
 
   // =========================================================================
-  // PASO 2: CURSO DE SEGURIDAD & CURSO SIMETRIC (SIN CREDENCIAL SV NI PREVIEW)
+  // PASO 2: CURSOS DE SEGURIDAD MÚLTIPLES (security_courses JSONB) & SIMETRIC
   // =========================================================================
+  const [securityCourses, setSecurityCourses] = useState<CandidateSecurityCourse[]>([
+    {
+      id: `course-${Date.now()}`,
+      courseName: "Reentrenamiento en Vigilancia",
+      academyName: "",
+      completionDate: "",
+      hasSimetricCourse: false,
+      simetricCourseNumber: "",
+    },
+  ]);
+
+  // Fallbacks tradicionales
   const [courseCompletionDate, setCourseCompletionDate] = useState("");
   const [courseAcademy, setCourseAcademy] = useState("");
   const [hasSimetricCourse, setHasSimetricCourse] = useState(false);
   const [simetricCourseNumber, setSimetricCourseNumber] = useState("");
 
   // =========================================================================
-  // PASO 3: 4 SOPORTES DOCUMENTALES & EXPERIENCIA LABORAL MÚLTIPLE
+  // PASO 3: SOPORTES DOCUMENTALES & DIPLOMAS MÚLTIPLES (document_diplomas_list)
   // =========================================================================
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [cedulaFile, setCedulaFile] = useState<File | null>(null);
   const [libretaFile, setLibretaFile] = useState<File | null>(null);
-  const [diplomasFile, setDiplomasFile] = useState<File | null>(null);
 
   const [documentCvUrl, setDocumentCvUrl] = useState<string | null>(null);
   const [documentCedulaUrl, setDocumentCedulaUrl] = useState<string | null>(
@@ -414,6 +459,11 @@ export default function DocumentosPage() {
   const [documentDiplomasUrl, setDocumentDiplomasUrl] = useState<string | null>(
     null
   );
+
+  // Lista de diplomas, certificados o cursos adjuntos (document_diplomas_list)
+  const [diplomasList, setDiplomasList] = useState<CandidateDiplomaItem[]>([]);
+  const [uploadingDiploma, setUploadingDiploma] = useState(false);
+  const diplomaInputRef = useRef<HTMLInputElement>(null);
 
   // Experiencia Laboral Múltiple
   const [workExperiences, setWorkExperiences] = useState<
@@ -537,15 +587,43 @@ export default function DocumentosPage() {
             setDriverLicenseClass(cp.license_category);
           }
 
-          // Curso SIMETRIC
-          if (cp.has_simetric_course !== undefined) {
-            setHasSimetricCourse(Boolean(cp.has_simetric_course));
-          }
-          if (cp.simetric_course_number) {
-            setSimetricCourseNumber(cp.simetric_course_number);
+          // 1. Cargar Cursos de Seguridad Múltiples (security_courses)
+          if (Array.isArray(cp.security_courses) && cp.security_courses.length > 0) {
+            const parsedCourses = cp.security_courses.map((c: any, idx: number) => ({
+              id: c.id || `course-${idx}-${Date.now()}`,
+              courseName: c.courseName || c.course_name || "Reentrenamiento en Vigilancia",
+              academyName: c.academyName || c.academy_name || "",
+              completionDate: c.completionDate || c.completion_date || "",
+              hasSimetricCourse: Boolean(c.hasSimetricCourse ?? c.has_simetric_course ?? false),
+              simetricCourseNumber: c.simetricCourseNumber || c.simetric_course_number || "",
+            }));
+            setSecurityCourses(parsedCourses);
+            if (parsedCourses[0]) {
+              setCourseCompletionDate(parsedCourses[0].completionDate);
+              setCourseAcademy(parsedCourses[0].academyName);
+              setHasSimetricCourse(parsedCourses[0].hasSimetricCourse);
+              setSimetricCourseNumber(parsedCourses[0].simetricCourseNumber);
+            }
+          } else {
+            // Cargar de columnas individuales
+            const initialCourse: CandidateSecurityCourse = {
+              id: `course-${Date.now()}`,
+              courseName: "Reentrenamiento en Vigilancia",
+              academyName: "",
+              completionDate: "",
+              hasSimetricCourse: Boolean(cp.has_simetric_course),
+              simetricCourseNumber: cp.simetric_course_number || "",
+            };
+            if (cp.has_simetric_course !== undefined) {
+              setHasSimetricCourse(Boolean(cp.has_simetric_course));
+            }
+            if (cp.simetric_course_number) {
+              setSimetricCourseNumber(cp.simetric_course_number);
+            }
+            setSecurityCourses([initialCourse]);
           }
 
-          // Soportes documentales
+          // 2. Cargar Soportes documentales
           if (cp.document_cv_url || cp.resume_pdf_url) {
             setDocumentCvUrl(cp.document_cv_url || cp.resume_pdf_url);
           }
@@ -557,6 +635,27 @@ export default function DocumentosPage() {
           }
           if (cp.document_diplomas_url) {
             setDocumentDiplomasUrl(cp.document_diplomas_url);
+          }
+
+          // 3. Cargar Múltiples Diplomas y Certificados (document_diplomas_list)
+          if (Array.isArray(cp.document_diplomas_list) && cp.document_diplomas_list.length > 0) {
+            setDiplomasList(
+              cp.document_diplomas_list.map((d: any, idx: number) => ({
+                id: d.id || `dip-${idx}-${Date.now()}`,
+                name: d.name || `Diploma o Certificado ${idx + 1}`,
+                url: d.url || "",
+                uploaded_at: d.uploaded_at || new Date().toISOString(),
+              }))
+            );
+          } else if (cp.document_diplomas_url) {
+            setDiplomasList([
+              {
+                id: `dip-0-${Date.now()}`,
+                name: "Diploma / Certificado Principal",
+                url: cp.document_diplomas_url,
+                uploaded_at: new Date().toISOString(),
+              },
+            ]);
           }
 
           // Experiencias laborales
@@ -585,7 +684,7 @@ export default function DocumentosPage() {
           }
         }
 
-        // Cargar último curso en public.candidate_courses
+        // Cargar último curso en public.candidate_courses por retrocompatibilidad
         const { data: course } = await supabase
           .from("candidate_courses")
           .select("*")
@@ -605,7 +704,37 @@ export default function DocumentosPage() {
             course.certificate_file_url || (course as any).diploma_pdf_url;
           if (certUrl) {
             setDocumentDiplomasUrl((prev) => prev || certUrl);
+            setDiplomasList((prev) => {
+              if (prev.length === 0) {
+                return [
+                  {
+                    id: `dip-course-${Date.now()}`,
+                    name: course.course_name || "Certificado de Curso",
+                    url: certUrl,
+                    uploaded_at: new Date().toISOString(),
+                  },
+                ];
+              }
+              return prev;
+            });
           }
+
+          // Si el estado de securityCourses tenía datos vacíos, completarlo con el de candidate_courses
+          setSecurityCourses((prev) => {
+            if (prev.length === 1 && !prev[0].completionDate && !prev[0].academyName) {
+              return [
+                {
+                  id: prev[0].id,
+                  courseName: course.course_name || prev[0].courseName,
+                  academyName: course.academy_name || "",
+                  completionDate: course.completion_date || "",
+                  hasSimetricCourse: Boolean(prev[0].hasSimetricCourse),
+                  simetricCourseNumber: prev[0].simetricCourseNumber,
+                },
+              ];
+            }
+            return prev;
+          });
         }
 
         // Cargar documentos desde public.candidate_documents por retrocompatibilidad
@@ -625,6 +754,20 @@ export default function DocumentosPage() {
               setDocumentLibretaUrl((prev) => prev || d.file_url);
             } else if (docType === "diploma_curso" && d.file_url) {
               setDocumentDiplomasUrl((prev) => prev || d.file_url);
+              setDiplomasList((prev) => {
+                if (!prev.some((item) => item.url === d.file_url)) {
+                  return [
+                    ...prev,
+                    {
+                      id: `dip-doc-${Date.now()}-${Math.random()}`,
+                      name: d.file_name || "Diploma o Certificado",
+                      url: d.file_url,
+                      uploaded_at: d.created_at || new Date().toISOString(),
+                    },
+                  ];
+                }
+                return prev;
+              });
             }
           });
         }
@@ -658,6 +801,140 @@ export default function DocumentosPage() {
         }
         return [...prev, roleLabel];
       }
+    });
+  };
+
+  // ---------------------------------------------------------------------------
+  // GESTIÓN DINÁMICA DE CURSOS DE SEGURIDAD (security_courses)
+  // ---------------------------------------------------------------------------
+  const handleAddSecurityCourse = () => {
+    const nextCourse: CandidateSecurityCourse = {
+      id: `course-${Date.now()}-${Math.random()}`,
+      courseName: "Reentrenamiento en Vigilancia",
+      academyName: "",
+      completionDate: "",
+      hasSimetricCourse: false,
+      simetricCourseNumber: "",
+    };
+    setSecurityCourses((prev) => [...prev, nextCourse]);
+  };
+
+  const handleRemoveSecurityCourse = (id: string) => {
+    setSecurityCourses((prev) => {
+      if (prev.length <= 1) {
+        // Si queda solo uno, reiniciamos sus valores en vez de dejar la lista vacía
+        return [
+          {
+            id: `course-${Date.now()}`,
+            courseName: "Reentrenamiento en Vigilancia",
+            academyName: "",
+            completionDate: "",
+            hasSimetricCourse: false,
+            simetricCourseNumber: "",
+          },
+        ];
+      }
+      return prev.filter((c) => c.id !== id);
+    });
+  };
+
+  const handleUpdateSecurityCourse = (
+    id: string,
+    field: keyof CandidateSecurityCourse,
+    value: any
+  ) => {
+    setSecurityCourses((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, [field]: value } : c))
+    );
+  };
+
+  // ---------------------------------------------------------------------------
+  // GESTIÓN DINÁMICA DE DIPLOMAS Y CERTIFICADOS (document_diplomas_list)
+  // ---------------------------------------------------------------------------
+  const handleUploadSingleDiploma = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      setUploadingDiploma(true);
+      setErrorMsg(null);
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error("No hay una sesión activa para subir el archivo.");
+      }
+
+      const newUploadedItems: CandidateDiplomaItem[] = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const cleanFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const filePath = `diplomas/${user.id}/${Date.now()}_${cleanFileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("documents")
+          .upload(filePath, file, { upsert: true });
+
+        if (uploadError) {
+          throw new Error(
+            `Error al subir ${file.name}: ${uploadError.message}`
+          );
+        }
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("documents").getPublicUrl(filePath);
+
+        newUploadedItems.push({
+          id: `dip-${Date.now()}-${i}`,
+          name: file.name,
+          url: publicUrl,
+          uploaded_at: new Date().toISOString(),
+        });
+
+        // Registrar en candidate_documents
+        await supabase.from("candidate_documents").insert({
+          candidate_id: user.id,
+          doc_type: "diploma_curso",
+          file_url: publicUrl,
+        });
+      }
+
+      setDiplomasList((prev) => {
+        const updated = [...prev, ...newUploadedItems];
+        if (updated[0]?.url) {
+          setDocumentDiplomasUrl(updated[0].url);
+        }
+        return updated;
+      });
+
+      setSuccessMsg(
+        `Se adjuntaron exitosamente ${newUploadedItems.length} diploma(s) o certificado(s).`
+      );
+      setTimeout(() => setSuccessMsg(null), 3500);
+    } catch (err: any) {
+      console.error("Error al subir diplomas:", err);
+      setErrorMsg(err.message || "Error al subir diploma o certificado.");
+    } finally {
+      setUploadingDiploma(false);
+      if (e.target) e.target.value = "";
+    }
+  };
+
+  const handleRemoveDiplomaItem = (index: number) => {
+    setDiplomasList((prev) => {
+      const updated = prev.filter((_, i) => i !== index);
+      if (updated.length > 0) {
+        setDocumentDiplomasUrl(updated[0].url);
+      } else {
+        setDocumentDiplomasUrl(null);
+      }
+      return updated;
     });
   };
 
@@ -737,7 +1014,7 @@ export default function DocumentosPage() {
         });
       }
 
-      // 2. Subir archivos seleccionados a Supabase Storage (bucket 'documents')
+      // 2. Subir archivos de soportes pendientes a Supabase Storage (bucket 'documents')
       const uploadSupportFile = async (
         file: File,
         folder: "cvs" | "id_cards" | "military_booklets" | "diplomas"
@@ -767,7 +1044,7 @@ export default function DocumentosPage() {
       let finalLibretaUrl = isExemptFromMilitaryBooklet
         ? null
         : documentLibretaUrl;
-      let finalDiplomasUrl = documentDiplomasUrl;
+      let finalDiplomasUrl = diplomasList[0]?.url || documentDiplomasUrl;
 
       if (cvFile) {
         finalCvUrl = await uploadSupportFile(cvFile, "cvs");
@@ -783,10 +1060,6 @@ export default function DocumentosPage() {
           "military_booklets"
         );
         setDocumentLibretaUrl(finalLibretaUrl);
-      }
-      if (diplomasFile) {
-        finalDiplomasUrl = await uploadSupportFile(diplomasFile, "diplomas");
-        setDocumentDiplomasUrl(finalDiplomasUrl);
       }
 
       // Si el usuario escribió una experiencia en los campos pero no pulsó "+ Añadir experiencia", incluirla
@@ -820,6 +1093,16 @@ export default function DocumentosPage() {
         ? false
         : hasMilitaryBooklet;
 
+      // Primer curso para retrocompatibilidad con columnas individuales
+      const firstCourse = securityCourses[0] || null;
+      const finalSimetric = firstCourse
+        ? Boolean(firstCourse.hasSimetricCourse)
+        : hasSimetricCourse;
+      const finalSimetricNumber =
+        firstCourse?.hasSimetricCourse && firstCourse.simetricCourseNumber
+          ? firstCourse.simetricCourseNumber.trim()
+          : simetricCourseNumber.trim() || null;
+
       // 3. Construir payload de public.candidate_profiles con todas las nuevas columnas y retrocompatibilidad
       const baseCandidatePayload: Record<string, any> = {
         user_id: userId,
@@ -850,17 +1133,20 @@ export default function DocumentosPage() {
         license_category: hasOwnVehicle
           ? driverLicenseClass.trim() || null
           : null,
-        has_simetric_course: hasSimetricCourse,
-        simetric_course_number: hasSimetricCourse
-          ? simetricCourseNumber.trim() || null
-          : null,
+        // Cursos múltiples y retrocompatibilidad individual
+        security_courses: securityCourses,
+        has_simetric_course: finalSimetric,
+        simetric_course_number: finalSimetricNumber,
+        // Diplomas múltiples y retrocompatibilidad individual
+        document_diplomas_list: diplomasList,
+        document_diplomas_url: finalDiplomasUrl,
+        // Experiencias laborales
         work_experiences: finalExperiences,
         work_experience_json: finalExperiences,
         document_cv_url: finalCvUrl,
         resume_pdf_url: finalCvUrl,
         document_cedula_url: finalCedulaUrl,
         document_libreta_url: finalLibretaUrl,
-        document_diplomas_url: finalDiplomasUrl,
         available_immediately: true,
         updated_at: new Date().toISOString(),
       };
@@ -876,7 +1162,7 @@ export default function DocumentosPage() {
         .upsert(payloadWithHasMotorcycle as any, { onConflict: "user_id" });
 
       if (upsertErr) {
-        // Reintentar con baseCandidatePayload (usando has_own_motorcycle estándar si has_motorcycle no es columna física)
+        // Reintentar con baseCandidatePayload
         const retry = await supabase
           .from("candidate_profiles")
           .upsert(baseCandidatePayload as any, { onConflict: "user_id" });
@@ -889,28 +1175,32 @@ export default function DocumentosPage() {
         );
       }
 
-      // 4. Registrar curso en public.candidate_courses si se diligenció fecha de curso
-      if (courseCompletionDate) {
-        const compDateObj = new Date(courseCompletionDate);
-        compDateObj.setFullYear(compDateObj.getFullYear() + 1);
-        const computedExpirationDate = compDateObj.toISOString().split("T")[0];
+      // 4. Registrar cursos en public.candidate_courses
+      if (securityCourses.length > 0) {
+        for (const c of securityCourses) {
+          if (c.completionDate) {
+            const compDateObj = new Date(c.completionDate);
+            compDateObj.setFullYear(compDateObj.getFullYear() + 1);
+            const computedExpirationDate = compDateObj.toISOString().split("T")[0];
 
-        await supabase.from("candidate_courses").insert({
-          candidate_id: userId,
-          course_name: `Reentrenamiento - ${formatSecurityRoleLabel(
-            firstSelectedRole
-          )}`,
-          academy_name:
-            courseAcademy.trim() || "Academia Autorizada SuperVigilancia",
-          completion_date: courseCompletionDate,
-          expiration_date: computedExpirationDate,
-          nro_credencial_supervigilancia:
-            hasSimetricCourse && simetricCourseNumber.trim()
-              ? simetricCourseNumber.trim()
-              : null,
-          certificate_file_url: finalDiplomasUrl,
-          is_verified_by_admin: false,
-        });
+            await supabase.from("candidate_courses").insert({
+              candidate_id: userId,
+              course_name:
+                c.courseName.trim() ||
+                `Reentrenamiento - ${formatSecurityRoleLabel(firstSelectedRole)}`,
+              academy_name:
+                c.academyName.trim() || "Academia Autorizada SuperVigilancia",
+              completion_date: c.completionDate,
+              expiration_date: computedExpirationDate,
+              nro_credencial_supervigilancia:
+                c.hasSimetricCourse && c.simetricCourseNumber.trim()
+                  ? c.simetricCourseNumber.trim()
+                  : null,
+              certificate_file_url: finalDiplomasUrl,
+              is_verified_by_admin: false,
+            });
+          }
+        }
       }
 
       // 5. Registrar soportes subidos en public.candidate_documents
@@ -936,13 +1226,6 @@ export default function DocumentosPage() {
           file_url: finalLibretaUrl,
         });
       }
-      if (diplomasFile && finalDiplomasUrl) {
-        docsToInsert.push({
-          candidate_id: userId,
-          doc_type: "diploma_curso",
-          file_url: finalDiplomasUrl,
-        });
-      }
 
       if (docsToInsert.length > 0) {
         await supabase.from("candidate_documents").insert(docsToInsert);
@@ -951,10 +1234,9 @@ export default function DocumentosPage() {
       setCvFile(null);
       setCedulaFile(null);
       setLibretaFile(null);
-      setDiplomasFile(null);
 
       setSuccessMsg(
-        "¡Hoja de Vida, Formación, Cursos y Soportes actualizados exitosamente!"
+        "¡Hoja de Vida, Cursos Realizados, Diplomas y Soportes actualizados exitosamente!"
       );
       setTimeout(() => {
         router.push("/guarda/perfil");
@@ -985,7 +1267,7 @@ export default function DocumentosPage() {
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1 font-normal">
-            Actualiza tus especialidades (hasta 5 perfiles), formación académica, curso SIMETRIC y bóveda documental.
+            Actualiza tus especialidades (hasta 5 perfiles), formación académica, múltiples cursos de seguridad, certificación SIMETRIC y bóveda documental.
           </p>
         </div>
 
@@ -1017,7 +1299,7 @@ export default function DocumentosPage() {
         </div>
       </div>
 
-      {/* Contenedor Principal del Formulario (Ancho completo sin tarjeta de Vista Previa de Credencial Digital) */}
+      {/* Contenedor Principal del Formulario */}
       <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-2xs space-y-6">
         {/* ===================================================================
             PASO 1: IDENTIFICACIÓN, ESPECIALIDADES (MÁX 5), EDUCACIÓN Y VEHÍCULO
@@ -1111,7 +1393,7 @@ export default function DocumentosPage() {
               </div>
             </div>
 
-            {/* 1. ESPECIALIDAD PRINCIPAL EN SEGURIDAD PRIVADA (MÁXIMO 5 OPCIONES ENTRE LOS 13 PERFILES OFICIALES) */}
+            {/* 1. ESPECIALIDAD PRINCIPAL EN SEGURIDAD PRIVADA (MÁXIMO 5 OPCIONES) */}
             <div className="pt-2 border-t border-slate-100 space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
@@ -1284,7 +1566,7 @@ export default function DocumentosPage() {
                 </button>
               </div>
 
-              {/* 2 Cuadritos interactivos: Fecha de inicio y Fecha de fin (Día, Mes y Año independientes) */}
+              {/* 2 Cuadritos interactivos: Fecha de inicio y Fecha de fin */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <InteractiveDateBox
                   label="Fecha de inicio"
@@ -1310,14 +1592,13 @@ export default function DocumentosPage() {
               </div>
             </div>
 
-            {/* 3. LIBRETA MILITAR (CONDICIONAL) Y VEHÍCULO PROPIO (REEMPLAZO DE MOTO PROPIA) */}
+            {/* 3. LIBRETA MILITAR Y VEHÍCULO PROPIO */}
             <div className="pt-4 border-t border-slate-100 space-y-4">
               <div
                 className={`grid grid-cols-1 ${
                   !isExemptFromMilitaryBooklet ? "sm:grid-cols-2" : ""
                 } gap-4`}
               >
-                {/* Pregunta de Libreta Militar: Se oculta si selecciona Personal administrativo o Conserje */}
                 {!isExemptFromMilitaryBooklet && (
                   <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
                     <div>
@@ -1342,7 +1623,6 @@ export default function DocumentosPage() {
                   </div>
                 )}
 
-                {/* Switch Vehículo propio */}
                 <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg bg-[#EAF3FA] border border-[#D5E6F5] flex items-center justify-center text-[#005DA4]">
@@ -1371,7 +1651,6 @@ export default function DocumentosPage() {
                 </div>
               </div>
 
-              {/* Opciones desplegadas cuando Vehículo propio está activo */}
               {hasOwnVehicle && (
                 <div className="p-4 rounded-xl border border-[#D5E6F5] bg-[#EAF3FA]/40 space-y-4 animate-in fade-in duration-150">
                   <div>
@@ -1429,104 +1708,204 @@ export default function DocumentosPage() {
         )}
 
         {/* ===================================================================
-            PASO 2: VALIDACIÓN DE CURSO DE SEGURIDAD & CURSO SIMETRIC
-            (SIN VISTA PREVIA DE CREDENCIAL DIGITAL NI NÚMERO DE CREDENCIAL SV)
+            PASO 2: VALIDACIÓN DE CURSOS DE SEGURIDAD MÚLTIPLES (security_courses)
+            & REGISTRO SIMETRIC (CON BOTÓN + AGREGAR OTRO CURSO REALIZADO)
            =================================================================== */}
         {step === 2 && (
           <div className="space-y-6 animate-in fade-in duration-150">
-            <div className="border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                Paso 2: Validación del Curso de Seguridad y Registro SIMETRIC
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Comprobación de vigencia legal de tu capacitación y certificación SIMETRIC.
-              </p>
+            <div className="border-b border-slate-100 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                  Paso 2: Cursos de Seguridad Realizados y Registro SIMETRIC
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Registra todos tus cursos (Fundamentación, Reentrenamientos, Medios Tecnológicos, etc.) y comprueba su vigencia legal.
+                </p>
+              </div>
+              <span className="text-xs font-bold text-[#0B3B70] bg-[#EAF3FA] border border-[#D5E6F5] px-3 py-1 rounded-full self-start sm:self-auto">
+                {securityCourses.length} curso(s) registrado(s)
+              </span>
             </div>
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Fecha de Realización del Último Curso
-                  </label>
-                  <input
-                    type="date"
-                    value={courseCompletionDate}
-                    onChange={(e) => setCourseCompletionDate(e.target.value)}
-                    className="w-full h-11 bg-white border border-slate-300 rounded-xl px-3.5 text-sm text-slate-900 tabular-nums focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all shadow-2xs"
-                  />
-                </div>
+            {/* Datalist global para tipos de cursos */}
+            <datalist id="security-course-options">
+              {COMMON_SECURITY_COURSES.map((opt) => (
+                <option key={opt} value={opt} />
+              ))}
+            </datalist>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Academia de Seguridad Emisora
-                  </label>
-                  <input
-                    type="text"
-                    value={courseAcademy}
-                    onChange={(e) => setCourseAcademy(e.target.value)}
-                    placeholder="Ej: Academia Nacional de Seguridad / Escovigil"
-                    className="w-full h-11 bg-white border border-slate-300 rounded-xl px-3.5 text-sm text-slate-900 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all shadow-2xs"
-                  />
-                </div>
-              </div>
-
-              {/* Semáforo de Vigencia en Vivo */}
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                  Diagnóstico de Vigencia en Vivo:
-                </label>
-                <CourseSemaphoreBanner
-                  completionDate={courseCompletionDate}
-                  candidateName={fullName}
-                  city={city}
-                  courseName={`Curso de ${formatSecurityRoleLabel(primaryRole)}`}
-                />
-              </div>
-
-              {/* Switch ¿Cuenta con curso SIMETRIC? */}
-              <div className="pt-2 border-t border-slate-100 space-y-3">
-                <div className="p-4 rounded-xl border border-slate-200 bg-[#F2F5F8] flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-[#0B3B70] text-white flex items-center justify-center shrink-0">
-                      <Award className="w-4 h-4 text-[#FFE066]" />
+            {/* Lista dinámica de cursos realizados */}
+            <div className="space-y-6">
+              {securityCourses.map((course, index) => (
+                <div
+                  key={course.id}
+                  className="p-5 sm:p-6 rounded-2xl border border-slate-200 bg-[#F8FAFC] space-y-4 shadow-2xs relative"
+                >
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-[#0B3B70] text-white flex items-center justify-center text-xs font-bold">
+                        {index + 1}
+                      </div>
+                      <span className="text-xs font-bold text-slate-900">
+                        {course.courseName || `Curso #${index + 1}`}
+                      </span>
                     </div>
+
+                    {securityCourses.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSecurityCourse(course.id)}
+                        className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors flex items-center gap-1 text-xs font-semibold cursor-pointer"
+                        title="Eliminar este curso"
+                      >
+                        <Trash2 className="w-4 h-4 text-rose-500" />
+                        <span className="hidden sm:inline">Quitar</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Nombre o Tipo de Curso */}
                     <div>
-                      <span className="text-xs font-bold text-slate-900 block">
-                        ¿Cuenta con curso SIMETRIC?
-                      </span>
-                      <span className="text-[11px] text-slate-500">
-                        Activa esta opción si posees registro de curso en plataforma SIMETRIC
-                      </span>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        Nombre o Tipo de Curso
+                      </label>
+                      <input
+                        type="text"
+                        list="security-course-options"
+                        value={course.courseName}
+                        onChange={(e) =>
+                          handleUpdateSecurityCourse(
+                            course.id,
+                            "courseName",
+                            e.target.value
+                          )
+                        }
+                        placeholder="Ej: Fundamentación, Reentrenamiento en Vigilancia..."
+                        className="w-full h-11 bg-white border border-slate-300 rounded-xl px-3.5 text-sm text-slate-900 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all shadow-2xs"
+                      />
+                    </div>
+
+                    {/* Nombre de la Academia */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        Nombre de la Academia o Institución
+                      </label>
+                      <input
+                        type="text"
+                        value={course.academyName}
+                        onChange={(e) =>
+                          handleUpdateSecurityCourse(
+                            course.id,
+                            "academyName",
+                            e.target.value
+                          )
+                        }
+                        placeholder="Ej: Academia Superior de Seguridad / Escovigil"
+                        className="w-full h-11 bg-white border border-slate-300 rounded-xl px-3.5 text-sm text-slate-900 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all shadow-2xs"
+                      />
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setHasSimetricCourse(!hasSimetricCourse)}
-                    className={`w-11 h-6 rounded-full p-0.5 transition-colors flex items-center cursor-pointer shrink-0 ${
-                      hasSimetricCourse
-                        ? "bg-[#005DA4] justify-end"
-                        : "bg-slate-300 justify-start"
-                    }`}
-                  >
-                    <div className="w-5 h-5 rounded-full bg-white shadow-xs" />
-                  </button>
-                </div>
 
-                {hasSimetricCourse && (
-                  <div className="p-4 rounded-xl border border-[#D5E6F5] bg-[#EAF3FA]/40 animate-in fade-in duration-150">
-                    <label className="block text-xs font-bold text-[#0B3B70] mb-1">
-                      Número de registro del curso
-                    </label>
-                    <input
-                      type="text"
-                      value={simetricCourseNumber}
-                      onChange={(e) => setSimetricCourseNumber(e.target.value)}
-                      placeholder="Ingresa el número de registro SIMETRIC"
-                      className="w-full h-11 bg-white border border-slate-300 rounded-xl px-3.5 text-sm text-slate-900 font-mono tabular-nums focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all shadow-2xs"
+                  {/* Selector interactivo de Fecha de Realización (Día, Mes y Año independientes) */}
+                  <div>
+                    <InteractiveDateBox
+                      label="Fecha de realización del curso"
+                      value={course.completionDate}
+                      onChange={(val) =>
+                        handleUpdateSecurityCourse(
+                          course.id,
+                          "completionDate",
+                          val
+                        )
+                      }
                     />
                   </div>
-                )}
+
+                  {/* Semáforo de Vigencia en Vivo para este curso */}
+                  {course.completionDate && (
+                    <div className="pt-1">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                        Diagnóstico de Vigencia en Vivo:
+                      </label>
+                      <CourseSemaphoreBanner
+                        completionDate={course.completionDate}
+                        candidateName={fullName}
+                        city={city}
+                        courseName={course.courseName || `Curso de Seguridad`}
+                      />
+                    </div>
+                  )}
+
+                  {/* Switch ¿Cuenta con curso SIMETRIC? */}
+                  <div className="pt-2 border-t border-slate-200/80 space-y-3">
+                    <div className="p-3.5 rounded-xl border border-slate-200 bg-white flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-[#0B3B70] text-white flex items-center justify-center shrink-0">
+                          <Award className="w-4 h-4 text-[#FFE066]" />
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-slate-900 block">
+                            ¿Cuenta con curso SIMETRIC?
+                          </span>
+                          <span className="text-[11px] text-slate-500">
+                            Activa si este curso cuenta con certificación en plataforma SIMETRIC
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleUpdateSecurityCourse(
+                            course.id,
+                            "hasSimetricCourse",
+                            !course.hasSimetricCourse
+                          )
+                        }
+                        className={`w-11 h-6 rounded-full p-0.5 transition-colors flex items-center cursor-pointer shrink-0 ${
+                          course.hasSimetricCourse
+                            ? "bg-[#005DA4] justify-end"
+                            : "bg-slate-300 justify-start"
+                        }`}
+                      >
+                        <div className="w-5 h-5 rounded-full bg-white shadow-xs" />
+                      </button>
+                    </div>
+
+                    {course.hasSimetricCourse && (
+                      <div className="p-3.5 rounded-xl border border-[#D5E6F5] bg-[#EAF3FA]/50 animate-in fade-in duration-150">
+                        <label className="block text-xs font-bold text-[#0B3B70] mb-1">
+                          Número de registro del curso
+                        </label>
+                        <input
+                          type="text"
+                          value={course.simetricCourseNumber}
+                          onChange={(e) =>
+                            handleUpdateSecurityCourse(
+                              course.id,
+                              "simetricCourseNumber",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Ingresa el número de registro SIMETRIC"
+                          className="w-full h-10 bg-white border border-slate-300 rounded-xl px-3.5 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {/* Botón "+ Agregar otro curso realizado" */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={handleAddSecurityCourse}
+                  className="rounded-full bg-[#EAF3FA] hover:bg-[#D5E6F5] text-[#0B3B70] border border-[#D5E6F5] text-xs font-bold h-11 px-5 inline-flex items-center gap-2 transition-colors shadow-2xs cursor-pointer"
+                >
+                  <Plus className="w-4 h-4 text-[#005DA4]" strokeWidth={2.5} />
+                  <span>+ Agregar otro curso realizado</span>
+                </button>
               </div>
             </div>
 
@@ -1552,7 +1931,8 @@ export default function DocumentosPage() {
         )}
 
         {/* ===================================================================
-            PASO 3: 4 SOPORTES DOCUMENTALES & EXPERIENCIA LABORAL MÚLTIPLE
+            PASO 3: SOPORTES DOCUMENTALES & CARGA MÚLTIPLE DE DIPLOMAS
+            (document_diplomas_list) Y EXPERIENCIA LABORAL
            =================================================================== */}
         {step === 3 && (
           <div className="space-y-6 animate-in fade-in duration-150">
@@ -1561,21 +1941,19 @@ export default function DocumentosPage() {
                 Paso 3: Soportes Documentales y Experiencia Laboral
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Adjunta tus soportes obligatorios y registra tu historial laboral detallado.
+                Adjunta tus documentos de identidad, diplomas y registra tu historial de experiencia laboral.
               </p>
             </div>
 
-            {/* SECCIÓN A: 4 SOPORTES (HOJA DE VIDA, CÉDULA, LIBRETA MILITAR CONDICIONAL, DIPLOMAS) */}
+            {/* SECCIÓN A1: 3 SOPORTES BASE (HOJA DE VIDA, CÉDULA, LIBRETA MILITAR CONDICIONAL) */}
             <div className="space-y-3">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Soportes Documentales Requeridos
+                Soportes de Identidad y Hoja de Vida
               </h4>
 
               <div
                 className={`grid grid-cols-1 sm:grid-cols-2 ${
-                  !isExemptFromMilitaryBooklet
-                    ? "lg:grid-cols-4"
-                    : "lg:grid-cols-3"
+                  !isExemptFromMilitaryBooklet ? "lg:grid-cols-3" : "lg:grid-cols-2"
                 } gap-3.5`}
               >
                 {/* Soporte 1: Hoja de Vida */}
@@ -1753,66 +2131,103 @@ export default function DocumentosPage() {
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
 
-                {/* Soporte 4: Diplomas */}
-                <div className="p-4 rounded-2xl border border-slate-200 bg-[#F2F5F8] flex flex-col justify-between space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-emerald-700">
-                      <FileCheck className="w-4 h-4" />
-                    </div>
-                    <span
-                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
-                        diplomasFile || documentDiplomasUrl
-                          ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                          : "bg-amber-50 text-amber-800 border border-amber-200"
-                      }`}
+            {/* SECCIÓN A2: APARTADO DE DIPLOMAS, CERTIFICADOS O CURSOS (CARGA MÚLTIPLE document_diplomas_list) */}
+            <div className="pt-2 border-t border-slate-100 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Diplomas, Certificados o Cursos Realizados
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Puedes adjuntar varios soportes (PDF o imagen) sin sobrescribir los anteriores.
+                  </p>
+                </div>
+                <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full self-start sm:self-auto">
+                  {diplomasList.length} archivo(s) adjunto(s)
+                </span>
+              </div>
+
+              {/* Lista de diplomas ya cargados */}
+              {diplomasList.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {diplomasList.map((item, idx) => (
+                    <div
+                      key={item.id || `${item.url}-${idx}`}
+                      className="p-3.5 rounded-xl border border-slate-200 bg-[#F8FAFC] flex items-center justify-between gap-3 shadow-2xs"
                     >
-                      {diplomasFile
-                        ? "Listo"
-                        : documentDiplomasUrl
-                        ? "Cargado"
-                        : "Pendiente"}
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0">
+                          <FileCheck className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-xs font-bold text-slate-900 block truncate">
+                            {item.name || `Diploma ${idx + 1}`}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono">
+                            {formatHumanDate(item.uploaded_at)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => openSecureDocument(item.url)}
+                          className="rounded-full bg-white hover:bg-[#EAF3FA] text-[#005DA4] border border-slate-300 text-[11px] font-semibold px-2.5 py-1 inline-flex items-center gap-1 shadow-2xs cursor-pointer"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          <span>Ver</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveDiplomaItem(idx)}
+                          className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                          title="Quitar soporte"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Botón "+ Adjuntar otro diploma, certificado o curso" */}
+              <div className="p-4 rounded-2xl border-2 border-dashed border-slate-300 hover:border-[#005DA4] bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-[#0B3B70] shrink-0 shadow-2xs">
+                    <Upload className="w-5 h-5 text-[#005DA4]" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-slate-900 block">
+                      Subir Diplomas, Certificados o Constancias de Cursos
+                    </span>
+                    <span className="text-[11px] text-slate-500">
+                      Formatos admitidos: PDF, JPG, PNG (puedes subir varios documentos)
                     </span>
                   </div>
-
-                  <div>
-                    <h5 className="text-xs font-bold text-slate-900">
-                      Diplomas
-                    </h5>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      Certificados de cursos y estudios
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="w-full inline-flex items-center justify-center gap-1.5 rounded-full bg-white hover:bg-[#EAF3FA] text-[#0B3B70] border border-slate-300 text-xs font-semibold cursor-pointer h-9 px-3 transition-colors shadow-2xs">
-                      <Upload className="w-3.5 h-3.5 text-[#005DA4]" />
-                      <span className="truncate">
-                        {diplomasFile ? diplomasFile.name : "Adjuntar Diplomas"}
-                      </span>
-                      <input
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        className="hidden"
-                        onChange={(e) => {
-                          if (e.target.files?.[0]) {
-                            setDiplomasFile(e.target.files[0]);
-                          }
-                        }}
-                      />
-                    </label>
-                    {documentDiplomasUrl && !diplomasFile && (
-                      <button
-                        type="button"
-                        onClick={() => openSecureDocument(documentDiplomasUrl)}
-                        className="text-[11px] font-semibold text-[#005DA4] hover:underline inline-flex items-center gap-1"
-                      >
-                        <span>Ver archivo actual</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
                 </div>
+
+                <label className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs font-bold h-10 px-5 inline-flex items-center gap-2 transition-colors shadow-xs cursor-pointer shrink-0">
+                  <Plus className="w-4 h-4 text-[#FFE066]" strokeWidth={2.5} />
+                  <span>
+                    {uploadingDiploma
+                      ? "Cargando archivo..."
+                      : "+ Adjuntar otro diploma, certificado o curso"}
+                  </span>
+                  <input
+                    type="file"
+                    ref={diplomaInputRef}
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    multiple
+                    disabled={uploadingDiploma}
+                    onChange={handleUploadSingleDiploma}
+                    className="hidden"
+                  />
+                </label>
               </div>
             </div>
 
@@ -1894,7 +2309,7 @@ export default function DocumentosPage() {
                   />
                 </div>
 
-                {/* 2 Cuadritos interactivos de Fecha de inicio y Fecha de fin (con switch "Trabajando actualmente en esta empresa") */}
+                {/* 2 Cuadritos interactivos de Fecha de inicio y Fecha de fin */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <InteractiveDateBox
                     label="Fecha de inicio"
@@ -1931,7 +2346,7 @@ export default function DocumentosPage() {
                   />
                 </div>
 
-                {/* Cuadro de texto para el rol o funciones (máximo 500 caracteres) */}
+                {/* Cuadro de texto para el rol o funciones */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-xs font-semibold text-slate-700">

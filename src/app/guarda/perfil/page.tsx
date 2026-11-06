@@ -64,6 +64,24 @@ const EDUCATION_LEVEL_OPTIONS = [
 
 const VEHICLE_TYPE_OPTIONS = ["Motocicleta", "Automóvil", "Camioneta"] as const;
 
+const COMMON_SECURITY_COURSES = [
+  "Fundamentación en Vigilancia",
+  "Reentrenamiento en Vigilancia",
+  "Fundamentación en Medios Tecnológicos (CCTV)",
+  "Reentrenamiento en Medios Tecnológicos",
+  "Fundamentación en Escolta",
+  "Reentrenamiento en Escolta",
+  "Fundamentación Guía Canino",
+  "Reentrenamiento Guía Canino",
+  "Supervisor de Seguridad",
+  "Operador CCTV",
+  "Manejador Canino",
+  "Primeros Auxilios y Control de Emergencias",
+  "Protección VIP y Manejo Defensivo",
+  "Seguridad Física y Control de Accesos",
+  "Otro curso especializado",
+];
+
 const MONTHS_ES = [
   { value: "01", label: "Enero" },
   { value: "02", label: "Febrero" },
@@ -78,6 +96,22 @@ const MONTHS_ES = [
   { value: "11", label: "Noviembre" },
   { value: "12", label: "Diciembre" },
 ];
+
+export interface CandidateSecurityCourse {
+  id: string;
+  courseName: string;
+  academyName: string;
+  completionDate: string;
+  hasSimetricCourse: boolean;
+  simetricCourseNumber: string;
+}
+
+export interface CandidateDiplomaItem {
+  id?: string;
+  name: string;
+  url: string;
+  uploaded_at: string;
+}
 
 interface ProfileWorkExperience {
   id: string;
@@ -140,7 +174,8 @@ export default function PerfilGuardaPage() {
   const [educationStartDate, setEducationStartDate] = useState("");
   const [educationEndDate, setEducationEndDate] = useState("");
 
-  // Estudios y Curso SuperVigilancia + Curso SIMETRIC
+  // Cursos de Seguridad Realizados Múltiples (security_courses JSONB)
+  const [securityCourses, setSecurityCourses] = useState<CandidateSecurityCourse[]>([]);
   const [courseName, setCourseName] = useState("Reentrenamiento en Vigilancia");
   const [academyName, setAcademyName] = useState(
     "Academia Superior de Seguridad"
@@ -173,7 +208,7 @@ export default function PerfilGuardaPage() {
     "Monitoreo de Cámaras y Alarmas CCTV",
   ]);
 
-  // Vehículo propio (Reemplaza "Moto propia") y Movilidad
+  // Vehículo propio y Movilidad
   const [hasOwnVehicle, setHasOwnVehicle] = useState(false);
   const [vehicleType, setVehicleType] = useState<string>("Motocicleta");
   const [driverLicenseClass, setDriverLicenseClass] = useState("");
@@ -182,11 +217,12 @@ export default function PerfilGuardaPage() {
     "Turnos rotativos 2x2x2 y relevos"
   );
 
-  // 4 Documentos adjuntos (Hoja de Vida, Cédula, Libreta Militar y Diplomas)
+  // Soportes Documentales y Lista Múltiple de Diplomas (document_diplomas_list)
   const [resumeUrl, setResumeUrl] = useState<string | null>(null);
   const [idCardUrl, setIdCardUrl] = useState<string | null>(null);
   const [libretaUrl, setLibretaUrl] = useState<string | null>(null);
   const [diplomaUrl, setDiplomaUrl] = useState<string | null>(null);
+  const [diplomasList, setDiplomasList] = useState<CandidateDiplomaItem[]>([]);
 
   // Estados de control UI y carga
   const [isLoading, setIsLoading] = useState(true);
@@ -327,6 +363,35 @@ export default function PerfilGuardaPage() {
               setEducationEndDate(cp.education_end_date);
             }
 
+            // Cursos Realizados Múltiples (security_courses)
+            if (Array.isArray(cp.security_courses) && cp.security_courses.length > 0) {
+              const coursesList: CandidateSecurityCourse[] = cp.security_courses.map(
+                (c: any, idx: number) => ({
+                  id: c.id || `c-${idx}-${Date.now()}`,
+                  courseName: c.courseName || c.course_name || "Reentrenamiento en Vigilancia",
+                  academyName: c.academyName || c.academy_name || "",
+                  completionDate: c.completionDate || c.completion_date || "",
+                  hasSimetricCourse: Boolean(c.hasSimetricCourse ?? c.has_simetric_course ?? false),
+                  simetricCourseNumber: c.simetricCourseNumber || c.simetric_course_number || "",
+                })
+              );
+              setSecurityCourses(coursesList);
+              if (coursesList[0]) {
+                setCourseName(coursesList[0].courseName);
+                setAcademyName(coursesList[0].academyName);
+                setCourseCompletionDate(coursesList[0].completionDate);
+                setHasSimetricCourse(coursesList[0].hasSimetricCourse);
+                setSimetricCourseNumber(coursesList[0].simetricCourseNumber);
+              }
+            } else {
+              if (cp.has_simetric_course !== undefined) {
+                setHasSimetricCourse(Boolean(cp.has_simetric_course));
+              }
+              if (cp.simetric_course_number) {
+                setSimetricCourseNumber(cp.simetric_course_number);
+              }
+            }
+
             // Vehículo propio y licencia
             if (cp.has_own_vehicle !== undefined && cp.has_own_vehicle !== null) {
               setHasOwnVehicle(Boolean(cp.has_own_vehicle));
@@ -346,15 +411,7 @@ export default function PerfilGuardaPage() {
               setMotorcycleCc(cp.motorcycle_cc);
             }
 
-            // Curso SIMETRIC
-            if (cp.has_simetric_course !== undefined) {
-              setHasSimetricCourse(Boolean(cp.has_simetric_course));
-            }
-            if (cp.simetric_course_number) {
-              setSimetricCourseNumber(cp.simetric_course_number);
-            }
-
-            // 4 Soportes en candidate_profiles
+            // Soportes en candidate_profiles
             if (cp.document_cv_url || cp.resume_pdf_url) {
               setResumeUrl(cp.document_cv_url || cp.resume_pdf_url);
             }
@@ -368,7 +425,28 @@ export default function PerfilGuardaPage() {
               setDiplomaUrl(cp.document_diplomas_url);
             }
 
-            // Experiencias laborales desde work_experiences (o work_experience_json si es arreglo)
+            // Diplomas Múltiples (document_diplomas_list)
+            if (Array.isArray(cp.document_diplomas_list) && cp.document_diplomas_list.length > 0) {
+              setDiplomasList(
+                cp.document_diplomas_list.map((d: any, idx: number) => ({
+                  id: d.id || `dip-${idx}-${Date.now()}`,
+                  name: d.name || `Diploma o Certificado ${idx + 1}`,
+                  url: d.url || "",
+                  uploaded_at: d.uploaded_at || new Date().toISOString(),
+                }))
+              );
+            } else if (cp.document_diplomas_url) {
+              setDiplomasList([
+                {
+                  id: `dip-0-${Date.now()}`,
+                  name: "Diploma / Certificado Principal",
+                  url: cp.document_diplomas_url,
+                  uploaded_at: new Date().toISOString(),
+                },
+              ]);
+            }
+
+            // Experiencias laborales desde work_experiences
             const rawWorkExps = Array.isArray(cp.work_experiences)
               ? cp.work_experiences
               : Array.isArray(cp.work_experience_json)
@@ -447,7 +525,37 @@ export default function PerfilGuardaPage() {
             }
             if (course.certificate_file_url) {
               setDiplomaUrl((prev) => prev || course.certificate_file_url);
+              setDiplomasList((prev) => {
+                if (prev.length === 0) {
+                  return [
+                    {
+                      id: `dip-cand-${Date.now()}`,
+                      name: course.course_name || "Certificado de Curso",
+                      url: course.certificate_file_url!,
+                      uploaded_at: new Date().toISOString(),
+                    },
+                  ];
+                }
+                return prev;
+              });
             }
+
+            // Si securityCourses estaba vacío, alimentarlo con candidate_courses
+            setSecurityCourses((prev) => {
+              if (prev.length === 0) {
+                return [
+                  {
+                    id: course.id || `c-${Date.now()}`,
+                    courseName: course.course_name || "Reentrenamiento en Vigilancia",
+                    academyName: course.academy_name || "Academia de Seguridad",
+                    completionDate: course.completion_date || "",
+                    hasSimetricCourse: Boolean(candProfile?.has_simetric_course),
+                    simetricCourseNumber: candProfile?.simetric_course_number || "",
+                  },
+                ];
+              }
+              return prev;
+            });
           }
 
           // Cargar soportes documentales desde public.candidate_documents
@@ -467,6 +575,20 @@ export default function PerfilGuardaPage() {
                 setLibretaUrl((prev) => prev || doc.file_url);
               } else if (type === "diploma_curso" && doc.file_url) {
                 setDiplomaUrl((prev) => prev || doc.file_url);
+                setDiplomasList((prev) => {
+                  if (!prev.some((d) => d.url === doc.file_url)) {
+                    return [
+                      ...prev,
+                      {
+                        id: `dip-doc-${Date.now()}-${Math.random()}`,
+                        name: doc.file_name || "Diploma o Certificado",
+                        url: doc.file_url,
+                        uploaded_at: doc.created_at || new Date().toISOString(),
+                      },
+                    ];
+                  }
+                  return prev;
+                });
               }
             });
           }
@@ -701,58 +823,97 @@ export default function PerfilGuardaPage() {
     }
   };
 
-  // 6. SUBIDA INDIVIDUAL DE DIPLOMAS
+  // 6. SUBIDA MÚLTIPLE DE DIPLOMAS Y CERTIFICADOS (document_diplomas_list)
   const handleUploadDiploma = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const file = e.target.files?.[0];
-    if (!file || !userId) return;
+    const files = e.target.files;
+    if (!files || files.length === 0 || !userId) return;
 
     try {
       setUploadingDoc("diploma");
-      const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const filePath = `diplomas/${userId}/${Date.now()}_${cleanName}`;
+      const newItems: CandidateDiplomaItem[] = [];
 
-      const { error: uploadError } = await supabase.storage
-        .from("documents")
-        .upload(filePath, file, { upsert: true });
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const filePath = `diplomas/${userId}/${Date.now()}_${cleanName}`;
 
-      if (uploadError) throw uploadError;
+        const { error: uploadError } = await supabase.storage
+          .from("documents")
+          .upload(filePath, file, { upsert: true });
 
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("documents").getPublicUrl(filePath);
+        if (uploadError) throw uploadError;
 
-      setDiplomaUrl(publicUrl);
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("documents").getPublicUrl(filePath);
+
+        newItems.push({
+          id: `dip-${Date.now()}-${i}`,
+          name: file.name,
+          url: publicUrl,
+          uploaded_at: new Date().toISOString(),
+        });
+
+        await supabase.from("candidate_documents").insert({
+          candidate_id: userId,
+          doc_type: "diploma_curso",
+          file_url: publicUrl,
+        });
+      }
+
+      const updatedList = [...diplomasList, ...newItems];
+      setDiplomasList(updatedList);
+      const mainUrl = updatedList[0]?.url || null;
+      setDiplomaUrl(mainUrl);
 
       await supabase
         .from("candidate_profiles")
         .update({
-          document_diplomas_url: publicUrl,
+          document_diplomas_list: updatedList,
+          document_diplomas_url: mainUrl,
           updated_at: new Date().toISOString(),
         } as any)
         .eq("user_id", userId);
 
-      if (courseId) {
+      if (courseId && mainUrl) {
         await supabase
           .from("candidate_courses")
-          .update({ certificate_file_url: publicUrl })
+          .update({ certificate_file_url: mainUrl })
           .eq("id", courseId);
       }
 
-      await supabase.from("candidate_documents").insert({
-        candidate_id: userId,
-        doc_type: "diploma_curso",
-        file_url: publicUrl,
-      });
-
-      showToast("Diplomas y certificados cargados con éxito.");
+      showToast(`Se adjuntaron ${newItems.length} diploma(s) o certificado(s) con éxito.`);
     } catch (err: any) {
       console.error("Error al subir Diplomas:", err);
       setErrorMessage(err.message || "Error al subir diplomas.");
     } finally {
       setUploadingDoc(null);
       if (e.target) e.target.value = "";
+    }
+  };
+
+  const handleRemoveDiplomaInProfile = async (index: number) => {
+    if (!userId) return;
+    try {
+      const updatedList = diplomasList.filter((_, i) => i !== index);
+      setDiplomasList(updatedList);
+      const newMainUrl = updatedList[0]?.url || null;
+      setDiplomaUrl(newMainUrl);
+
+      await supabase
+        .from("candidate_profiles")
+        .update({
+          document_diplomas_list: updatedList,
+          document_diplomas_url: newMainUrl,
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq("user_id", userId);
+
+      showToast("Diploma o certificado retirado.");
+    } catch {
+      setErrorMessage("No fue posible retirar el diploma.");
     }
   };
 
@@ -823,11 +984,21 @@ export default function PerfilGuardaPage() {
     }
   };
 
-  // 9. GUARDAR SECCIÓN C: FORMACIÓN ACADÉMICA, CURSO SUPERVIGILANCIA Y SIMETRIC
+  // 9. GUARDAR SECCIÓN C: FORMACIÓN ACADÉMICA, CURSOS REALIZADOS Y SIMETRIC
   const handleSaveCourseAndEducation = async () => {
     if (!userId) return;
     setIsSaving(true);
     try {
+      // Sincronizar primer curso
+      const firstCourse = securityCourses[0] || null;
+      const finalSimetric = firstCourse
+        ? Boolean(firstCourse.hasSimetricCourse)
+        : hasSimetricCourse;
+      const finalSimetricNumber =
+        firstCourse?.hasSimetricCourse && firstCourse.simetricCourseNumber
+          ? firstCourse.simetricCourseNumber.trim()
+          : simetricCourseNumber.trim() || null;
+
       await supabase
         .from("candidate_profiles")
         .update({
@@ -841,16 +1012,17 @@ export default function PerfilGuardaPage() {
           education_end_date: educationCurrentlyStudying
             ? null
             : educationEndDate || null,
-          has_simetric_course: hasSimetricCourse,
-          simetric_course_number: hasSimetricCourse
-            ? simetricCourseNumber.trim() || null
-            : null,
+          security_courses: securityCourses,
+          has_simetric_course: finalSimetric,
+          simetric_course_number: finalSimetricNumber,
           updated_at: new Date().toISOString(),
         } as any)
         .eq("user_id", userId);
 
-      if (courseCompletionDate) {
-        const compDateObj = new Date(courseCompletionDate);
+      // Sincronizar en candidate_courses el primer curso con fecha
+      const activeCourseDate = firstCourse?.completionDate || courseCompletionDate;
+      if (activeCourseDate) {
+        const compDateObj = new Date(activeCourseDate);
         const expDateObj = new Date(compDateObj);
         expDateObj.setFullYear(expDateObj.getFullYear() + 1);
         const expirationDate = expDateObj.toISOString().split("T")[0];
@@ -859,13 +1031,11 @@ export default function PerfilGuardaPage() {
           await supabase
             .from("candidate_courses")
             .update({
-              course_name: courseName,
-              academy_name: academyName,
-              completion_date: courseCompletionDate,
+              course_name: firstCourse?.courseName || courseName,
+              academy_name: firstCourse?.academyName || academyName,
+              completion_date: activeCourseDate,
               expiration_date: expirationDate,
-              nro_credencial_supervigilancia: hasSimetricCourse
-                ? simetricCourseNumber.trim() || null
-                : null,
+              nro_credencial_supervigilancia: finalSimetricNumber,
             })
             .eq("id", courseId);
         } else {
@@ -873,13 +1043,11 @@ export default function PerfilGuardaPage() {
             .from("candidate_courses")
             .insert({
               candidate_id: userId,
-              course_name: courseName,
-              academy_name: academyName,
-              completion_date: courseCompletionDate,
+              course_name: firstCourse?.courseName || courseName,
+              academy_name: firstCourse?.academyName || academyName,
+              completion_date: activeCourseDate,
               expiration_date: expirationDate,
-              nro_credencial_supervigilancia: hasSimetricCourse
-                ? simetricCourseNumber.trim() || null
-                : null,
+              nro_credencial_supervigilancia: finalSimetricNumber,
               certificate_file_url: diplomaUrl,
             })
             .select("id")
@@ -1062,13 +1230,16 @@ export default function PerfilGuardaPage() {
       !nationalId.startsWith("TEMP-")
   );
   const hasCourse = Boolean(
-    (courseCompletionDate && courseCompletionDate.trim().length > 0) ||
+    securityCourses.length > 0 ||
+      (courseCompletionDate && courseCompletionDate.trim().length > 0) ||
       hasSimetricCourse ||
       Boolean(educationInstitution.trim())
   );
   const hasResume = Boolean(resumeUrl && resumeUrl.trim().length > 0);
   const hasIdCard = Boolean(idCardUrl && idCardUrl.trim().length > 0);
-  const hasDiploma = Boolean(diplomaUrl && diplomaUrl.trim().length > 0);
+  const hasDiploma = Boolean(
+    diplomasList.length > 0 || (diplomaUrl && diplomaUrl.trim().length > 0)
+  );
 
   const checklist = [
     { label: "Foto de perfil cargada", done: hasAvatar, weight: 12 },
@@ -1088,13 +1259,13 @@ export default function PerfilGuardaPage() {
       weight: 15,
     },
     {
-      label: "Formación y Cursos / SIMETRIC",
+      label: "Cursos realizados / Registro SIMETRIC",
       done: hasCourse,
       weight: 15,
     },
     { label: "Hoja de Vida adjunta", done: hasResume, weight: 10 },
     { label: "Copia de Cédula adjunta", done: hasIdCard, weight: 10 },
-    { label: "Diplomas adjuntos", done: hasDiploma, weight: 10 },
+    { label: "Diplomas o Certificados adjuntos", done: hasDiploma, weight: 10 },
   ];
 
   const totalPercentage = checklist.reduce(
@@ -1417,7 +1588,7 @@ export default function PerfilGuardaPage() {
                   "Personal de seguridad privada con vocación de servicio, disciplina y cumplimiento normativo ante la SuperVigilancia. Experiencia en control de acceso, rondas y protección de activos en instalaciones corporativas y residenciales."}
               </p>
             ) : (
-              /* MODO EDICIÓN SECCIÓN B (Hasta 5 especialidades entre los 13 perfiles oficiales) */
+              /* MODO EDICIÓN SECCIÓN B */
               <div className="space-y-4 bg-[#F2F5F8]/70 p-5 rounded-2xl border border-slate-200 mt-2">
                 <div className="flex items-center justify-between">
                   <label className="block font-bold text-slate-800 text-xs">
@@ -1519,7 +1690,7 @@ export default function PerfilGuardaPage() {
           </div>
 
           {/* --------------------------------------------------------------------- */}
-          {/* SECCIÓN C: FORMACIÓN ACADÉMICA, CURSOS SUPERVIGILANCIA Y SIMETRIC (✏️) */}
+          {/* SECCIÓN C: FORMACIÓN ACADÉMICA, CURSOS REALIZADOS Y SIMETRIC (✏️)     */}
           {/* --------------------------------------------------------------------- */}
           <div className="space-y-4 pb-6 border-b border-slate-100">
             <div className="flex items-center justify-between">
@@ -1589,38 +1760,89 @@ export default function PerfilGuardaPage() {
                   )}
                 </div>
 
-                {/* Línea de tiempo Curso SuperVigilancia & SIMETRIC */}
-                <div className="relative pl-6 space-y-3">
-                  <div className="absolute left-[7px] top-2 bottom-1 w-0.5 bg-slate-200" />
-                  <div className="relative">
-                    <div className="w-3.5 h-3.5 rounded-full bg-[#005DA4] ring-4 ring-[#EAF3FA] absolute -left-[23px] top-1" />
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-900">
-                        {courseName}
-                      </h4>
-                      <p className="text-xs text-slate-600 font-medium mt-0.5">
-                        {academyName}
-                      </p>
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-1 font-mono">
-                        <span>
-                          Fecha:{" "}
-                          <strong className="text-slate-800">
-                            {courseCompletionDate || "Sin registrar"}
-                          </strong>
-                        </span>
-                        <span>•</span>
-                        <span>
-                          Curso SIMETRIC:{" "}
-                          <strong className="text-[#0B3B70]">
-                            {hasSimetricCourse
-                              ? `Sí (Registro: ${
-                                  simetricCourseNumber || "Activo"
-                                })`
-                              : "No registrado"}
-                          </strong>
-                        </span>
+                {/* Línea de tiempo Cursos Realizados (security_courses) */}
+                <div className="space-y-2 pt-1">
+                  <span className="text-xs font-bold text-slate-800 block">
+                    Cursos de Seguridad Realizados ({securityCourses.length || 1})
+                  </span>
+
+                  <div className="relative pl-6 space-y-4 pt-1">
+                    <div className="absolute left-[7px] top-2 bottom-1 w-0.5 bg-slate-200" />
+
+                    {securityCourses.length > 0 ? (
+                      securityCourses.map((c, idx) => (
+                        <div key={c.id || idx} className="relative">
+                          <div className="w-3.5 h-3.5 rounded-full bg-[#005DA4] ring-4 ring-[#EAF3FA] absolute -left-[23px] top-1" />
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="text-sm font-bold text-slate-900">
+                                {c.courseName || `Curso #${idx + 1}`}
+                              </h4>
+                              {c.hasSimetricCourse && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#EAF3FA] text-[#0B3B70] border border-[#D5E6F5] inline-flex items-center gap-1">
+                                  <Award className="w-3 h-3 text-[#FFE066]" />
+                                  <span>SIMETRIC: {c.simetricCourseNumber || "Activo"}</span>
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-600 font-medium mt-0.5">
+                              {c.academyName || "Academia de Seguridad Autorizada"}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-1 font-mono">
+                              <span>
+                                Fecha de realización:{" "}
+                                <strong className="text-slate-800">
+                                  {c.completionDate
+                                    ? formatReadableDate(c.completionDate)
+                                    : "Sin registrar"}
+                                </strong>
+                              </span>
+                              <span>•</span>
+                              <span>
+                                Curso SIMETRIC:{" "}
+                                <strong className={c.hasSimetricCourse ? "text-[#0B3B70]" : "text-slate-500"}>
+                                  {c.hasSimetricCourse
+                                    ? `Sí (N° ${c.simetricCourseNumber || "Registrado"})`
+                                    : "No registrado"}
+                                </strong>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      /* Fallback para curso único tradicional */
+                      <div className="relative">
+                        <div className="w-3.5 h-3.5 rounded-full bg-[#005DA4] ring-4 ring-[#EAF3FA] absolute -left-[23px] top-1" />
+                        <div>
+                          <h4 className="text-sm font-bold text-slate-900">
+                            {courseName}
+                          </h4>
+                          <p className="text-xs text-slate-600 font-medium mt-0.5">
+                            {academyName}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-1 font-mono">
+                            <span>
+                              Fecha:{" "}
+                              <strong className="text-slate-800">
+                                {courseCompletionDate || "Sin registrar"}
+                              </strong>
+                            </span>
+                            <span>•</span>
+                            <span>
+                              Curso SIMETRIC:{" "}
+                              <strong className="text-[#0B3B70]">
+                                {hasSimetricCourse
+                                  ? `Sí (Registro: ${
+                                      simetricCourseNumber || "Activo"
+                                    })`
+                                  : "No registrado"}
+                              </strong>
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
 
@@ -1629,7 +1851,7 @@ export default function PerfilGuardaPage() {
                   <div className="flex items-start gap-2.5">
                     <Lightbulb className="w-4 h-4 text-[#005DA4] shrink-0 mt-0.5" />
                     <p className="leading-relaxed">
-                      Mantén al día tu reentrenamiento anual y tu certificación SIMETRIC. Puedes gestionar el formulario paso a paso en Configuración de HV & Soportes.
+                      Mantén al día tu reentrenamiento anual y tu certificación SIMETRIC. Puedes agregar varios cursos realizados y gestionar tus certificados en Configuración de HV & Soportes.
                     </p>
                   </div>
                   <Link
@@ -1642,9 +1864,9 @@ export default function PerfilGuardaPage() {
               </div>
             ) : (
               /* MODO EDICIÓN SECCIÓN C */
-              <div className="space-y-4 bg-[#F2F5F8]/70 p-5 rounded-2xl border border-slate-200">
+              <div className="space-y-5 bg-[#F2F5F8]/70 p-5 rounded-2xl border border-slate-200">
                 <span className="text-xs font-bold text-[#0B3B70] uppercase tracking-wider block">
-                  Editar Formación Académica y Cursos
+                  Editar Formación Académica y Cursos Realizados
                 </span>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -1736,68 +1958,172 @@ export default function PerfilGuardaPage() {
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      Nombre del Curso de Seguridad
-                    </label>
-                    <input
-                      type="text"
-                      value={courseName}
-                      onChange={(e) => setCourseName(e.target.value)}
-                      placeholder="Ej. Reentrenamiento en Vigilancia"
-                      className="w-full h-9 bg-white border border-slate-300 rounded-xl px-3 text-xs font-medium text-slate-900 focus:outline-none focus:border-[#005DA4]"
-                    />
+                {/* Edición de cursos de seguridad */}
+                <div className="pt-3 border-t border-slate-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800">
+                      Cursos de Seguridad Realizados
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSecurityCourses((prev) => [
+                          ...prev,
+                          {
+                            id: `c-${Date.now()}-${Math.random()}`,
+                            courseName: "Reentrenamiento en Vigilancia",
+                            academyName: "",
+                            completionDate: "",
+                            hasSimetricCourse: false,
+                            simetricCourseNumber: "",
+                          },
+                        ])
+                      }
+                      className="text-xs font-semibold text-[#005DA4] hover:underline inline-flex items-center gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>+ Añadir otro curso</span>
+                    </button>
                   </div>
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      Academia Emisora
-                    </label>
-                    <input
-                      type="text"
-                      value={academyName}
-                      onChange={(e) => setAcademyName(e.target.value)}
-                      placeholder="Nombre de la academia autorizada"
-                      className="w-full h-9 bg-white border border-slate-300 rounded-xl px-3 text-xs font-medium text-slate-900 focus:outline-none focus:border-[#005DA4]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      Fecha de Realización del Curso
-                    </label>
-                    <input
-                      type="date"
-                      value={courseCompletionDate || ""}
-                      onChange={(e) => setCourseCompletionDate(e.target.value)}
-                      className="w-full h-9 bg-white border border-slate-300 rounded-xl px-3 text-xs font-mono font-medium text-slate-900 focus:outline-none focus:border-[#005DA4]"
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="font-semibold text-slate-700">
-                        ¿Cuenta con curso SIMETRIC?
-                      </label>
-                      <input
-                        type="checkbox"
-                        checked={hasSimetricCourse}
-                        onChange={(e) => setHasSimetricCourse(e.target.checked)}
-                      />
-                    </div>
-                    {hasSimetricCourse ? (
-                      <input
-                        type="text"
-                        value={simetricCourseNumber}
-                        onChange={(e) =>
-                          setSimetricCourseNumber(e.target.value)
-                        }
-                        placeholder="Número de registro SIMETRIC"
-                        className="w-full h-9 bg-white border border-slate-300 rounded-xl px-3 text-xs font-mono font-medium text-slate-900 focus:outline-none focus:border-[#005DA4]"
-                      />
-                    ) : (
-                      <div className="h-9 rounded-xl bg-slate-100 border border-slate-200 px-3 flex items-center text-xs text-slate-500">
-                        Sin curso SIMETRIC activo
+
+                  <div className="space-y-3">
+                    {securityCourses.map((c, idx) => (
+                      <div
+                        key={c.id || idx}
+                        className="p-3.5 rounded-xl border border-slate-200 bg-white space-y-2.5 text-xs"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-[#0B3B70]">
+                            Curso #{idx + 1}
+                          </span>
+                          {securityCourses.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setSecurityCourses((prev) =>
+                                  prev.filter((_, i) => i !== idx)
+                                )
+                              }
+                              className="text-slate-400 hover:text-rose-600"
+                              title="Quitar curso"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <div>
+                            <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                              Nombre o Tipo de Curso
+                            </label>
+                            <input
+                              type="text"
+                              list="common-courses-profile"
+                              value={c.courseName}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setSecurityCourses((prev) =>
+                                  prev.map((item, i) =>
+                                    i === idx ? { ...item, courseName: val } : item
+                                  )
+                                );
+                              }}
+                              placeholder="Ej. Reentrenamiento en Vigilancia"
+                              className="w-full h-8 bg-slate-50 border border-slate-300 rounded-lg px-2.5 text-xs text-slate-900"
+                            />
+                            <datalist id="common-courses-profile">
+                              {COMMON_SECURITY_COURSES.map((opt) => (
+                                <option key={opt} value={opt} />
+                              ))}
+                            </datalist>
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                              Academia Emisora
+                            </label>
+                            <input
+                              type="text"
+                              value={c.academyName}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setSecurityCourses((prev) =>
+                                  prev.map((item, i) =>
+                                    i === idx ? { ...item, academyName: val } : item
+                                  )
+                                );
+                              }}
+                              placeholder="Academia autorizada"
+                              className="w-full h-8 bg-slate-50 border border-slate-300 rounded-lg px-2.5 text-xs text-slate-900"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                              Fecha de realización
+                            </label>
+                            <input
+                              type="date"
+                              value={c.completionDate}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setSecurityCourses((prev) =>
+                                  prev.map((item, i) =>
+                                    i === idx ? { ...item, completionDate: val } : item
+                                  )
+                                );
+                              }}
+                              className="w-full h-8 bg-slate-50 border border-slate-300 rounded-lg px-2.5 text-xs font-mono text-slate-900"
+                            />
+                          </div>
+
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="text-[11px] font-semibold text-slate-600">
+                                ¿Cuenta con curso SIMETRIC?
+                              </label>
+                              <input
+                                type="checkbox"
+                                checked={c.hasSimetricCourse}
+                                onChange={(e) => {
+                                  const val = e.target.checked;
+                                  setSecurityCourses((prev) =>
+                                    prev.map((item, i) =>
+                                      i === idx
+                                        ? { ...item, hasSimetricCourse: val }
+                                        : item
+                                    )
+                                  );
+                                }}
+                              />
+                            </div>
+                            {c.hasSimetricCourse ? (
+                              <input
+                                type="text"
+                                value={c.simetricCourseNumber}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setSecurityCourses((prev) =>
+                                    prev.map((item, i) =>
+                                      i === idx
+                                        ? { ...item, simetricCourseNumber: val }
+                                        : item
+                                    )
+                                  );
+                                }}
+                                placeholder="N° de registro SIMETRIC"
+                                className="w-full h-8 bg-slate-50 border border-slate-300 rounded-lg px-2.5 text-xs font-mono text-slate-900"
+                              />
+                            ) : (
+                              <span className="text-[10px] text-slate-400 block pt-1">
+                                Sin registro SIMETRIC
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    )}
+                    ))}
                   </div>
                 </div>
 
@@ -2419,7 +2745,7 @@ export default function PerfilGuardaPage() {
           </div>
 
           {/* --------------------------------------------------------------------- */}
-          {/* SECCIÓN F: DOCUMENTOS ADJUNTOS (LOS 4 SOPORTES SINCRONIZADOS)         */}
+          {/* SECCIÓN F: DOCUMENTOS ADJUNTOS (INCLUYE DIPLOMAS MÚLTIPLES)          */}
           {/* --------------------------------------------------------------------- */}
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -2429,7 +2755,7 @@ export default function PerfilGuardaPage() {
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Enlaces directos y actualización sincronizada de Hoja de Vida, Cédula
-                  {!isExemptFromMilitaryBooklet ? ", Libreta Militar" : ""} y Diplomas.
+                  {!isExemptFromMilitaryBooklet ? ", Libreta Militar" : ""} y múltiples Diplomas o Certificados.
                 </p>
               </div>
               <Link
@@ -2565,7 +2891,7 @@ export default function PerfilGuardaPage() {
                 </div>
               </div>
 
-              {/* DOCUMENTO 3: LIBRETA MILITAR (Oculta si es Personal administrativo o Conserje) */}
+              {/* DOCUMENTO 3: LIBRETA MILITAR */}
               {!isExemptFromMilitaryBooklet && (
                 <div className="p-4 rounded-2xl border border-slate-200 bg-[#F2F5F8] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
@@ -2629,66 +2955,100 @@ export default function PerfilGuardaPage() {
                 </div>
               )}
 
-              {/* DOCUMENTO 4: DIPLOMAS */}
-              <div className="p-4 rounded-2xl border border-slate-200 bg-[#F2F5F8] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#005DA4] shrink-0" />
-                  <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-[#0B3B70] shrink-0 shadow-2xs">
-                    <FileCheck className="w-4 h-4 text-emerald-600" />
+              {/* DOCUMENTO 4: DIPLOMAS, CERTIFICADOS O CURSOS (LISTA COMPLETA document_diplomas_list) */}
+              <div className="p-4 rounded-2xl border border-slate-200 bg-[#F2F5F8] space-y-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#005DA4] shrink-0" />
+                    <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-[#0B3B70] shrink-0 shadow-2xs">
+                      <FileCheck className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900">
+                        Diplomas y Certificados de Cursos ({diplomasList.length})
+                      </h4>
+                      <span className="text-[11px] font-medium block">
+                        {diplomasList.length > 0 ? (
+                          <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                            <Check className="w-3 h-3 text-emerald-600" />{" "}
+                            {diplomasList.length} archivo(s) disponible(s)
+                          </span>
+                        ) : (
+                          <span className="text-amber-700 font-semibold">
+                            Pendiente por adjuntar
+                          </span>
+                        )}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900">
-                      Diplomas y Certificados de Cursos
-                    </h4>
-                    <span className="text-[11px] font-medium block">
-                      {diplomaUrl ? (
-                        <span className="text-emerald-700 font-semibold flex items-center gap-1">
-                          <Check className="w-3 h-3 text-emerald-600" />{" "}
-                          Diplomas cargados
-                        </span>
-                      ) : (
-                        <span className="text-amber-700 font-semibold">
-                          Pendiente por adjuntar
-                        </span>
-                      )}
-                    </span>
+
+                  <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => diplomaInputRef.current?.click()}
+                      disabled={uploadingDoc === "diploma"}
+                      className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs px-4 py-1.5 font-semibold inline-flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-[#FFE066]" />
+                      <span>
+                        {uploadingDoc === "diploma"
+                          ? "Subiendo..."
+                          : "+ Adjuntar diploma"}
+                      </span>
+                    </button>
+                    <input
+                      type="file"
+                      ref={diplomaInputRef}
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      multiple
+                      onChange={handleUploadDiploma}
+                      className="hidden"
+                    />
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
-                  {diplomaUrl && (
-                    <button
-                      type="button"
-                      onClick={() => openSecureDocument(diplomaUrl)}
-                      className="rounded-full bg-white text-slate-700 hover:text-[#0B3B70] border border-slate-300 text-xs px-3.5 py-1.5 font-semibold inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Ver</span>
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => diplomaInputRef.current?.click()}
-                    disabled={uploadingDoc === "diploma"}
-                    className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs px-4 py-1.5 font-semibold inline-flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
-                  >
-                    <Upload className="w-3.5 h-3.5" />
-                    <span>
-                      {uploadingDoc === "diploma"
-                        ? "Subiendo..."
-                        : diplomaUrl
-                        ? "Reemplazar"
-                        : "Subir Diplomas"}
-                    </span>
-                  </button>
-                  <input
-                    type="file"
-                    ref={diplomaInputRef}
-                    accept=".pdf,image/*"
-                    onChange={handleUploadDiploma}
-                    className="hidden"
-                  />
-                </div>
+                {/* Lista de diplomas registrados */}
+                {diplomasList.length > 0 && (
+                  <div className="space-y-2 pt-2 border-t border-slate-200/80">
+                    {diplomasList.map((item, idx) => (
+                      <div
+                        key={item.id || `${item.url}-${idx}`}
+                        className="p-3 rounded-xl bg-white border border-slate-200 flex items-center justify-between gap-3 shadow-2xs"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <FileCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <div className="min-w-0">
+                            <span className="text-xs font-semibold text-slate-800 block truncate">
+                              {item.name || `Diploma ${idx + 1}`}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {formatReadableDate(item.uploaded_at)}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => openSecureDocument(item.url)}
+                            className="rounded-full bg-slate-50 hover:bg-[#EAF3FA] text-[#005DA4] border border-slate-200 text-[11px] px-2.5 py-1 font-semibold inline-flex items-center gap-1 cursor-pointer"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            <span>Ver</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveDiplomaInProfile(idx)}
+                            className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                            title="Quitar diploma"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -2785,7 +3145,7 @@ export default function PerfilGuardaPage() {
               Las empresas de seguridad privada autorizadas en Colombia filtran
               automáticamente candidatos con{" "}
               <strong className="text-white">Hoja de Vida al 100%</strong>,
-              especialidades definidas y soportes validados.
+              especialidades definidas, cursos vigentes y soportes validados.
             </p>
 
             <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-xs border border-white/15 space-y-1">
