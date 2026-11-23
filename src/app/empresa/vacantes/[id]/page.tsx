@@ -39,6 +39,12 @@ import {
 import { ResumeDrawerModal } from "@/components/empresa/ResumeDrawerModal";
 import { OrderSecurityStudyModal } from "@/components/empresa/OrderSecurityStudyModal";
 import {
+  CandidateCvModal,
+  CandidateSecurityCourseItem,
+  CandidateWorkExperienceItem,
+  CandidateDiplomaFileItem,
+} from "@/components/empresa/CandidateCvModal";
+import {
   ApplicationStatus,
   SecurityRoleType,
   SecurityStudyStatus,
@@ -61,8 +67,11 @@ interface ATSCandidate {
   id: string;
   candidate_user_id?: string;
   full_name: string;
+  email?: string;
   national_id: string;
   phone_whatsapp: string;
+  avatar_url?: string | null;
+  is_verified?: boolean;
   department: string;
   city: string;
   locality?: string;
@@ -70,6 +79,11 @@ interface ATSCandidate {
   selected_roles: string[];
   years_experience: number;
   education_level: string;
+  education_title?: string;
+  education_institution?: string;
+  education_currently_studying?: boolean;
+  education_start_date?: string | null;
+  education_end_date?: string | null;
   has_military_booklet: boolean;
   has_own_motorcycle: boolean;
   has_own_vehicle: boolean;
@@ -77,15 +91,19 @@ interface ATSCandidate {
   driver_license_class?: string;
   has_driving_license: boolean;
   motorcycle_cc?: number | null;
+  salary_expectation?: number | null;
+  available_to_travel?: boolean | null;
+  available_to_relocate?: boolean | null;
   available_immediately: boolean;
   resume_pdf_url: string;
+  document_cv_url?: string | null;
+  document_cedula_url?: string | null;
+  document_libreta_url?: string | null;
+  document_diplomas_url?: string | null;
+  document_diplomas_list?: CandidateDiplomaFileItem[];
   has_simetric_course: boolean;
-  security_courses: Array<{
-    course_type?: string;
-    name?: string;
-    academy?: string;
-    institution?: string;
-  }>;
+  simetric_course_number?: string | null;
+  security_courses: CandidateSecurityCourseItem[];
   course_semaphore: "VIGENTE" | "PROXIMO_A_VENCER" | "VENCIDO";
   course_name?: string;
   course_date?: string;
@@ -95,15 +113,11 @@ interface ATSCandidate {
   status: ApplicationStatus | string;
   is_read: boolean;
   applied_at?: string;
+  screening_answers?: unknown;
+  bio_summary?: string | null;
   work_history?: { company: string; role: string; dates: string }[];
-  work_experiences_raw?: Array<{
-    company?: string;
-    role?: string;
-    description?: string;
-    startDate?: string;
-    endDate?: string;
-    current?: boolean;
-  }>;
+  work_experiences?: CandidateWorkExperienceItem[];
+  work_experiences_raw?: CandidateWorkExperienceItem[];
 }
 
 type FunnelTabKey =
@@ -195,6 +209,9 @@ export default function ATSVacantePage() {
   const [vacancyAddress, setVacancyAddress] = useState<string>("Colombia");
   const [selectedCandidateForDrawer, setSelectedCandidateForDrawer] =
     useState<ATSCandidate | null>(null);
+  const [cvModalCandidateId, setCvModalCandidateId] = useState<string | null>(
+    null
+  );
   const [selectedCandidateForStudy, setSelectedCandidateForStudy] =
     useState<ATSCandidate | null>(null);
   const [credits, setCredits] = useState(0);
@@ -332,7 +349,7 @@ export default function ATSVacantePage() {
             candidateIds.length > 0
               ? await supabase
                   .from("profiles")
-                  .select("id, full_name, phone_whatsapp")
+                  .select("id, full_name, phone_whatsapp, email")
                   .in("id", candidateIds)
               : { data: [] as any[] };
           const userProfMap = new Map(
@@ -473,9 +490,15 @@ export default function ATSVacantePage() {
                 userProf.full_name ||
                 candProf.full_name ||
                 "Aspirante Operativo",
+              email: userProf.email || candProf.email || "",
               national_id: candProf.national_id || "En verificación",
               phone_whatsapp:
                 userProf.phone_whatsapp || candProf.phone || "3000000000",
+              avatar_url: candProf.avatar_url || userProf.avatar_url || null,
+              is_verified:
+                typeof candProf.is_verified === "boolean"
+                  ? candProf.is_verified
+                  : true,
               department: candDepartment,
               city: candCity,
               locality: candProf.locality_neighborhood || candProf.locality,
@@ -485,6 +508,13 @@ export default function ATSVacantePage() {
               selected_roles: selectedRoles,
               years_experience: candProf.years_experience ?? 1,
               education_level: educationLevel,
+              education_title: candProf.education_title || "",
+              education_institution: candProf.education_institution || "",
+              education_currently_studying: Boolean(
+                candProf.education_currently_studying
+              ),
+              education_start_date: candProf.education_start_date || null,
+              education_end_date: candProf.education_end_date || null,
               has_military_booklet: !!candProf.has_military_booklet,
               has_own_motorcycle: !!candProf.has_own_motorcycle,
               has_own_vehicle: hasOwnVehicle,
@@ -492,29 +522,59 @@ export default function ATSVacantePage() {
               driver_license_class: driverLicenseClass,
               has_driving_license: hasDrivingLicense,
               motorcycle_cc: candProf.motorcycle_cc,
+              salary_expectation:
+                candProf.salary_expectation ??
+                candProf.expected_salary ??
+                null,
+              available_to_travel:
+                candProf.available_to_travel ??
+                candProf.willing_to_travel ??
+                null,
+              available_to_relocate:
+                candProf.available_to_relocate ??
+                candProf.willing_to_relocate ??
+                null,
               available_immediately: !!candProf.available_immediately,
               resume_pdf_url:
                 candProf.document_cv_url || candProf.resume_pdf_url || "",
+              document_cv_url:
+                candProf.document_cv_url || candProf.resume_pdf_url || null,
+              document_cedula_url: candProf.document_cedula_url || null,
+              document_libreta_url: candProf.document_libreta_url || null,
+              document_diplomas_url: candProf.document_diplomas_url || null,
+              document_diplomas_list: Array.isArray(
+                candProf.document_diplomas_list
+              )
+                ? candProf.document_diplomas_list
+                : [],
               has_simetric_course: hasSimetricCourse,
+              simetric_course_number: candProf.simetric_course_number || null,
               security_courses: securityCourses,
               course_semaphore: semaphore,
               course_name: candCourse?.course_type
                 ? formatSecurityRoleLabel(candCourse.course_type)
-                : securityCourses[0]?.course_type ||
+                : securityCourses[0]?.courseName ||
+                  securityCourses[0]?.course_type ||
                   securityCourses[0]?.name ||
                   "Vigilancia Básica",
               course_date:
-                candCourse?.completion_date || candCourse?.expiration_date,
+                candCourse?.completion_date ||
+                candCourse?.expiration_date ||
+                securityCourses[0]?.completionDate ||
+                securityCourses[0]?.completion_date,
               days_remaining: Math.max(daysRem, 0),
               match_score: matchResult.score,
               match_breakdown: matchResult.breakdown,
               status: (a.status as ApplicationStatus) || "postulado",
               is_read: isReadResolved,
               applied_at: a.created_at,
+              screening_answers: a.screening_answers ?? null,
+              bio_summary: candProf.bio_summary || null,
               work_history:
                 formattedWorkHistory.length > 0
                   ? formattedWorkHistory
                   : undefined,
+              work_experiences: workExperiencesRaw,
               work_experiences_raw: workExperiencesRaw,
             };
           });
@@ -694,13 +754,22 @@ export default function ATSVacantePage() {
     }
   };
 
-  // Seleccionar candidato para ver su perfil -> marca is_read: true en segundo plano sin alertas intrusivas
+  // Seleccionar candidato para ver su perfil -> marca is_read: true en segundo plano y abre Visor 360°
   const handleSelectCandidate = (candidate: ATSCandidate) => {
     setSelectedCandidate({ ...candidate, is_read: true });
+    setCvModalCandidateId(candidate.id);
     if (!candidate.is_read) {
       void markCandidateAsReadSilently(candidate);
     }
   };
+
+  const cvModalCandidate = useMemo(
+    () =>
+      cvModalCandidateId
+        ? candidates.find((c) => c.id === cvModalCandidateId) || null
+        : null,
+    [candidates, cvModalCandidateId]
+  );
 
   // Abrir Hoja de Vida en PDF y marcar leído
   const handleOpenResumePdf = (candidate: ATSCandidate) => {
@@ -2100,11 +2169,11 @@ export default function ATSVacantePage() {
                       <button
                         type="button"
                         onClick={() =>
-                          setSelectedCandidateForDrawer(selectedCandidate)
+                          setCvModalCandidateId(selectedCandidate.id)
                         }
                         className="rounded-full bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 text-xs h-9 px-4 font-semibold inline-flex items-center justify-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
                       >
-                        <span>Ver Expediente Completo</span>
+                        <span>Abrir Visor 360° de Hoja de Vida</span>
                       </button>
                     </div>
                   </div>
@@ -2128,6 +2197,22 @@ export default function ATSVacantePage() {
           </div>
         </div>
       </div>
+
+      {/* VISOR 360° DE HOJA DE VIDA PARA EMPRESAS (FASE 3) */}
+      <CandidateCvModal
+        isOpen={!!cvModalCandidate}
+        onClose={() => setCvModalCandidateId(null)}
+        candidate={cvModalCandidate}
+        companyName={companyName}
+        vacancyTitle={vacancyTitle}
+        onStatusChange={handleStatusChange}
+        onOpenStudyModal={() => {
+          if (cvModalCandidate) {
+            setSelectedCandidateForStudy(cvModalCandidate);
+          }
+          setCvModalCandidateId(null);
+        }}
+      />
 
       {/* DRAWER MODAL FOR CANDIDATE RESUME */}
       <ResumeDrawerModal
