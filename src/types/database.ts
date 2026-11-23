@@ -158,23 +158,59 @@ export interface Company {
   created_at: string;
 }
 
+export interface RequiredLanguageItem {
+  language: string;
+  level: "Básico" | "Intermedio" | "Avanzado" | "Nativo" | string;
+}
+
+export interface ScreeningQuestionItem {
+  id: string;
+  question: string;
+  type: "cerrada" | "abierta";
+  ideal_answer?: "Sí" | "No";
+}
+
 export interface JobPost {
   id: string;
   company_id: string;
   title: string;
+  title_complement?: string | null;
   role_required: SecurityRoleType;
+  department?: string | null;
   city: string;
   zone_neighborhood: string | null;
+  postal_code_zone?: string | null;
   shift: string;
+  work_modality?: string | null;
+  contract_type?: string | null;
   salary_monthly: number;
+  vacancies_count?: number | null;
+  hire_date?: string | null;
   includes_surcharges: boolean;
   requires_active_course: boolean;
   requires_motorcycle: boolean;
   min_motorcycle_cc: number | null;
   requires_military_booklet: boolean;
   min_experience_years: number;
+  min_education_level?: string | null;
+  required_languages?: RequiredLanguageItem[] | null;
+  required_skills?: string[] | null;
+  requires_license?: boolean | null;
+  license_class_required?: string | null;
+  requires_travel_availability?: boolean | null;
+  requires_relocation?: boolean | null;
+  inclusive_disability?: boolean | null;
   is_strict_filter: boolean;
   is_urgent_relief: boolean;
+  is_featured?: boolean | null;
+  is_urgent?: boolean | null;
+  is_flash?: boolean | null;
+  hide_company_name?: boolean | null;
+  custom_company_alias?: string | null;
+  show_contact_email?: boolean | null;
+  show_contact_phone?: boolean | null;
+  show_contact_address?: boolean | null;
+  screening_questions?: ScreeningQuestionItem[] | null;
   description: string;
   interview_address: string | null;
   is_active: boolean;
