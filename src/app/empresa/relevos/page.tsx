@@ -582,7 +582,7 @@ export default function RadarRelevosPage() {
     <div className="space-y-6">
       {/* Toast Flotante de Confirmación */}
       {notificationToast && (
-        <div className="fixed bottom-6 right-6 z-50 max-w-md bg-[#0B3B70] text-white px-5 py-3.5 rounded-2xl shadow-xl border border-[#005DA4] flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
+        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-50 sm:max-w-md bg-[#0B3B70] text-white px-5 py-3.5 rounded-2xl shadow-xl border border-[#005DA4] flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
           <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
           <span className="text-xs font-semibold leading-snug">{notificationToast}</span>
         </div>
@@ -853,7 +853,7 @@ export default function RadarRelevosPage() {
               >
                 <div className="space-y-4">
                   {/* Cabecera: Foto Real o Iniciales + Nombre + Cargo + Semáforo Curso */}
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5">
                     <div className="flex items-center gap-3.5 min-w-0">
                       {guard.avatar_url ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
@@ -901,7 +901,7 @@ export default function RadarRelevosPage() {
                   </div>
 
                   {/* Atributos Operativos + Teléfono (con Candado B2B si aplica) */}
-                  <div className="grid grid-cols-3 gap-2 text-xs py-3 border-t border-b border-slate-100">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs py-3 border-t border-b border-slate-100">
                     <div>
                       <span className="text-[10px] text-slate-400 uppercase font-bold block">
                         Contacto Celular
@@ -1064,7 +1064,7 @@ export default function RadarRelevosPage() {
       {/* MODAL COMERCIAL B2B ESTILO COMPUTRABAJO (PAYWALL POR CRÉDITOS O PLAN) */}
       {isPaywallModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200/90 rounded-3xl w-full max-w-lg shadow-2xl p-7 space-y-6 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white border border-slate-200/90 rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl p-6 sm:p-7 space-y-6 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-[#EAF3FA] border border-[#D5E6F5] text-[#0B3B70] flex items-center justify-center shrink-0">

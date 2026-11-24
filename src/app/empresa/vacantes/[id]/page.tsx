@@ -233,6 +233,7 @@ export default function ATSVacantePage() {
   const [onlyVehicle, setOnlyVehicle] = useState(false);
   const [onlyLicense, setOnlyLicense] = useState(false);
   const [sortMode, setSortMode] = useState<SortModeKey>("match_desc");
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -1287,10 +1288,35 @@ export default function ATSVacantePage() {
 
       {/* 2. LAYOUT DE 2 ZONAS: SIDEBAR IZQUIERDO DE FILTROS + ZONA DERECHA DE POSTULADOS */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        {/* Botón colapsable de filtros visible solo en móvil/tablet (< lg) */}
+        <button
+          type="button"
+          onClick={() => setShowMobileFilters((prev) => !prev)}
+          aria-expanded={showMobileFilters}
+          className="lg:hidden w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-2xs flex items-center justify-between gap-2 text-xs font-bold text-[#0B3B70] hover:border-[#005DA4] transition-colors cursor-pointer"
+        >
+          <span className="inline-flex items-center gap-2">
+            <SlidersHorizontal className="w-4 h-4 text-[#005DA4]" />
+            <span>Filtros de candidatos</span>
+            {hasActiveFilters && (
+              <span className="text-[10px] font-bold bg-[#EAF3FA] text-[#005DA4] px-2 py-0.5 rounded-full">
+                {activeFilterChips.length}
+              </span>
+            )}
+          </span>
+          <span className="text-[11px] font-semibold text-[#005DA4]">
+            {showMobileFilters ? "Ocultar" : "Mostrar"}
+          </span>
+        </button>
+
         {/* =============================================================== */}
         {/* ZONA IZQUIERDA: SIDEBAR DE FILTROS DE CANDIDATOS (3 COLS)       */}
         {/* =============================================================== */}
-        <aside className="lg:col-span-3 bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs space-y-5 lg:sticky lg:top-20">
+        <aside
+          className={`${
+            showMobileFilters ? "block" : "hidden"
+          } lg:block lg:col-span-3 bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs space-y-5 lg:sticky lg:top-20`}
+        >
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="w-4 h-4 text-[#005DA4]" />
@@ -1751,6 +1777,19 @@ export default function ATSVacantePage() {
                             </span>
                           )}
                         </div>
+
+                        {/* Acceso rápido al Visor 360° en móvil/tablet (< xl) */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectCandidate(cand);
+                          }}
+                          className="xl:hidden mt-3 w-full h-9 rounded-full bg-[#EAF3FA] hover:bg-[#D5E6F5] text-[#0B3B70] border border-[#D5E6F5] text-xs font-bold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-[#005DA4] shrink-0" />
+                          <span>Ver Hoja de Vida 360°</span>
+                        </button>
                       </div>
                     );
                   })}

@@ -296,7 +296,7 @@ export default function EmpresaDashboardPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <Link
             href="/empresa/relevos"
             className="rounded-full bg-[#EAF3FA] hover:bg-[#D5E6F5] text-[#0B3B70] border border-[#D5E6F5] text-xs h-10 px-4 font-semibold inline-flex items-center gap-1.5 transition-colors shadow-2xs"
@@ -434,7 +434,7 @@ export default function EmpresaDashboardPage() {
 
       {/* 2. RECENT VACANCIES TABLE */}
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h3 className="text-sm font-bold tracking-tight text-slate-900">
               Vacantes Publicadas & Filtro de Postulados
@@ -445,7 +445,7 @@ export default function EmpresaDashboardPage() {
           </div>
           <Link
             href="/empresa/vacantes"
-            className="text-xs text-[#005DA4] hover:text-[#0B3B70] font-semibold flex items-center gap-1"
+            className="text-xs text-[#005DA4] hover:text-[#0B3B70] font-semibold flex items-center gap-1 shrink-0 self-start sm:self-auto"
           >
             Ver todas las vacantes
             <ChevronRight className="w-4 h-4" />
@@ -453,7 +453,7 @@ export default function EmpresaDashboardPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full min-w-[680px] text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-slate-200 text-slate-500 uppercase text-[10px] tracking-wider font-bold">
                 <th className="pb-3.5 font-bold">Puesto / Vacante</th>
@@ -526,7 +526,7 @@ export default function EmpresaDashboardPage() {
 
       {/* 3. RECENT SECURITY STUDY ORDERS WIDGET */}
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h3 className="text-sm font-bold tracking-tight text-slate-900">
               Evaluaciones Recientes de Confiabilidad & Poligrafía
@@ -537,7 +537,7 @@ export default function EmpresaDashboardPage() {
           </div>
           <Link
             href="/empresa/estudios"
-            className="text-xs text-[#005DA4] hover:text-[#0B3B70] font-semibold flex items-center gap-1"
+            className="text-xs text-[#005DA4] hover:text-[#0B3B70] font-semibold flex items-center gap-1 shrink-0 self-start sm:self-auto"
           >
             Ver historial completo
             <ChevronRight className="w-4 h-4" />
@@ -565,7 +565,7 @@ export default function EmpresaDashboardPage() {
                 className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
               >
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <strong className="text-slate-900 font-bold text-sm">
                       {study.candidate_name}
                     </strong>

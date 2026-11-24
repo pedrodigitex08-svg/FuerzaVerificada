@@ -865,7 +865,7 @@ export function CandidateCvModal({
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
                   Desglose de compatibilidad
                 </span>
-                <div className="grid grid-cols-5 gap-1 text-center text-[10px]">
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-1 text-center text-[10px]">
                   <div className="bg-slate-50 rounded-md p-1.5">
                     <span className="text-slate-500 block">Perfil</span>
                     <strong className="font-mono text-slate-900">

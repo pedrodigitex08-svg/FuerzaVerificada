@@ -499,6 +499,16 @@ export function Navbar() {
               {isAdmin && (
                 <>
                   <Link
+                    href="/admin/verificacion"
+                    className={`py-5 border-b-[3px] transition-all ${
+                      isActiveRoute("/admin/verificacion")
+                        ? "text-[#0B3B70] font-semibold border-[#0B3B70]"
+                        : "text-slate-700 hover:text-[#0B3B70] border-transparent hover:border-[#0B3B70]"
+                    }`}
+                  >
+                    Centro de Verificación
+                  </Link>
+                  <Link
                     href="/admin/estudios"
                     className={`py-5 border-b-[3px] transition-all ${
                       isActiveRoute("/admin/estudios")
@@ -536,7 +546,7 @@ export function Navbar() {
                         : "text-slate-700 hover:text-[#0B3B70] border-transparent hover:border-[#0B3B70]"
                     }`}
                   >
-                    Planes B2B
+                    Planes & Tarifas B2B
                   </Link>
                   <Link
                     href="/admin/configuracion"
@@ -591,7 +601,7 @@ export function Navbar() {
         </div>
 
         {/* LADO DERECHO: PÍLDORA DE USUARIO CON DROPDOWN O BOTONES PÍLDORA VISITANTE */}
-        <div className="hidden sm:flex items-center gap-3">
+        <div className="hidden lg:flex items-center gap-3">
           {isAuthenticated ? (
             /* USUARIO AUTENTICADO: PÍLDORA ESTILO COMPUTRABAJO CON DROPDOWN FLOTANTE */
             <div className="relative" ref={userDropdownRef}>
@@ -776,6 +786,14 @@ export function Navbar() {
                     {isAdmin && (
                       <>
                         <Link
+                          href="/admin/verificacion"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 hover:text-[#0B3B70] hover:bg-[#EAF3FA] rounded-xl transition-colors"
+                        >
+                          <CheckCircle className="w-4 h-4 text-[#0B3B70] shrink-0" strokeWidth={1.75} />
+                          <span>Centro de Verificación</span>
+                        </Link>
+                        <Link
                           href="/admin/estudios"
                           onClick={() => setUserMenuOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 hover:text-[#0B3B70] hover:bg-[#EAF3FA] rounded-xl transition-colors"
@@ -805,7 +823,7 @@ export function Navbar() {
                           className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 hover:text-[#0B3B70] hover:bg-[#EAF3FA] rounded-xl transition-colors"
                         >
                           <Shield className="w-4 h-4 text-[#0B3B70] shrink-0" strokeWidth={1.75} />
-                          <span>Planes y Facturación</span>
+                          <span>Planes & Tarifas B2B</span>
                         </Link>
                         <Link
                           href="/admin/configuracion"
@@ -1094,6 +1112,18 @@ export function Navbar() {
               {isAdmin && (
                 <>
                   <Link
+                    href="/admin/verificacion"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-between p-3 rounded-xl border border-slate-200/90 hover:border-[#0B3B70] hover:bg-[#EAF3FA] transition-all"
+                  >
+                    <div>
+                      <p className="text-xs font-bold text-slate-900">Centro de Verificación</p>
+                      <p className="text-[11px] text-slate-500">Auditoría de antecedentes y cédulas</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                  </Link>
+
+                  <Link
                     href="/admin/estudios"
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center justify-between p-3 rounded-xl border border-slate-200/90 hover:border-[#0B3B70] hover:bg-[#EAF3FA] transition-all"
@@ -1125,6 +1155,18 @@ export function Navbar() {
                     <div>
                       <p className="text-xs font-bold text-slate-900">Academias Aliadas</p>
                       <p className="text-[11px] text-slate-500">Convenios y códigos</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                  </Link>
+
+                  <Link
+                    href="/admin/planes"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-between p-3 rounded-xl border border-slate-200/90 hover:border-[#0B3B70] hover:bg-[#EAF3FA] transition-all"
+                  >
+                    <div>
+                      <p className="text-xs font-bold text-slate-900">Planes & Tarifas B2B</p>
+                      <p className="text-[11px] text-slate-500">Paquetes y precios corporativos</p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-slate-400" />
                   </Link>

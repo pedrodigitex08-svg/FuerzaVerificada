@@ -322,16 +322,16 @@ export default function HomePage() {
             Vacantes verificadas en cargos operativos, administrativos y gerenciales junto a las mejores empresas de seguridad y sus aliados.
           </p>
 
-          {/* BUSCADOR EN PÍLDORA BLANCA GIGANTE (ROUNDED-FULL) */}
+          {/* BUSCADOR EN PÍLDORA BLANCA GIGANTE (ROUNDED-2XL EN MÓVIL / ROUNDED-FULL EN DESKTOP) */}
           <div className="pt-2 max-w-4xl mx-auto w-full">
             <form
               onSubmit={handleSearchSubmit}
-              className="bg-white rounded-full p-2 sm:p-2.5 shadow-2xl flex flex-col md:flex-row items-center gap-2 border border-slate-100 text-slate-900 transition-all focus-within:ring-4 focus-within:ring-[#005DA4]/20"
+              className="bg-white rounded-2xl md:rounded-full p-3 md:p-2 shadow-2xl flex flex-col md:flex-row items-center gap-2 md:gap-0 border border-slate-100 text-slate-900 transition-all focus-within:ring-4 focus-within:ring-[#005DA4]/20"
             >
               {/* Campo 1: Cargo o Categoría */}
-              <div className="flex-1 w-full px-4 py-2 flex items-center gap-3 text-left">
+              <div className="flex-1 w-full flex items-center gap-3 px-2 py-1 text-left border-b border-slate-200/80 pb-2.5 md:border-b-0 md:pb-1 md:border-r md:pr-4 md:pl-3">
                 <Briefcase className="w-5 h-5 text-slate-400 shrink-0" strokeWidth={2} />
-                <div className="w-full">
+                <div className="w-full min-w-0">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block leading-tight">
                     Cargo o Categoría
                   </label>
@@ -345,12 +345,10 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Divisor vertical */}
-              <div className="hidden md:block h-8 w-px bg-slate-200" />
-
               {/* Campo 2: Lugar o Ciudad */}
-              <div className="flex-1 w-full px-4 py-2 flex items-center gap-3 text-left relative">
-                <div className="w-full">
+              <div className="flex-1 w-full flex items-center gap-3 px-2 py-1 text-left relative md:pl-4 md:pr-2">
+                <MapPin className="w-5 h-5 text-slate-400 shrink-0" strokeWidth={2} />
+                <div className="w-full min-w-0">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block leading-tight mb-0.5">
                     Lugar o Ciudad
                   </label>
@@ -358,6 +356,7 @@ export default function HomePage() {
                     value={locationSearch}
                     onChange={setLocationSearch}
                     placeholder="Lugar o ciudad (Bogotá, Barranquilla...)"
+                    className="[&>div>svg:first-child]:hidden"
                   />
                 </div>
               </div>
@@ -365,9 +364,9 @@ export default function HomePage() {
               {/* Botón Píldora Azul Marino (#0B3B70) */}
               <button
                 type="submit"
-                className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white font-semibold px-8 py-3.5 text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shrink-0 w-full md:w-auto active:scale-[0.98] transition-all cursor-pointer"
+                className="w-full md:w-auto rounded-xl md:rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white font-semibold py-3 md:py-3.5 px-6 text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shrink-0 active:scale-[0.98] transition-all cursor-pointer"
               >
-                <Search className="w-4 h-4" strokeWidth={2.5} />
+                <Search className="w-4 h-4 shrink-0" strokeWidth={2.5} />
                 <span>Buscar empleos</span>
               </button>
             </form>
@@ -480,7 +479,7 @@ export default function HomePage() {
       {/* VACANTES DESTACADAS RECIENTES (CONSULTA REAL DE SUPABASE) */}
       {featuredJobs.length > 0 && (
         <section className="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-          <div className="flex items-center justify-between pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4">
             <div>
               <h2 className="text-lg sm:text-xl font-bold tracking-tight text-[#0B3B70]">
                 Ofertas de Empleo Destacadas
@@ -492,7 +491,7 @@ export default function HomePage() {
 
             <Link
               href="/vacantes"
-              className="rounded-full border border-slate-300 hover:border-[#0B3B70] text-xs font-bold text-[#0B3B70] px-4 py-2 transition-all bg-white shadow-2xs inline-flex items-center gap-1.5"
+              className="rounded-full border border-slate-300 hover:border-[#0B3B70] text-xs font-bold text-[#0B3B70] px-4 py-2 transition-all bg-white shadow-2xs inline-flex items-center gap-1.5 self-start sm:self-auto shrink-0"
             >
               <span>Ver todas las ofertas</span>
               <ChevronRight className="w-3.5 h-3.5" />
