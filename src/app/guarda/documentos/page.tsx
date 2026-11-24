@@ -406,6 +406,15 @@ export default function DocumentosPage() {
   const [willingToTravel, setWillingToTravel] = useState(false);
   const [willingToRelocate, setWillingToRelocate] = useState(false);
 
+  // Estado de verificación de antecedentes (Fase B)
+  const [isVerified, setIsVerified] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState<string | null>(
+    null
+  );
+  const [verificationNotes, setVerificationNotes] = useState<string | null>(
+    null
+  );
+
   // Especialidad Principal en Seguridad Privada (Hasta 5 opciones)
   const [selectedRoles, setSelectedRoles] = useState<string[]>([
     "Guarda de seguridad",
@@ -557,6 +566,11 @@ export default function DocumentosPage() {
           if (cp.willing_to_relocate !== undefined || cp.available_to_relocate !== undefined) {
             setWillingToRelocate(Boolean(cp.willing_to_relocate ?? cp.available_to_relocate));
           }
+
+          // Estado de verificación de antecedentes (Fase B)
+          setIsVerified(cp.is_verified === true);
+          setVerificationStatus(cp.verification_status ?? null);
+          setVerificationNotes(cp.verification_notes ?? null);
 
           // Cargar selected_roles o inicializar desde primary_role
           if (Array.isArray(cp.selected_roles) && cp.selected_roles.length > 0) {
@@ -1183,6 +1197,14 @@ export default function DocumentosPage() {
         document_libreta_url: finalLibretaUrl,
         available_immediately: true,
         updated_at: new Date().toISOString(),
+        // Reingreso automático a bandeja de Pendientes si fue rechazado o no tenía estado (NUNCA revocar si ya está aprobado)
+        ...(!(isVerified && verificationStatus === "aprobado") &&
+        (verificationStatus === "rechazado" || !verificationStatus)
+          ? {
+              verification_status: "pendiente",
+              is_verified: false,
+            }
+          : {}),
       };
 
       // Intentar primero incluyendo también has_motorcycle: true si eligió Motocicleta
@@ -1291,7 +1313,7 @@ export default function DocumentosPage() {
       {/* Cabecera Principal */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">
               Configuración de Hoja de Vida, Cursos y Soportes
             </h1>
@@ -1299,10 +1321,35 @@ export default function DocumentosPage() {
               <Sparkles className="w-3 h-3 text-[#005DA4]" />
               Paso a Paso
             </span>
+            {isVerified && verificationStatus === "aprobado" ? (
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                ✓ Perfil Verificado
+              </span>
+            ) : verificationStatus === "rechazado" ? (
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
+                ✕ Requiere Corrección
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+                ⏳ En Verificación de Antecedentes
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-500 mt-1 font-normal">
             Actualiza tus especialidades (hasta 5 perfiles), formación académica, múltiples cursos de seguridad, certificación SIMETRIC y bóveda documental.
           </p>
+          {verificationStatus === "rechazado" && verificationNotes && (
+            <div className="mt-2.5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+              <div>
+                <strong className="text-rose-900">Novedad de verificación: </strong>
+                <span>{verificationNotes}</span>
+                <span className="block text-[11px] text-rose-700 mt-0.5">
+                  Al guardar tus correcciones, tu perfil volverá automáticamente a revisión de antecedentes.
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Pestañas interactivas de los 3 Pasos */}

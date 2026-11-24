@@ -199,11 +199,13 @@ export default function RadarRelevosPage() {
           }
         }
 
-        // 1. Consulta resiliente sobre public.candidate_profiles (con respaldo plano anti-join)
+        // 1. Consulta resiliente sobre public.candidate_profiles filtrando estrictamente personal verificado y aprobado (Fase B)
         let rawCandidates: any[] = [];
         const { data, error } = await supabase
           .from("candidate_profiles")
           .select("*, profiles(*)")
+          .eq("is_verified", true)
+          .eq("verification_status", "aprobado")
           .order("updated_at", { ascending: false });
 
         if (!error && Array.isArray(data) && data.length > 0) {
@@ -212,11 +214,19 @@ export default function RadarRelevosPage() {
           const { data: directCandidates } = await supabase
             .from("candidate_profiles")
             .select("*")
+            .eq("is_verified", true)
+            .eq("verification_status", "aprobado")
             .order("updated_at", { ascending: false });
           if (Array.isArray(directCandidates)) {
             rawCandidates = directCandidates;
           }
         }
+
+        // Doble garantía en cliente: solo personal aprobado oficialmente
+        rawCandidates = rawCandidates.filter(
+          (c: any) =>
+            c?.is_verified === true && c?.verification_status === "aprobado"
+        );
 
         if (rawCandidates.length > 0) {
           const userIds = rawCandidates

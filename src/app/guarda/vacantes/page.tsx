@@ -324,6 +324,33 @@ function VacantesContent() {
   const [screeningError, setScreeningError] = useState<string | null>(null);
   const [isSubmittingApplication, setIsSubmittingApplication] = useState(false);
 
+  // Estado de Verificación de Antecedentes del Candidato (Fase B)
+  const [verificationLoaded, setVerificationLoaded] = useState(false);
+  const [candidateVerification, setCandidateVerification] = useState<{
+    is_verified: boolean;
+    verification_status: string | null;
+    verification_notes: string | null;
+  }>({
+    is_verified: false,
+    verification_status: null,
+    verification_notes: null,
+  });
+  const [verificationLockNotice, setVerificationLockNotice] = useState<
+    string | null
+  >(null);
+
+  const isCandidateApproved =
+    candidateVerification.is_verified === true &&
+    candidateVerification.verification_status === "aprobado";
+  const isCandidateRejected =
+    candidateVerification.verification_status === "rechazado";
+  const isApplyLockedByVerification =
+    isAuthenticated &&
+    role !== "company" &&
+    role !== "admin" &&
+    verificationLoaded &&
+    !isCandidateApproved;
+
   useEffect(() => {
     async function loadCandidateState() {
       try {
@@ -338,6 +365,14 @@ function VacantesContent() {
           .select("*")
           .eq("user_id", user.id)
           .maybeSingle();
+
+        const cpAny = candProf as any;
+        setCandidateVerification({
+          is_verified: cpAny?.is_verified === true,
+          verification_status: cpAny?.verification_status ?? null,
+          verification_notes: cpAny?.verification_notes ?? null,
+        });
+        setVerificationLoaded(true);
 
         // 2. Load candidate_courses
         const { data: course } = await supabase
@@ -622,6 +657,20 @@ function VacantesContent() {
       alert(
         "Tu cuenta actual es de Empresa de Seguridad. Las postulaciones a vacantes son exclusivas para el Personal Operativo."
       );
+      return;
+    }
+
+    // Candado de verificación de antecedentes (Fase B)
+    if (role !== "admin" && !isCandidateApproved) {
+      const msg = isCandidateRejected
+        ? `Tu perfil requiere corrección antes de postularte${
+            candidateVerification.verification_notes
+              ? `: "${candidateVerification.verification_notes}"`
+              : "."
+          } Actualiza tus soportes en Mi Hoja de Vida y Soportes.`
+        : "Tu perfil aún está en verificación de antecedentes por el equipo de FuerzaVerificada. Una vez aprobado, podrás postularte a todas las vacantes.";
+      setVerificationLockNotice(msg);
+      setTimeout(() => setVerificationLockNotice(null), 6500);
       return;
     }
 
@@ -1340,6 +1389,74 @@ function VacantesContent() {
         </div>
       </div>
 
+      {/* BANNER SUPERIOR DE ESTADO DE VERIFICACIÓN DE ANTECEDENTES (FASE B) */}
+      {isApplyLockedByVerification && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+          {isCandidateRejected ? (
+            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                <div className="space-y-0.5 text-xs">
+                  <strong className="text-sm font-bold text-rose-950 block">
+                    Validación con novedad / corrección requerida
+                  </strong>
+                  <p className="text-rose-800 leading-relaxed">
+                    {candidateVerification.verification_notes ||
+                      "Nuestro equipo encontró una novedad en tu cédula o soportes documentales. Por favor actualiza tu documentación para habilitar las postulaciones."}
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/guarda/documentos"
+                className="rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-5 py-2.5 inline-flex items-center justify-center gap-1.5 shadow-xs transition-colors shrink-0"
+              >
+                <span>Corregir mi Hoja de Vida y Soportes</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          ) : (
+            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="space-y-0.5 text-xs">
+                  <strong className="text-sm font-bold text-amber-950 block">
+                    Perfil en verificación de antecedentes
+                  </strong>
+                  <p className="text-amber-900 leading-relaxed">
+                    El equipo de FuerzaVerificada está validando tu cédula y soportes. Una vez aprobado, podrás postularte a todas las vacantes.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/guarda/documentos"
+                className="rounded-full bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-5 py-2.5 inline-flex items-center justify-center gap-1.5 shadow-xs transition-colors shrink-0"
+              >
+                <span>Verificar mis soportes</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* AVISO AL INTENTAR POSTULARSE SIN VERIFICACIÓN */}
+      {verificationLockNotice && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-3">
+          <div className="p-3.5 rounded-2xl bg-slate-900 text-white text-xs font-semibold flex items-center justify-between gap-3 shadow-md border border-slate-700">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-[#FFE066] shrink-0" />
+              <span>{verificationLockNotice}</span>
+            </div>
+            <Link
+              href="/guarda/documentos"
+              className="text-[#FFE066] hover:underline font-bold shrink-0"
+            >
+              Ir a Soportes →
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* FEEDBACK TOAST */}
       {successToast && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
@@ -1600,14 +1717,25 @@ function VacantesContent() {
                   <button
                     type="button"
                     disabled={isSelectedApplied}
+                    aria-disabled={isSelectedApplied || isApplyLockedByVerification}
                     onClick={() => handleApply(selectedJob)}
                     className={`font-semibold rounded-full px-9 py-2.5 text-sm transition-all shadow-xs ${
                       isSelectedApplied
                         ? "bg-[#EAF3FA] text-[#0B3B70] border border-[#D5E6F5] cursor-default font-bold"
-                        : "bg-[#0B3B70] hover:bg-[#082B54] text-white"
+                        : isApplyLockedByVerification
+                        ? isCandidateRejected
+                          ? "bg-rose-100 text-rose-700 border border-rose-200 cursor-not-allowed font-bold"
+                          : "bg-amber-100 text-amber-800 border border-amber-200 cursor-not-allowed font-bold"
+                        : "bg-[#0B3B70] hover:bg-[#082B54] text-white cursor-pointer"
                     }`}
                   >
-                    {isSelectedApplied ? "Ya estás postulado" : "Aplicar"}
+                    {isSelectedApplied
+                      ? "Ya estás postulado"
+                      : isApplyLockedByVerification
+                      ? isCandidateRejected
+                        ? "🔒 Requiere Corrección"
+                        : "🔒 En Verificación"
+                      : "Aplicar"}
                   </button>
 
                   {/* 4 Botones Circulares Azul Hielo (#EAF3FA) */}
@@ -1858,14 +1986,25 @@ function VacantesContent() {
                   <button
                     type="button"
                     disabled={isSelectedApplied}
+                    aria-disabled={isSelectedApplied || isApplyLockedByVerification}
                     onClick={() => handleApply(selectedJob)}
                     className={`w-full rounded-full py-3 text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-md ${
                       isSelectedApplied
                         ? "bg-[#EAF3FA] text-[#0B3B70] border border-[#D5E6F5] cursor-default"
-                        : "bg-[#0B3B70] hover:bg-[#082B54] text-white"
+                        : isApplyLockedByVerification
+                        ? isCandidateRejected
+                          ? "bg-rose-100 text-rose-700 border border-rose-200 cursor-not-allowed"
+                          : "bg-amber-100 text-amber-800 border border-amber-200 cursor-not-allowed"
+                        : "bg-[#0B3B70] hover:bg-[#082B54] text-white cursor-pointer"
                     }`}
                   >
-                    {isSelectedApplied ? "Ya estás postulado a esta vacante" : "Aplicar ahora a esta oferta"}
+                    {isSelectedApplied
+                      ? "Ya estás postulado a esta vacante"
+                      : isApplyLockedByVerification
+                      ? isCandidateRejected
+                        ? "🔒 Requiere Corrección"
+                        : "🔒 En Verificación"
+                      : "Aplicar ahora a esta oferta"}
                   </button>
                 </div>
               </div>
@@ -2015,19 +2154,33 @@ function VacantesContent() {
             <button
               type="button"
               disabled={isSelectedApplied}
+              aria-disabled={isSelectedApplied || isApplyLockedByVerification}
               onClick={() => {
                 handleApply(selectedJob);
-                if (getJobScreeningQuestions(selectedJob).length === 0) {
+                if (
+                  !isApplyLockedByVerification &&
+                  getJobScreeningQuestions(selectedJob).length === 0
+                ) {
                   setMobileDetailOpen(false);
                 }
               }}
               className={`rounded-full px-6 py-2.5 text-xs font-bold transition-all shadow-md ${
                 isSelectedApplied
                   ? "bg-[#EAF3FA] text-[#0B3B70] border border-[#D5E6F5]"
+                  : isApplyLockedByVerification
+                  ? isCandidateRejected
+                    ? "bg-rose-100 text-rose-700 border border-rose-200 cursor-not-allowed"
+                    : "bg-amber-100 text-amber-800 border border-amber-200 cursor-not-allowed"
                   : "bg-[#0B3B70] text-white hover:bg-[#082B54]"
               }`}
             >
-              {isSelectedApplied ? "Ya postulado" : "Aplicar"}
+              {isSelectedApplied
+                ? "Ya postulado"
+                : isApplyLockedByVerification
+                ? isCandidateRejected
+                  ? "🔒 Requiere Corrección"
+                  : "🔒 En Verificación"
+                : "Aplicar"}
             </button>
           </div>
         </div>

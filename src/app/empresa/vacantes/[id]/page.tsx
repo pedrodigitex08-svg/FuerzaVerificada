@@ -495,10 +495,10 @@ export default function ATSVacantePage() {
               phone_whatsapp:
                 userProf.phone_whatsapp || candProf.phone || "3000000000",
               avatar_url: candProf.avatar_url || userProf.avatar_url || null,
-              is_verified:
-                typeof candProf.is_verified === "boolean"
-                  ? candProf.is_verified
-                  : true,
+              is_verified: Boolean(
+                candProf?.is_verified === true &&
+                  candProf?.verification_status === "aprobado"
+              ),
               department: candDepartment,
               city: candCity,
               locality: candProf.locality_neighborhood || candProf.locality,

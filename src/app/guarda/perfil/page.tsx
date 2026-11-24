@@ -230,6 +230,15 @@ export default function PerfilGuardaPage() {
   const [successToast, setSuccessToast] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Estado de verificación de antecedentes (Fase B)
+  const [isVerified, setIsVerified] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState<string | null>(
+    null
+  );
+  const [verificationNotes, setVerificationNotes] = useState<string | null>(
+    null
+  );
+
   // Estado de edición por sección ("none" | "header" | "role" | "course" | "experience" | "competencies" | "mobility")
   const [editingSection, setEditingSection] = useState<string | null>(null);
 
@@ -308,6 +317,11 @@ export default function PerfilGuardaPage() {
               setNationalId(cp.national_id);
             }
             if (cp.city) setCity(cp.city);
+
+            // Estado de verificación de antecedentes (Fase B)
+            setIsVerified(cp.is_verified === true);
+            setVerificationStatus(cp.verification_status ?? null);
+            setVerificationNotes(cp.verification_notes ?? null);
             if (cp.locality_neighborhood) setLocality(cp.locality_neighborhood);
 
             // Especialidades seleccionadas (selected_roles hasta 5 + primary_role)
@@ -1340,6 +1354,43 @@ export default function PerfilGuardaPage() {
         >
           Academias Aliadas
         </Link>
+      </div>
+
+      {/* INSIGNIA DE ESTADO DE VERIFICACIÓN DE ANTECEDENTES (FASE B) */}
+      <div className="max-w-6xl mx-auto">
+        {isVerified && verificationStatus === "aprobado" ? (
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold shadow-2xs">
+            <span>✓ Perfil Verificado</span>
+            <span className="text-[11px] font-normal text-emerald-700">
+              • Habilitado para postularte a todas las vacantes
+            </span>
+          </div>
+        ) : verificationStatus === "rechazado" ? (
+          <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+            <div className="flex items-start gap-2.5 text-xs">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300 font-bold shrink-0">
+                ✕ Requiere Corrección
+              </span>
+              <span className="text-rose-800 leading-relaxed">
+                {verificationNotes ||
+                  "Nuestro equipo solicitó ajustar tus soportes documentales para completar la verificación."}
+              </span>
+            </div>
+            <Link
+              href="/guarda/documentos"
+              className="rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-1.5 shrink-0 text-center transition-colors"
+            >
+              Corregir soportes
+            </Link>
+          </div>
+        ) : (
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold shadow-2xs">
+            <span>⏳ En Verificación de Antecedentes</span>
+            <span className="text-[11px] font-normal text-amber-700">
+              • Nuestro equipo está validando tu cédula y soportes
+            </span>
+          </div>
+        )}
       </div>
 
       {/* 2. LAYOUT DE 2 COLUMNAS (lg:grid-cols-12 gap-6) */}
