@@ -308,23 +308,6 @@ export default function HomePage() {
 
         {/* Contenido principal del Hero */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-6 w-full">
-          {/* Badge superior pill */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#072140]/70 backdrop-blur-md border border-white/20 text-xs font-semibold text-white tracking-wide shadow-xs">
-              <Shield className="w-4 h-4 text-emerald-400" strokeWidth={2} />
-              <span>Portal Oficial de Empleo en Seguridad Privada • Colombia</span>
-            </div>
-
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-medium text-white shadow-xs">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FFE066] opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#FFE066]" />
-              </span>
-              <span className="text-slate-300 text-[11px]">Especialidad:</span>
-              <span className="text-[#FFE066] font-bold text-xs">{HERO_SCENES[activeSceneIndex].tag}</span>
-            </div>
-          </div>
-
           {/* Gran Título Hero Institucional de Autoridad */}
           <h1 className="text-3xl sm:text-5xl lg:text-[3.25rem] font-extrabold tracking-tight leading-[1.12] text-balance text-white max-w-4xl mx-auto drop-shadow-[0_2px_12px_rgba(0,0,0,0.55)]">
             El Portal de Empleos y Confiabilidad para la{" "}
