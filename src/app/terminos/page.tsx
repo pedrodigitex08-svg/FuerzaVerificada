@@ -107,7 +107,7 @@ export default function TerminosPage() {
             </h2>
             <div className="p-4 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-950 space-y-2">
               <p>
-                <strong>No Intermediación Laboral Directa ni Contrato de Trabajo:</strong> FuerzaVerificada <strong>no es empleador ni patrono</strong> del personal operativo que se registra en el sistema, ni se constituye como empresa de servicios temporales.
+                <strong>No Intermediación Laboral Directa ni Contrato de Trabajo:</strong> FuerzaVerificada <strong>no es empleador ni patrono</strong> del personal que se registra en el sistema, ni se constituye como empresa de servicios temporales.
               </p>
               <p>
                 La relación de trabajo, la decisión definitiva de vinculación o no vinculación, el pago de acreencias laborales, salarios, seguridad social y prestaciones corresponden exclusivamente a la empresa de seguridad contratante. FuerzaVerificada no garantiza la contratación de ningún candidato ni responde por el desempeño individual del personal en su puesto de servicio.
