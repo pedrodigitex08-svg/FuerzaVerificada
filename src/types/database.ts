@@ -117,6 +117,11 @@ export interface CandidateProfile {
   bio_summary: string | null;
   work_experience_json: Json | null;
   resume_pdf_url: string | null;
+  is_verified?: boolean;
+  verification_status?: "pendiente" | "aprobado" | "rechazado" | string;
+  verification_notes?: string | null;
+  verified_at?: string | null;
+  verified_by?: string | null;
   updated_at: string;
 }
 

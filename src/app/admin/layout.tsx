@@ -36,6 +36,7 @@ export default function AdminLayout({
   const router = useRouter();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [pendingVerificationsCount, setPendingVerificationsCount] = useState(0);
   const [activeStudiesCount, setActiveStudiesCount] = useState(0);
   const [companiesCount, setCompaniesCount] = useState(0);
   const [verifiedCompaniesCount, setVerifiedCompaniesCount] = useState(0);
@@ -186,6 +187,36 @@ export default function AdminLayout({
           setCandidatesCount(candsCount);
         }
 
+        // Conteo en vivo de candidatos pendientes por verificar
+        const { count: pendingCount, error: pendingErr } = await supabase
+          .from("candidate_profiles")
+          .select("*", { count: "exact", head: true })
+          .or(
+            "verification_status.eq.pendiente,and(is_verified.eq.false,verification_status.is.null),and(is_verified.is.null,verification_status.is.null)"
+          );
+        if (!pendingErr && pendingCount !== null && pendingCount !== undefined) {
+          setPendingVerificationsCount(pendingCount);
+        } else {
+          // Respaldo seguro si alguna combinación de filtro falla
+          const { data: fallbackRows } = await supabase
+            .from("candidate_profiles")
+            .select("is_verified, verification_status");
+          if (Array.isArray(fallbackRows)) {
+            const countVal = fallbackRows.filter((row: any) => {
+              if (row.verification_status === "pendiente") return true;
+              if (
+                (row.verification_status === null ||
+                  row.verification_status === undefined) &&
+                row.is_verified !== true
+              ) {
+                return true;
+              }
+              return false;
+            }).length;
+            setPendingVerificationsCount(countVal);
+          }
+        }
+
         const { count: acadsCount } = await supabase
           .from("partner_academies")
           .select("*", { count: "exact", head: true });
@@ -196,14 +227,22 @@ export default function AdminLayout({
     }
 
     loadAdminCounts();
+    window.addEventListener("fv_verificacion_updated", loadAdminCounts);
 
     return () => {
       isMounted = false;
       window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("fv_verificacion_updated", loadAdminCounts);
     };
   }, [pathname, router]);
 
   const navigation = [
+    {
+      name: "Centro de Verificación",
+      href: "/admin/verificacion",
+      icon: BadgeCheck,
+      badge: pendingVerificationsCount.toString(),
+    },
     {
       name: "Bandeja de Estudios & Poligrafía",
       href: "/admin/estudios",
