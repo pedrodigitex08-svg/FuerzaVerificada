@@ -318,8 +318,8 @@ export default function HomePage() {
           </h1>
 
           {/* Subtítulo 100% Real (Cero cifras infladas) */}
-          <p className="text-sm sm:text-base md:text-lg text-slate-100 max-w-3xl mx-auto font-normal leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.55)]">
-            Conecta directamente con empresas de vigilancia autorizadas para cargos de Guarda, Escolta, Supervisor y Operador CCTV.
+          <p className="text-sm sm:text-base md:text-lg text-slate-100/90 max-w-2xl mx-auto font-normal leading-relaxed text-balance drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">
+            Vacantes verificadas en cargos operativos, administrativos y gerenciales junto a las mejores empresas de seguridad y sus aliados.
           </p>
 
           {/* BUSCADOR EN PÍLDORA BLANCA GIGANTE (ROUNDED-FULL) */}
