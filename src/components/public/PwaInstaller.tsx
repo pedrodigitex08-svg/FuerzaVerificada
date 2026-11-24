@@ -93,7 +93,7 @@ export function PwaInstaller() {
   if (!isVisible || !deferredPrompt) return null;
 
   return (
-    <div className="fixed bottom-5 left-5 z-40 flex items-center bg-[#0B3B70] hover:bg-[#082B54] text-white rounded-full pl-4 pr-2.5 py-2 shadow-lg border border-white/15 text-xs font-semibold gap-2 transition-all">
+    <div className="fixed bottom-20 md:bottom-5 left-4 md:left-5 z-40 flex items-center bg-[#0B3B70] hover:bg-[#082B54] text-white rounded-full pl-4 pr-2.5 py-2 shadow-lg border border-white/15 text-xs font-semibold gap-2 transition-all">
       <button
         type="button"
         onClick={handleInstallClick}

@@ -2084,22 +2084,22 @@ export default function DocumentosPage() {
               </div>
             </div>
 
-            <div className="flex gap-3 pt-3">
+            <div className="flex flex-col-reverse sm:flex-row gap-2.5 pt-3">
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="rounded-full bg-[#EAF3FA] hover:bg-[#D5E6F5] text-[#0B3B70] border border-[#D5E6F5] text-xs h-11 px-6 font-semibold w-1/3 flex items-center justify-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
+                className="rounded-full bg-[#EAF3FA] hover:bg-[#D5E6F5] text-[#0B3B70] border border-[#D5E6F5] text-xs min-h-11 h-auto py-2.5 px-4 text-center font-semibold w-full sm:w-1/3 flex items-center justify-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
               >
-                <ArrowLeft className="w-4 h-4" strokeWidth={2} />
+                <ArrowLeft className="w-4 h-4 shrink-0" strokeWidth={2} />
                 <span>Atrás</span>
               </button>
               <button
                 type="button"
                 onClick={() => setStep(3)}
-                className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs font-semibold h-11 px-6 w-2/3 flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
+                className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs font-semibold min-h-11 h-auto py-2.5 px-4 text-center w-full sm:w-2/3 flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
               >
                 <span>Continuar al Paso 3: Soportes & Experiencia</span>
-                <ArrowRight className="w-4 h-4" strokeWidth={2} />
+                <ArrowRight className="w-4 h-4 shrink-0" strokeWidth={2} />
               </button>
             </div>
           </div>
@@ -2386,8 +2386,8 @@ export default function DocumentosPage() {
                   </div>
                 </div>
 
-                <label className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs font-bold h-10 px-5 inline-flex items-center gap-2 transition-colors shadow-xs cursor-pointer shrink-0">
-                  <Plus className="w-4 h-4 text-[#FFE066]" strokeWidth={2.5} />
+                <label className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs font-bold w-full sm:w-auto min-h-10 h-auto py-2 px-4 inline-flex items-center justify-center text-center gap-2 transition-colors shadow-xs cursor-pointer">
+                  <Plus className="w-4 h-4 text-[#FFE066] shrink-0" strokeWidth={2.5} />
                   <span>
                     {uploadingDiploma
                       ? "Cargando archivo..."
@@ -2585,29 +2585,29 @@ export default function DocumentosPage() {
               </div>
             )}
 
-            <div className="flex gap-3 pt-3">
+            <div className="flex flex-col-reverse sm:flex-row gap-2.5 pt-3">
               <button
                 type="button"
                 onClick={() => setStep(2)}
-                className="rounded-full bg-[#EAF3FA] hover:bg-[#D5E6F5] text-[#0B3B70] border border-[#D5E6F5] text-xs h-11 px-6 font-semibold w-1/3 flex items-center justify-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
+                className="rounded-full bg-[#EAF3FA] hover:bg-[#D5E6F5] text-[#0B3B70] border border-[#D5E6F5] text-xs min-h-11 h-auto py-2.5 px-4 text-center font-semibold w-full sm:w-1/3 flex items-center justify-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
               >
-                <ArrowLeft className="w-4 h-4" strokeWidth={2} />
+                <ArrowLeft className="w-4 h-4 shrink-0" strokeWidth={2} />
                 <span>Atrás</span>
               </button>
               <button
                 type="button"
                 disabled={loading}
                 onClick={handleSaveAll}
-                className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs font-semibold h-11 px-6 w-2/3 flex items-center justify-center gap-2 shadow-xs transition-colors disabled:opacity-60 cursor-pointer"
+                className="rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs font-semibold min-h-11 h-auto py-2.5 px-4 text-center w-full sm:w-2/3 flex items-center justify-center gap-2 shadow-xs transition-colors disabled:opacity-60 cursor-pointer"
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
-                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
                     Guardando expediente y soportes...
                   </span>
                 ) : (
                   <>
-                    <Check className="w-4 h-4 text-emerald-400" strokeWidth={2.5} />
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" strokeWidth={2.5} />
                     <span>Guardar Hoja de Vida y Soportes</span>
                   </>
                 )}

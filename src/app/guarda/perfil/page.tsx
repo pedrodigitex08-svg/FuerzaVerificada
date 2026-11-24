@@ -1359,7 +1359,7 @@ export default function PerfilGuardaPage() {
       {/* INSIGNIA DE ESTADO DE VERIFICACIÓN DE ANTECEDENTES (FASE B) */}
       <div className="max-w-6xl mx-auto">
         {isVerified && verificationStatus === "aprobado" ? (
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold shadow-2xs">
+          <div className="flex flex-wrap items-center gap-2 px-3.5 py-1.5 rounded-2xl sm:rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold shadow-2xs">
             <span>✓ Perfil Verificado</span>
             <span className="text-[11px] font-normal text-emerald-700">
               • Habilitado para postularte a todas las vacantes
@@ -1384,7 +1384,7 @@ export default function PerfilGuardaPage() {
             </Link>
           </div>
         ) : (
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold shadow-2xs">
+          <div className="flex flex-wrap items-center gap-2 px-3.5 py-1.5 rounded-2xl sm:rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold shadow-2xs">
             <span>⏳ En Verificación de Antecedentes</span>
             <span className="text-[11px] font-normal text-amber-700">
               • Nuestro equipo está validando tu cédula y soportes
@@ -2203,7 +2203,7 @@ export default function PerfilGuardaPage() {
           {/* SECCIÓN EXPERIENCIAS LABORALES MÚLTIPLES (work_experiences)           */}
           {/* --------------------------------------------------------------------- */}
           <div className="space-y-4 pb-6 border-b border-slate-100">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <h3 className="text-base font-bold text-slate-900 tracking-tight">
                   Experiencia Laboral
@@ -2219,7 +2219,7 @@ export default function PerfilGuardaPage() {
                     editingSection === "experience" ? null : "experience"
                   )
                 }
-                className="rounded-full border border-[#0B3B70] text-[#0B3B70] hover:bg-[#EAF3FA] px-4 py-1.5 text-xs font-semibold transition-colors cursor-pointer"
+                className="rounded-full border border-[#0B3B70] text-[#0B3B70] hover:bg-[#EAF3FA] px-4 py-1.5 text-xs font-semibold transition-colors cursor-pointer self-start sm:self-auto shrink-0"
               >
                 {editingSection === "experience"
                   ? "Cerrar"
@@ -2388,7 +2388,7 @@ export default function PerfilGuardaPage() {
           {/* SECCIÓN D: COMPETENCIAS OPERATIVAS Y DOTACIÓN EN PÍLDORAS             */}
           {/* --------------------------------------------------------------------- */}
           <div className="space-y-4 pb-6 border-b border-slate-100">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <h3 className="text-base font-bold text-slate-900 tracking-tight">
                 Conocimientos, competencias y dotación
               </h3>
@@ -2399,7 +2399,7 @@ export default function PerfilGuardaPage() {
                     editingSection === "competencies" ? null : "competencies"
                   )
                 }
-                className="rounded-full border border-[#0B3B70] text-[#0B3B70] hover:bg-[#EAF3FA] px-4 py-1.5 text-xs font-semibold transition-colors cursor-pointer"
+                className="rounded-full border border-[#0B3B70] text-[#0B3B70] hover:bg-[#EAF3FA] px-4 py-1.5 text-xs font-semibold transition-colors cursor-pointer self-start sm:self-auto shrink-0"
               >
                 {editingSection === "competencies"
                   ? "Cerrar"
@@ -3215,10 +3215,10 @@ export default function PerfilGuardaPage() {
       {/* ========================================================================= */}
       {/* 3. MEDIDOR CIRCULAR FLOTANTE DEL PORCENTAJE REAL (0% A 100%)              */}
       {/* ========================================================================= */}
-      <div className="fixed bottom-6 right-6 z-40">
+      <div className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-30">
         <div className="relative">
           {showProgressTooltip && (
-            <div className="absolute bottom-full right-0 mb-3 w-80 bg-white rounded-3xl shadow-2xl border border-slate-200 p-5 z-50 animate-in fade-in zoom-in-95 duration-200">
+            <div className="absolute bottom-full right-0 mb-3 w-[calc(100vw-2rem)] sm:w-80 bg-white rounded-3xl shadow-2xl border border-slate-200 p-5 z-50 animate-in fade-in zoom-in-95 duration-200">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                 <div className="flex items-center gap-2">
                   <Award className="w-4 h-4 text-[#0B3B70]" />

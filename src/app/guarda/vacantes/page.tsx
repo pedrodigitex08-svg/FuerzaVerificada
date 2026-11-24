@@ -922,7 +922,7 @@ function VacantesContent() {
   return (
     <div className="min-h-screen bg-[#F2F5F8] text-[#313944] pb-16">
       {/* 1. FILA SUPERIOR DE FILTROS DESPLEGABLES CON FLECHA (⌄) SOBRE FONDO #F2F5F8 */}
-      <div className="w-full bg-[#F2F5F8] border-b border-slate-200/80 sticky top-0 md:top-[68px] z-20 backdrop-blur-md bg-[#F2F5F8]/95 shadow-2xs">
+      <div className="w-full bg-[#F2F5F8] border-b border-slate-200/80 md:sticky md:top-16 z-20 md:backdrop-blur-md bg-[#F2F5F8]/95 shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 space-y-2.5">
           {/* Barra de búsqueda móvil (visible en pantallas móviles < md donde NavbarSearchPill no está activa) */}
           <form
@@ -1005,7 +1005,7 @@ function VacantesContent() {
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
               {openDropdown === "sort" && (
-                <div className="absolute left-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+                <div className="fixed inset-x-4 top-24 max-h-[70vh] overflow-y-auto z-50 sm:absolute sm:inset-x-auto sm:top-full sm:left-0 sm:mt-2 sm:max-h-80 sm:w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 space-y-1">
                   <button
                     type="button"
                     onClick={() => {
@@ -1061,7 +1061,7 @@ function VacantesContent() {
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
               {openDropdown === "date" && (
-                <div className="absolute left-0 mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+                <div className="fixed inset-x-4 top-24 max-h-[70vh] overflow-y-auto z-50 sm:absolute sm:inset-x-auto sm:top-full sm:left-0 sm:mt-2 sm:max-h-80 sm:w-52 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 space-y-1">
                   {[
                     { id: "todas", label: "Cualquier fecha" },
                     { id: "hoy", label: "Publicadas hoy (24h)" },
@@ -1107,7 +1107,7 @@ function VacantesContent() {
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
               {openDropdown === "cat" && (
-                <div className="absolute left-0 mt-2 w-64 max-h-80 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+                <div className="fixed inset-x-4 top-24 max-h-[70vh] overflow-y-auto z-50 sm:absolute sm:inset-x-auto sm:top-full sm:left-0 sm:mt-2 sm:max-h-80 sm:w-64 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 space-y-1">
                   {[
                     { id: "todas", label: "Todas las categorías" },
                     ...OFFICIAL_SECURITY_PROFILES.map((p) => ({
@@ -1153,7 +1153,7 @@ function VacantesContent() {
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
               {openDropdown === "loc" && (
-                <div className="absolute left-0 mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+                <div className="fixed inset-x-4 top-24 max-h-[70vh] overflow-y-auto z-50 sm:absolute sm:inset-x-auto sm:top-full sm:left-0 sm:mt-2 sm:max-h-80 sm:w-52 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 space-y-1">
                   {[
                     { id: "", label: "Todo el país (Colombia)" },
                     { id: "Bogotá", label: "Bogotá D.C." },
@@ -1205,7 +1205,7 @@ function VacantesContent() {
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
               {openDropdown === "exp" && (
-                <div className="absolute left-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+                <div className="fixed inset-x-4 top-24 max-h-[70vh] overflow-y-auto z-50 sm:absolute sm:inset-x-auto sm:top-full sm:left-0 sm:mt-2 sm:max-h-80 sm:w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 space-y-1">
                   {[
                     { id: "todos", label: "Cualquier experiencia" },
                     { id: "0", label: "Sin experiencia" },
@@ -1255,7 +1255,7 @@ function VacantesContent() {
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
               {openDropdown === "sal" && (
-                <div className="absolute left-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+                <div className="fixed inset-x-4 top-24 max-h-[70vh] overflow-y-auto z-50 sm:absolute sm:inset-x-auto sm:top-full sm:left-0 sm:mt-2 sm:max-h-80 sm:w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 space-y-1">
                   {[
                     { id: "todos", label: "Cualquier salario" },
                     { id: "1600", label: "Desde $1.600.000" },
@@ -1299,7 +1299,7 @@ function VacantesContent() {
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
               {openDropdown === "shift" && (
-                <div className="absolute left-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+                <div className="fixed inset-x-4 top-24 max-h-[70vh] overflow-y-auto z-50 sm:absolute sm:inset-x-auto sm:top-full sm:left-0 sm:mt-2 sm:max-h-80 sm:w-56 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 space-y-1">
                   {[
                     { id: "todos", label: "Todos los turnos" },
                     ...SHIFT_OPTIONS.map((o) => ({ id: o.value, label: `Turno ${o.shortLabel}` })),
@@ -1347,7 +1347,7 @@ function VacantesContent() {
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
               {openDropdown === "contract" && (
-                <div className="absolute left-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-30 space-y-1">
+                <div className="fixed inset-x-4 top-24 max-h-[70vh] overflow-y-auto z-50 sm:absolute sm:inset-x-auto sm:top-full sm:left-0 sm:mt-2 sm:max-h-80 sm:w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 space-y-1">
                   {[
                     { id: "todos", label: "Todos los contratos" },
                     { id: "fijo", label: "Término fijo" },
