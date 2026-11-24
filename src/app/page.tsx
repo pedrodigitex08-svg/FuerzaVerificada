@@ -105,13 +105,18 @@ export default function HomePage() {
   const [profileCounts, setProfileCounts] = useState<Record<string, number>>({});
   const [activeDirectoryTab, setActiveDirectoryTab] = useState<"localizacion" | "cargos">("localizacion");
   const [activeSceneIndex, setActiveSceneIndex] = useState(0);
+  const [heroZoomReady, setHeroZoomReady] = useState(false);
 
-  // Rotación suave de escenas panorámicas del Hero
+  // Rotación suave de escenas panorámicas del Hero con efecto Ken Burns desde la primera diapositiva
   useEffect(() => {
+    const raf = requestAnimationFrame(() => setHeroZoomReady(true));
     const timer = setInterval(() => {
       setActiveSceneIndex((prev) => (prev + 1) % HERO_SCENES.length);
     }, 5500);
-    return () => clearInterval(timer);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearInterval(timer);
+    };
   }, []);
 
   // Carga de vacantes destacadas y conteo real desde Supabase
@@ -269,16 +274,16 @@ export default function HomePage() {
       {/* ========================================================================= */}
       {/* BLOQUE 1: HERO CON IMAGEN CORPORATIVA, PÍLDORA GIGANTE Y CURVA EN ARCO    */}
       {/* ========================================================================= */}
-      <section className="relative min-h-[580px] sm:min-h-[620px] text-white pt-16 pb-20 sm:pb-28 overflow-hidden flex items-center justify-center">
-        {/* Fondo dinámico multicapa con fotografías panorámicas hiperrealistas */}
+      <section className="relative min-h-[580px] sm:min-h-[620px] bg-[#071a38] text-white pt-16 pb-20 sm:pb-28 overflow-hidden flex items-center justify-center">
+        {/* Fondo dinámico multicapa con fotografías panorámicas hiperrealistas (Efecto Video Ken Burns) */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
           {HERO_SCENES.map((scene, idx) => {
             const isActive = idx === activeSceneIndex;
             return (
               <div
                 key={scene.id}
-                className={`absolute inset-0 w-full h-full hero-cinematic-slide ${
-                  isActive ? "active" : "inactive"
+                className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out ${
+                  isActive ? "opacity-70" : "opacity-0"
                 }`}
                 aria-hidden={!isActive}
               >
@@ -289,16 +294,16 @@ export default function HomePage() {
                   priority={idx === 0}
                   sizes="100vw"
                   quality={85}
-                  className="object-cover object-center w-full h-full"
+                  className={`object-cover object-center w-full h-full brightness-95 contrast-105 transition-all duration-[7000ms] ease-out ${
+                    isActive && heroZoomReady ? "scale-105" : "scale-100"
+                  }`}
                 />
               </div>
             );
           })}
 
-          {/* Superposición oscura corporativa (bg-slate-900/55 con gradientes para legibilidad) */}
-          <div className="absolute inset-0 bg-slate-900/60" />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#072140]/85 via-[#0B3B70]/65 to-[#072140]/90" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,rgba(7,33,64,0.65)_100%)]" />
+          {/* Degradado elegante que deja respirar el centro y oscurece suavemente los bordes */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#071a38]/75 via-[#0a234a]/45 to-[#071a38]/85" />
         </div>
 
         {/* Contenido principal del Hero */}
@@ -321,12 +326,16 @@ export default function HomePage() {
           </div>
 
           {/* Gran Título Hero Institucional de Autoridad */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white max-w-4xl mx-auto leading-tight drop-shadow-md">
-            El Portal de Empleo y Confiabilidad para la Seguridad Privada en Colombia
+          <h1 className="text-3xl sm:text-5xl lg:text-[3.25rem] font-extrabold tracking-tight leading-[1.12] text-balance text-white max-w-4xl mx-auto drop-shadow-[0_2px_12px_rgba(0,0,0,0.55)]">
+            El Portal de Empleos y Confiabilidad para la{" "}
+            <span className="bg-gradient-to-r from-[#FFE066] via-[#FFF3B0] to-sky-200 bg-clip-text text-transparent">
+              Seguridad Privada y sus Aliados
+            </span>{" "}
+            en Colombia
           </h1>
 
           {/* Subtítulo 100% Real (Cero cifras infladas) */}
-          <p className="text-sm sm:text-base md:text-lg text-slate-100 max-w-3xl mx-auto font-normal leading-relaxed drop-shadow-xs">
+          <p className="text-sm sm:text-base md:text-lg text-slate-100 max-w-3xl mx-auto font-normal leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.55)]">
             Conecta directamente con empresas de vigilancia autorizadas para cargos de Guarda, Escolta, Supervisor y Operador CCTV.
           </p>
 
