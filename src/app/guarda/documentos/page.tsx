@@ -37,6 +37,11 @@ import {
 } from "@/lib/utils/shiftNormalizer";
 import { createClient } from "@/lib/supabase/client";
 import { openSecureDocument } from "@/lib/utils/storageSecurity";
+import {
+  COLOMBIA_DEPARTMENTS,
+  COLOMBIA_DEPARTMENTS_CITIES,
+  findDepartmentByCity,
+} from "@/lib/constants/colombiaSecurityCatalog";
 
 const EDUCATION_LEVEL_OPTIONS = [
   "Educación Básica primaria",
@@ -394,8 +399,12 @@ export default function DocumentosPage() {
   const [fullName, setFullName] = useState("");
   const [nationalId, setNationalId] = useState("");
   const [phone, setPhone] = useState("");
+  const [department, setDepartment] = useState("Bogotá D.C.");
   const [city, setCity] = useState("Bogotá D.C.");
   const [locality, setLocality] = useState("");
+  const [expectedSalary, setExpectedSalary] = useState("");
+  const [willingToTravel, setWillingToTravel] = useState(false);
+  const [willingToRelocate, setWillingToRelocate] = useState(false);
 
   // Especialidad Principal en Seguridad Privada (Hasta 5 opciones)
   const [selectedRoles, setSelectedRoles] = useState<string[]>([
@@ -529,8 +538,25 @@ export default function DocumentosPage() {
           if (cp.national_id && !String(cp.national_id).startsWith("CC-")) {
             setNationalId(cp.national_id);
           }
+          if (cp.department && COLOMBIA_DEPARTMENTS_CITIES[cp.department]) {
+            setDepartment(cp.department);
+          } else if (cp.city) {
+            setDepartment(findDepartmentByCity(cp.city));
+          }
           if (cp.city) setCity(cp.city);
           if (cp.locality_neighborhood) setLocality(cp.locality_neighborhood);
+
+          // Campos opcionales de adecuación (Fase 4)
+          const loadedSalary = cp.expected_salary ?? cp.salary_expectation;
+          if (loadedSalary !== undefined && loadedSalary !== null && Number(loadedSalary) > 0) {
+            setExpectedSalary(String(Math.round(Number(loadedSalary))));
+          }
+          if (cp.willing_to_travel !== undefined || cp.available_to_travel !== undefined) {
+            setWillingToTravel(Boolean(cp.willing_to_travel ?? cp.available_to_travel));
+          }
+          if (cp.willing_to_relocate !== undefined || cp.available_to_relocate !== undefined) {
+            setWillingToRelocate(Boolean(cp.willing_to_relocate ?? cp.available_to_relocate));
+          }
 
           // Cargar selected_roles o inicializar desde primary_role
           if (Array.isArray(cp.selected_roles) && cp.selected_roles.length > 0) {
@@ -1104,11 +1130,19 @@ export default function DocumentosPage() {
           : simetricCourseNumber.trim() || null;
 
       // 3. Construir payload de public.candidate_profiles con todas las nuevas columnas y retrocompatibilidad
+      const parsedExpectedSalary = expectedSalary.replace(/\D/g, "")
+        ? parseInt(expectedSalary.replace(/\D/g, ""), 10)
+        : null;
+
       const baseCandidatePayload: Record<string, any> = {
         user_id: userId,
         national_id: nationalId.trim() || `CC-${userId.slice(0, 8)}`,
+        department,
         city,
         locality_neighborhood: locality.trim() || null,
+        expected_salary: parsedExpectedSalary,
+        willing_to_travel: willingToTravel,
+        willing_to_relocate: willingToRelocate,
         selected_roles: finalSelectedRoles,
         primary_role: firstSelectedRole,
         years_experience: yearsExperience,
@@ -1357,7 +1391,31 @@ export default function DocumentosPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Departamento (Colombia)
+                </label>
+                <select
+                  value={department}
+                  onChange={(e) => {
+                    const nextDept = e.target.value;
+                    setDepartment(nextDept);
+                    const nextCities =
+                      COLOMBIA_DEPARTMENTS_CITIES[nextDept] || [];
+                    if (nextCities.length > 0) {
+                      setCity(nextCities[0]);
+                    }
+                  }}
+                  className="w-full h-11 bg-white border border-slate-300 rounded-xl px-3 text-sm text-slate-900 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all shadow-2xs"
+                >
+                  {COLOMBIA_DEPARTMENTS.map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Ciudad Sede
@@ -1367,16 +1425,17 @@ export default function DocumentosPage() {
                   onChange={(e) => setCity(e.target.value)}
                   className="w-full h-11 bg-white border border-slate-300 rounded-xl px-3 text-sm text-slate-900 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all shadow-2xs"
                 >
-                  <option value="Bogotá D.C.">Bogotá D.C.</option>
-                  <option value="Medellín">Medellín</option>
-                  <option value="Cali">Cali</option>
-                  <option value="Barranquilla">Barranquilla</option>
-                  <option value="Bucaramanga">Bucaramanga</option>
-                  <option value="Cartagena">Cartagena</option>
-                  <option value="Pereira">Pereira</option>
-                  <option value="Ibagué">Ibagué</option>
-                  <option value="Cúcuta">Cúcuta</option>
-                  <option value="Villavicencio">Villavicencio</option>
+                  {(COLOMBIA_DEPARTMENTS_CITIES[department] || ["Bogotá D.C."]).map(
+                    (c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    )
+                  )}
+                  {city &&
+                    !(COLOMBIA_DEPARTMENTS_CITIES[department] || []).includes(
+                      city
+                    ) && <option value={city}>{city}</option>}
                 </select>
               </div>
               <div>
@@ -1390,6 +1449,75 @@ export default function DocumentosPage() {
                   placeholder="Ej: Suba, Fontibón, Kennedy"
                   className="w-full h-11 bg-white border border-slate-300 rounded-xl px-3.5 text-sm text-slate-900 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15 transition-all shadow-2xs"
                 />
+              </div>
+            </div>
+
+            {/* Bloque aditivo opcional para maximizar % de Adecuación (Fase 4) */}
+            <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Aspiración salarial mensual{" "}
+                  <span className="text-slate-400 font-normal">(Opcional)</span>
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={expectedSalary}
+                  onChange={(e) =>
+                    setExpectedSalary(e.target.value.replace(/\D/g, ""))
+                  }
+                  placeholder="Ej: 2000000"
+                  className="w-full h-10 bg-white border border-slate-300 rounded-xl px-3 text-sm font-mono text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15"
+                />
+                {expectedSalary && (
+                  <span className="text-[11px] font-mono text-[#005DA4] font-semibold mt-0.5 block">
+                    ${parseInt(expectedSalary, 10).toLocaleString("es-CO")} COP / mes
+                  </span>
+                )}
+              </div>
+
+              <div className="p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between gap-2">
+                <div>
+                  <span className="text-xs font-bold text-slate-800 block">
+                    Disponibilidad para viajar
+                  </span>
+                  <span className="text-[11px] text-slate-500">
+                    Desplazamientos laborales
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setWillingToTravel(!willingToTravel)}
+                  className={`w-10 h-5 rounded-full p-0.5 transition-colors flex items-center shrink-0 cursor-pointer ${
+                    willingToTravel
+                      ? "bg-[#005DA4] justify-end"
+                      : "bg-slate-300 justify-start"
+                  }`}
+                >
+                  <div className="w-4 h-4 rounded-full bg-white shadow-xs" />
+                </button>
+              </div>
+
+              <div className="p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between gap-2">
+                <div>
+                  <span className="text-xs font-bold text-slate-800 block">
+                    Cambiar de residencia
+                  </span>
+                  <span className="text-[11px] text-slate-500">
+                    Disponibilidad de traslado
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setWillingToRelocate(!willingToRelocate)}
+                  className={`w-10 h-5 rounded-full p-0.5 transition-colors flex items-center shrink-0 cursor-pointer ${
+                    willingToRelocate
+                      ? "bg-[#005DA4] justify-end"
+                      : "bg-slate-300 justify-start"
+                  }`}
+                >
+                  <div className="w-4 h-4 rounded-full bg-white shadow-xs" />
+                </button>
               </div>
             </div>
 

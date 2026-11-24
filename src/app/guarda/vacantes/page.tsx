@@ -30,6 +30,10 @@ import {
   Building,
   BadgeCheck,
   Banknote,
+  Star,
+  GraduationCap,
+  Users,
+  HelpCircle,
 } from "lucide-react";
 import { calculateMatchScore } from "@/lib/utils/matchCalculator";
 import {
@@ -42,7 +46,11 @@ import {
   OFFICIAL_SECURITY_PROFILES,
   matchesOfficialSecurityProfile,
 } from "@/lib/utils/shiftNormalizer";
-import { JobPost, CourseSemaphore } from "@/types/database";
+import {
+  JobPost,
+  CourseSemaphore,
+  ScreeningQuestionItem,
+} from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/supabase/useAuth";
 
@@ -86,6 +94,24 @@ function normalizeFilterStr(str?: string | null): string {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .trim();
+}
+
+function getDisplayCompanyName(job: JobPostWithCompany): string {
+  if (job.hide_company_name === true) {
+    return (
+      job.custom_company_alias?.trim() ||
+      "Empresa confidencial del sector seguridad"
+    );
+  }
+  return job.company_name;
+}
+
+function getJobScreeningQuestions(job: JobPostWithCompany): ScreeningQuestionItem[] {
+  if (!Array.isArray(job.screening_questions)) return [];
+  return job.screening_questions.filter(
+    (q): q is ScreeningQuestionItem =>
+      Boolean(q && typeof q.question === "string" && q.question.trim().length > 0)
+  );
 }
 
 function VacantesContent() {
@@ -289,6 +315,15 @@ function VacantesContent() {
   // Mobile detail drawer toggle
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
 
+  // Modal de Preguntas de Filtrado (Fase 4)
+  const [screeningModalJob, setScreeningModalJob] =
+    useState<JobPostWithCompany | null>(null);
+  const [screeningAnswersDraft, setScreeningAnswersDraft] = useState<
+    Record<string, string>
+  >({});
+  const [screeningError, setScreeningError] = useState<string | null>(null);
+  const [isSubmittingApplication, setIsSubmittingApplication] = useState(false);
+
   useEffect(() => {
     async function loadCandidateState() {
       try {
@@ -376,27 +411,23 @@ function VacantesContent() {
     loadCandidateState();
   }, [supabase]);
 
-  const handleApply = async (job: JobPostWithCompany) => {
-    if (!isAuthenticated) {
-      router.push(`/login?redirect=${encodeURIComponent("/vacantes")}`);
-      return;
-    }
-
-    if (role === "company") {
-      alert(
-        "Tu cuenta actual es de Empresa de Seguridad. Las postulaciones a vacantes son exclusivas para el Personal Operativo."
-      );
-      return;
-    }
-
+  const executeApplicationInsert = async (
+    job: JobPostWithCompany,
+    screeningAnswers: Array<{
+      question_id: string;
+      question: string;
+      answer: string;
+    }> = []
+  ): Promise<boolean> => {
     const match = calculateMatchScore(job, candidateProfile);
+    setIsSubmittingApplication(true);
 
     try {
       const { data: userData, error: authErr } = await supabase.auth.getUser();
       const user = userData?.user;
       if (authErr || !user) {
         router.push(`/login?redirect=${encodeURIComponent("/guarda/vacantes")}`);
-        return;
+        return false;
       }
 
       // 1. Asegurar que exista fila en public.candidate_profiles antes de insertar en public.applications
@@ -473,7 +504,7 @@ function VacantesContent() {
         setAppliedJobIds((prev) => ({ ...prev, [job.id]: true }));
         setSuccessToast(`¡Postulación registrada para: ${job.title}!`);
         setTimeout(() => setSuccessToast(null), 4000);
-        return;
+        return true;
       }
 
       // 3. Insertar en public.applications enviando el ID correcto (user.id o candidateProfile.id)
@@ -481,6 +512,12 @@ function VacantesContent() {
       let insertError: any = null;
       let insertedOk = false;
       const statusesToTry = ["aplicado", "postulado"];
+      const extraMeta = {
+        is_read: false,
+        ...(screeningAnswers.length > 0
+          ? { screening_answers: screeningAnswers }
+          : {}),
+      };
 
       for (const candId of candidateIdsToTry) {
         if (insertedOk) break;
@@ -490,7 +527,8 @@ function VacantesContent() {
             candidate_id: candId,
             match_score: match.score,
             status: st as any,
-          });
+            ...extraMeta,
+          } as any);
 
           if (!error || error.code === "23505") {
             insertedOk = true;
@@ -499,9 +537,11 @@ function VacantesContent() {
           }
           insertError = error;
 
-          // Respaldo sin match_score si la columna no existiera en algún esquema
+          // Respaldo si alguna columna opcional (match_score, is_read, screening_answers) no existiera
           if (
             error.message?.includes("match_score") ||
+            error.message?.includes("is_read") ||
+            error.message?.includes("screening_answers") ||
             error.code === "42703" ||
             error.code === "PGRST204"
           ) {
@@ -531,6 +571,7 @@ function VacantesContent() {
               job_id: job.id,
               candidate_id: candId,
               match_score: match.score,
+              ...extraMeta,
             } as any);
           if (!defErr || defErr.code === "23505") {
             insertedOk = true;
@@ -551,12 +592,13 @@ function VacantesContent() {
             insertError?.message || "Verifica tu sesión o permisos de candidato."
           }`
         );
-        return;
+        return false;
       }
 
       setAppliedJobIds((prev) => ({ ...prev, [job.id]: true }));
       setSuccessToast(`¡Postulación enviada exitosamente para: ${job.title}!`);
       setTimeout(() => setSuccessToast(null), 4000);
+      return true;
     } catch (err: any) {
       console.error("Excepción al registrar postulación:", err);
       alert(
@@ -564,6 +606,66 @@ function VacantesContent() {
           err?.message || "Intenta nuevamente."
         }`
       );
+      return false;
+    } finally {
+      setIsSubmittingApplication(false);
+    }
+  };
+
+  const handleApply = async (job: JobPostWithCompany) => {
+    if (!isAuthenticated) {
+      router.push(`/login?redirect=${encodeURIComponent("/vacantes")}`);
+      return;
+    }
+
+    if (role === "company") {
+      alert(
+        "Tu cuenta actual es de Empresa de Seguridad. Las postulaciones a vacantes son exclusivas para el Personal Operativo."
+      );
+      return;
+    }
+
+    const questions = getJobScreeningQuestions(job);
+    if (questions.length > 0) {
+      setScreeningModalJob(job);
+      setScreeningAnswersDraft({});
+      setScreeningError(null);
+      return;
+    }
+
+    await executeApplicationInsert(job, []);
+  };
+
+  const handleConfirmScreeningSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!screeningModalJob) return;
+
+    const questions = getJobScreeningQuestions(screeningModalJob);
+    const missing = questions.find(
+      (q) => !(screeningAnswersDraft[q.id] || "").trim()
+    );
+    if (missing) {
+      setScreeningError(
+        "Por favor responde todas las preguntas de filtrado antes de enviar tu postulación."
+      );
+      return;
+    }
+
+    setScreeningError(null);
+    const formattedAnswers = questions.map((q) => ({
+      question_id: q.id,
+      question: q.question,
+      answer: (screeningAnswersDraft[q.id] || "").trim(),
+    }));
+
+    const ok = await executeApplicationInsert(
+      screeningModalJob,
+      formattedAnswers
+    );
+    if (ok) {
+      setScreeningModalJob(null);
+      setScreeningAnswersDraft({});
+      setMobileDetailOpen(false);
     }
   };
 
@@ -596,12 +698,15 @@ function VacantesContent() {
       if (hiddenJobIds[j.id]) return false;
 
       const q = normalizeFilterStr(searchTerm);
+      const displayComp = getDisplayCompanyName(j);
       const matchesSearch =
         !q ||
         normalizeFilterStr(j.title).includes(q) ||
-        normalizeFilterStr(j.company_name).includes(q) ||
+        normalizeFilterStr(j.title_complement).includes(q) ||
+        normalizeFilterStr(displayComp).includes(q) ||
         normalizeFilterStr(j.role_required).includes(q) ||
         normalizeFilterStr(j.zone_neighborhood).includes(q) ||
+        normalizeFilterStr(j.postal_code_zone).includes(q) ||
         normalizeFilterStr(j.description).includes(q);
 
       const loc = normalizeFilterStr(locationFilter);
@@ -610,7 +715,9 @@ function VacantesContent() {
         loc === "todo el pais" ||
         loc === "todas" ||
         normalizeFilterStr(j.city).includes(loc) ||
-        normalizeFilterStr(j.zone_neighborhood).includes(loc);
+        normalizeFilterStr(j.department).includes(loc) ||
+        normalizeFilterStr(j.zone_neighborhood).includes(loc) ||
+        normalizeFilterStr(j.postal_code_zone).includes(loc);
 
       let matchesCategory = true;
       if (categoryFilter !== "todas") {
@@ -654,31 +761,54 @@ function VacantesContent() {
 
       let matchesContract = true;
       if (contractFilter !== "todos") {
-        const contractRaw = normalizeFilterStr((j as any).contract_type);
-        const titleNorm = normalizeFilterStr(j.title);
-        const descNorm = normalizeFilterStr(j.description);
-        const haystack = `${contractRaw} ${titleNorm} ${descNorm}`;
-
-        if (contractFilter === "fijo") {
-          matchesContract =
-            haystack.includes("termino fijo") ||
-            haystack.includes("contrato fijo") ||
-            haystack.includes("fijo") ||
-            haystack.includes("fija");
-        } else if (contractFilter === "indefinido") {
-          matchesContract =
-            haystack.includes("termino indefinido") ||
-            haystack.includes("contrato indefinido") ||
-            haystack.includes("indefinido") ||
-            haystack.includes("indefinida");
-        } else if (contractFilter === "obra") {
-          matchesContract =
-            haystack.includes("obra o labor") ||
-            haystack.includes("obra") ||
-            haystack.includes("labor") ||
-            haystack.includes("prestacion");
+        const contractRaw = normalizeFilterStr(j.contract_type);
+        if (contractRaw) {
+          // Fuente principal nativa: job.contract_type
+          if (contractFilter === "fijo") {
+            matchesContract =
+              contractRaw.includes("termino fijo") ||
+              (contractRaw.includes("fijo") && !contractRaw.includes("indefinido"));
+          } else if (contractFilter === "indefinido") {
+            matchesContract = contractRaw.includes("indefinido");
+          } else if (contractFilter === "obra") {
+            matchesContract =
+              contractRaw.includes("obra") ||
+              contractRaw.includes("labor") ||
+              contractRaw.includes("prestacion");
+          } else {
+            matchesContract = contractRaw.includes(
+              normalizeFilterStr(contractFilter)
+            );
+          }
         } else {
-          matchesContract = haystack.includes(normalizeFilterStr(contractFilter));
+          // Respaldo retrocompatible para vacantes antiguas donde contract_type es null
+          const titleNorm = normalizeFilterStr(j.title);
+          const descNorm = normalizeFilterStr(j.description);
+          const haystack = `${titleNorm} ${descNorm}`;
+
+          if (contractFilter === "fijo") {
+            matchesContract =
+              haystack.includes("termino fijo") ||
+              haystack.includes("contrato fijo") ||
+              haystack.includes("fijo") ||
+              haystack.includes("fija");
+          } else if (contractFilter === "indefinido") {
+            matchesContract =
+              haystack.includes("termino indefinido") ||
+              haystack.includes("contrato indefinido") ||
+              haystack.includes("indefinido") ||
+              haystack.includes("indefinida");
+          } else if (contractFilter === "obra") {
+            matchesContract =
+              haystack.includes("obra o labor") ||
+              haystack.includes("obra") ||
+              haystack.includes("labor") ||
+              haystack.includes("prestacion");
+          } else {
+            matchesContract = haystack.includes(
+              normalizeFilterStr(contractFilter)
+            );
+          }
         }
       }
 
@@ -697,6 +827,10 @@ function VacantesContent() {
       if (sortBy === "salario") {
         return (b.salary_monthly || 0) - (a.salary_monthly || 0);
       }
+      // Priorizar ofertas destacadas arriba en el ordenamiento por defecto
+      const featuredDiff = (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0);
+      if (featuredDiff !== 0) return featuredDiff;
+
       const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
       const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
       return timeB - timeA;
@@ -1261,6 +1395,8 @@ function VacantesContent() {
                 const isSelected = selectedJob?.id === job.id;
                 const isApplied = !!appliedJobIds[job.id];
                 const relativeDate = formatRelativeDate(job.created_at);
+                const displayCompany = getDisplayCompanyName(job);
+                const isUrgentJob = job.is_urgent === true || job.is_urgent_relief === true;
 
                 return (
                   <div
@@ -1272,6 +1408,8 @@ function VacantesContent() {
                     className={`bg-white rounded-2xl p-5 relative cursor-pointer transition-all ${
                       isSelected
                         ? "border-[1.5px] border-[#005DA4] shadow-sm ring-1 ring-[#005DA4]/20"
+                        : job.is_featured
+                        ? "border border-amber-300/90 hover:border-amber-400 shadow-2xs"
                         : "border border-slate-200 hover:border-slate-300 shadow-2xs"
                     }`}
                   >
@@ -1288,29 +1426,62 @@ function VacantesContent() {
                       <MoreVertical className="w-4 h-4" />
                     </button>
 
+                    {/* Insignias de visibilidad: ★ Destacada / ⚡ Urgente */}
+                    {(job.is_featured || isUrgentJob) && (
+                      <div className="flex flex-wrap items-center gap-1.5 mb-2 pr-6">
+                        {job.is_featured && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-0.5 rounded-full">
+                            ★ Destacada
+                          </span>
+                        )}
+                        {isUrgentJob && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-orange-50 text-orange-700 border border-orange-200 px-2.5 py-0.5 rounded-full">
+                            ⚡ Urgente
+                          </span>
+                        )}
+                      </div>
+                    )}
+
                     {/* Título en negrita */}
                     <h3 className="text-lg font-bold text-slate-900 leading-snug pr-6 hover:text-[#005DA4] transition-colors">
                       {job.title}
                     </h3>
+                    {job.title_complement && (
+                      <p className="text-xs font-medium text-slate-500 mt-0.5 pr-6">
+                        {job.title_complement}
+                      </p>
+                    )}
 
                     {/* Fila Empresa + Calificación + Check azul de verificación */}
                     <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium mt-1.5 flex-wrap">
-                      <span className="text-amber-500 font-bold">4,8 ★</span>
-                      <BadgeCheck className="w-4 h-4 text-[#005DA4] shrink-0" strokeWidth={2.5} />
-                      <span className="text-[#005DA4] font-semibold">{job.company_name}</span>
+                      {!job.hide_company_name && (
+                        <>
+                          <span className="text-amber-500 font-bold">4,8 ★</span>
+                          <BadgeCheck className="w-4 h-4 text-[#005DA4] shrink-0" strokeWidth={2.5} />
+                        </>
+                      )}
+                      <span className="text-[#005DA4] font-semibold">{displayCompany}</span>
                     </div>
 
                     {/* Ciudad / Departamento */}
                     <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
                       <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span>{job.city} {job.zone_neighborhood ? `• ${job.zone_neighborhood}` : ""}</span>
+                      <span>
+                        {job.city}
+                        {job.department && job.department !== job.city
+                          ? `, ${job.department}`
+                          : ""}
+                        {job.postal_code_zone || job.zone_neighborhood
+                          ? ` • ${job.postal_code_zone || job.zone_neighborhood}`
+                          : ""}
+                      </span>
                     </div>
 
                     {/* Modalidad y Salario */}
                     <div className="mt-2.5 flex flex-wrap items-center gap-2 text-xs">
                       <span className="text-slate-600 font-medium flex items-center gap-1">
                         <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        Presencial · Turno operativo
+                        {job.work_modality || "Presencial"} · {formatShiftLabel(job.shift).split(" ")[0]}
                       </span>
                       <span className="text-slate-300">•</span>
                       <span className="text-slate-900 font-bold font-mono tabular-nums">
@@ -1350,36 +1521,76 @@ function VacantesContent() {
                 {/* CABECERA DEL DETALLE ESTILO COMPUTRABAJO */}
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1">
+                    {(selectedJob.is_featured || selectedJob.is_urgent || selectedJob.is_urgent_relief) && (
+                      <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+                        {selectedJob.is_featured && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-0.5 rounded-full">
+                            ★ Destacada
+                          </span>
+                        )}
+                        {(selectedJob.is_urgent || selectedJob.is_urgent_relief) && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-orange-50 text-orange-700 border border-orange-200 px-2.5 py-0.5 rounded-full">
+                            ⚡ Urgente
+                          </span>
+                        )}
+                      </div>
+                    )}
+
                     <h1 className="text-2xl font-bold text-slate-900 leading-tight">
                       {selectedJob.title}
                     </h1>
+                    {selectedJob.title_complement && (
+                      <p className="text-sm font-medium text-slate-500">
+                        {selectedJob.title_complement}
+                      </p>
+                    )}
                     <div className="text-sm font-semibold text-slate-700">
                       {selectedJob.city}
+                      {selectedJob.department && selectedJob.department !== selectedJob.city
+                        ? `, ${selectedJob.department}`
+                        : ""}
                     </div>
 
                     <div className="flex items-center gap-2 text-xs text-slate-600 pt-1 flex-wrap">
-                      <span className="text-amber-500 font-bold">4,8 ★</span>
+                      {!selectedJob.hide_company_name && (
+                        <span className="text-amber-500 font-bold">4,8 ★</span>
+                      )}
                       <span className="text-[#005DA4] font-semibold text-sm hover:underline cursor-pointer">
-                        {selectedJob.company_name}
+                        {getDisplayCompanyName(selectedJob)}
                       </span>
                       <span>•</span>
                       <span className="text-slate-500">
-                        {selectedJob.zone_neighborhood || selectedJob.city}
+                        {selectedJob.postal_code_zone || selectedJob.zone_neighborhood || selectedJob.city}
                       </span>
                     </div>
 
                     {/* Sello azul de verificación */}
-                    <div className="pt-2">
+                    <div className="pt-2 flex flex-wrap items-center gap-2">
                       <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#005DA4] bg-[#EAF3FA] px-3 py-1 rounded-full border border-[#D5E6F5]">
                         <BadgeCheck className="w-4 h-4 text-[#005DA4]" strokeWidth={2.5} />
-                        <span>Empresa verificada</span>
+                        <span>
+                          {selectedJob.hide_company_name
+                            ? "Empresa confidencial verificada"
+                            : "Empresa verificada"}
+                        </span>
                       </span>
+                      {selectedJob.vacancies_count && selectedJob.vacancies_count > 0 && (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+                          <Users className="w-3.5 h-3.5 text-slate-500" />
+                          <span>
+                            {selectedJob.vacancies_count}{" "}
+                            {selectedJob.vacancies_count === 1 ? "vacante" : "vacantes"}
+                          </span>
+                        </span>
+                      )}
                     </div>
                   </div>
 
                   {/* Logo o insignia corporativa a la derecha superior */}
                   <div className="w-14 h-14 rounded-2xl bg-[#EAF3FA] border border-[#D5E6F5] text-[#0B3B70] flex items-center justify-center font-extrabold text-lg shrink-0 shadow-2xs">
-                    {(selectedJob.company_name || "ES").slice(0, 2).toUpperCase()}
+                    {selectedJob.hide_company_name
+                      ? "EC"
+                      : (getDisplayCompanyName(selectedJob) || "ES").slice(0, 2).toUpperCase()}
                   </div>
                 </div>
 
@@ -1460,7 +1671,10 @@ function VacantesContent() {
                       </div>
                       <div>
                         <span className="font-semibold text-slate-900">Tipo de contrato: </span>
-                        <span>Contrato a término fijo / Obra o labor con todas las prestaciones</span>
+                        <span>
+                          {selectedJob.contract_type ||
+                            "Contrato a término fijo / Obra o labor con todas las prestaciones"}
+                        </span>
                       </div>
                     </div>
 
@@ -1479,10 +1693,48 @@ function VacantesContent() {
                         <Building2 className="w-4 h-4" />
                       </div>
                       <div>
-                        <span className="font-semibold text-slate-900">Modalidad: </span>
-                        <span>Presencial - Puesto operativo de seguridad privada</span>
+                        <span className="font-semibold text-slate-900">Modalidad / Lugar de trabajo: </span>
+                        <span>
+                          {selectedJob.work_modality ||
+                            "Presencial - Puesto operativo de seguridad privada"}
+                        </span>
                       </div>
                     </div>
+
+                    {selectedJob.department && (
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
+                          <MapPin className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="font-semibold text-slate-900">Ubicación: </span>
+                          <span>
+                            {selectedJob.city}
+                            {selectedJob.department !== selectedJob.city
+                              ? `, ${selectedJob.department}`
+                              : ""}
+                            {selectedJob.postal_code_zone
+                              ? ` (${selectedJob.postal_code_zone})`
+                              : ""}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedJob.vacancies_count && selectedJob.vacancies_count > 0 && (
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
+                          <Users className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="font-semibold text-slate-900">Cantidad de vacantes: </span>
+                          <span className="font-mono font-bold text-slate-900">
+                            {selectedJob.vacancies_count}{" "}
+                            {selectedJob.vacancies_count === 1 ? "plaza disponible" : "plazas disponibles"}
+                          </span>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
@@ -1526,8 +1778,24 @@ function VacantesContent() {
 
                     <div className="p-3 rounded-xl bg-[#F2F5F8] border border-slate-200/80 flex items-center justify-between">
                       <span className="text-slate-600">Experiencia Mínima:</span>
-                      <strong className="text-slate-900 font-bold">{selectedJob.min_experience_years || 1} año(s)</strong>
+                      <strong className="text-slate-900 font-bold">
+                        {selectedJob.min_experience_years === 0
+                          ? "Sin experiencia"
+                          : `${selectedJob.min_experience_years || 1} año(s)`}
+                      </strong>
                     </div>
+
+                    {selectedJob.min_education_level && (
+                      <div className="p-3 rounded-xl bg-[#F2F5F8] border border-slate-200/80 flex items-center justify-between gap-2 sm:col-span-2">
+                        <span className="text-slate-600 flex items-center gap-1.5 shrink-0">
+                          <GraduationCap className="w-3.5 h-3.5 text-[#005DA4]" />
+                          Estudios mínimos:
+                        </span>
+                        <strong className="text-slate-900 font-bold text-right">
+                          {selectedJob.min_education_level}
+                        </strong>
+                      </div>
+                    )}
 
                     <div className="p-3 rounded-xl bg-[#F2F5F8] border border-slate-200/80 flex items-center justify-between">
                       <span className="text-slate-600">Libreta Militar:</span>
@@ -1543,6 +1811,26 @@ function VacantesContent() {
                       </strong>
                     </div>
                   </div>
+
+                  {/* Píldoras de destrezas requeridas si existen */}
+                  {Array.isArray(selectedJob.required_skills) &&
+                    selectedJob.required_skills.length > 0 && (
+                      <div className="pt-2 space-y-2">
+                        <span className="text-xs font-semibold text-slate-700 block">
+                          Destrezas y conocimientos solicitados:
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {selectedJob.required_skills.map((skill) => (
+                            <span
+                              key={skill}
+                              className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#EAF3FA] text-[#0B3B70] border border-[#D5E6F5]"
+                            >
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                 </div>
 
                 {/* Sede para entrevistas si aplica */}
@@ -1598,7 +1886,9 @@ function VacantesContent() {
         <div className="fixed inset-0 z-50 lg:hidden bg-slate-950/70 backdrop-blur-xs flex flex-col justify-end animate-in fade-in duration-150">
           <div className="bg-white rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto space-y-4 pb-24">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <span className="text-xs font-bold text-[#005DA4]">{selectedJob.company_name}</span>
+              <span className="text-xs font-bold text-[#005DA4]">
+                {getDisplayCompanyName(selectedJob)}
+              </span>
               <button
                 type="button"
                 onClick={() => setMobileDetailOpen(false)}
@@ -1609,9 +1899,31 @@ function VacantesContent() {
               </button>
             </div>
 
-            <h3 className="text-lg font-bold text-slate-900 tracking-tight leading-snug">
-              {selectedJob.title}
-            </h3>
+            {(selectedJob.is_featured || selectedJob.is_urgent || selectedJob.is_urgent_relief) && (
+              <div className="flex flex-wrap gap-1.5">
+                {selectedJob.is_featured && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-0.5 rounded-full">
+                    ★ Destacada
+                  </span>
+                )}
+                {(selectedJob.is_urgent || selectedJob.is_urgent_relief) && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-orange-50 text-orange-700 border border-orange-200 px-2.5 py-0.5 rounded-full">
+                    ⚡ Urgente
+                  </span>
+                )}
+              </div>
+            )}
+
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 tracking-tight leading-snug">
+                {selectedJob.title}
+              </h3>
+              {selectedJob.title_complement && (
+                <p className="text-xs font-medium text-slate-500 mt-0.5">
+                  {selectedJob.title_complement}
+                </p>
+              )}
+            </div>
 
             <div className="p-3.5 bg-[#EAF3FA] text-[#0B3B70] rounded-2xl flex items-center justify-between border border-[#D5E6F5]">
               <div>
@@ -1625,10 +1937,52 @@ function VacantesContent() {
               </span>
             </div>
 
-            <div className="flex items-center gap-2 text-xs text-slate-600">
-              <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <span>{selectedJob.city} {selectedJob.zone_neighborhood ? `• ${selectedJob.zone_neighborhood}` : ""}</span>
+            <div className="space-y-1.5 text-xs text-slate-600">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span>
+                  {selectedJob.city}
+                  {selectedJob.department && selectedJob.department !== selectedJob.city
+                    ? `, ${selectedJob.department}`
+                    : ""}
+                  {selectedJob.postal_code_zone || selectedJob.zone_neighborhood
+                    ? ` • ${selectedJob.postal_code_zone || selectedJob.zone_neighborhood}`
+                    : ""}
+                </span>
+              </div>
+              {selectedJob.contract_type && (
+                <div className="flex items-center gap-2">
+                  <Briefcase className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span>{selectedJob.contract_type}</span>
+                </div>
+              )}
+              {selectedJob.work_modality && (
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span>{selectedJob.work_modality}</span>
+                </div>
+              )}
+              {selectedJob.min_education_level && (
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span>{selectedJob.min_education_level}</span>
+                </div>
+              )}
             </div>
+
+            {Array.isArray(selectedJob.required_skills) &&
+              selectedJob.required_skills.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedJob.required_skills.map((skill) => (
+                    <span
+                      key={skill}
+                      className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#EAF3FA] text-[#0B3B70] border border-[#D5E6F5]"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              )}
 
             <div className="space-y-1.5">
               <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
@@ -1651,7 +2005,7 @@ function VacantesContent() {
           <div className="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 p-3 z-40 shadow-xl flex items-center justify-between gap-3">
             <div className="truncate">
               <span className="text-[10px] text-slate-400 uppercase tracking-wider block truncate">
-                {selectedJob.company_name}
+                {getDisplayCompanyName(selectedJob)}
               </span>
               <span className="text-xs font-bold text-[#0B3B70] font-mono tabular-nums">
                 ${selectedJob.salary_monthly.toLocaleString("es-CO")} COP
@@ -1663,7 +2017,9 @@ function VacantesContent() {
               disabled={isSelectedApplied}
               onClick={() => {
                 handleApply(selectedJob);
-                setMobileDetailOpen(false);
+                if (getJobScreeningQuestions(selectedJob).length === 0) {
+                  setMobileDetailOpen(false);
+                }
               }}
               className={`rounded-full px-6 py-2.5 text-xs font-bold transition-all shadow-md ${
                 isSelectedApplied
@@ -1674,6 +2030,141 @@ function VacantesContent() {
               {isSelectedApplied ? "Ya postulado" : "Aplicar"}
             </button>
           </div>
+        </div>
+      )}
+
+      {/* 5. MODAL DE PREGUNTAS DE FILTRADO AL POSTULARSE (FASE 4) */}
+      {screeningModalJob && (
+        <div
+          className="fixed inset-0 z-[60] bg-slate-950/65 backdrop-blur-xs flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Preguntas de filtrado de la oferta"
+        >
+          <div
+            className="fixed inset-0"
+            onClick={() => !isSubmittingApplication && setScreeningModalJob(null)}
+          />
+          <form
+            onSubmit={handleConfirmScreeningSubmit}
+            className="relative z-10 w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 space-y-5"
+          >
+            <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-100">
+              <div>
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#005DA4] bg-[#EAF3FA] border border-[#D5E6F5] px-2.5 py-0.5 rounded-full mb-1.5">
+                  <HelpCircle className="w-3.5 h-3.5" />
+                  <span>Preguntas de filtrado de la empresa</span>
+                </div>
+                <h3 className="text-base font-bold text-slate-900 leading-snug">
+                  {screeningModalJob.title}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {getDisplayCompanyName(screeningModalJob)} • Responde estas preguntas rápidas para completar tu postulación.
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={isSubmittingApplication}
+                onClick={() => setScreeningModalJob(null)}
+                className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                aria-label="Cerrar modal"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {screeningError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>{screeningError}</span>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {getJobScreeningQuestions(screeningModalJob).map((q, idx) => {
+                const currentVal = screeningAnswersDraft[q.id] || "";
+                return (
+                  <div
+                    key={q.id}
+                    className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5"
+                  >
+                    <label className="block text-xs font-bold text-slate-900 leading-snug">
+                      {idx + 1}. {q.question} <span className="text-rose-500">*</span>
+                    </label>
+
+                    {q.type === "cerrada" ? (
+                      <div className="grid grid-cols-2 gap-2.5">
+                        {(["Sí", "No"] as const).map((opt) => (
+                          <button
+                            key={opt}
+                            type="button"
+                            onClick={() => {
+                              setScreeningAnswersDraft((prev) => ({
+                                ...prev,
+                                [q.id]: opt,
+                              }));
+                              setScreeningError(null);
+                            }}
+                            className={`h-10 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                              currentVal === opt
+                                ? "bg-[#0B3B70] text-white border-[#0B3B70] shadow-xs"
+                                : "bg-white text-slate-700 border-slate-200 hover:border-[#005DA4]"
+                            }`}
+                          >
+                            {currentVal === opt && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
+                            <span>{opt}</span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <textarea
+                        rows={2}
+                        maxLength={300}
+                        value={currentVal}
+                        onChange={(e) => {
+                          setScreeningAnswersDraft((prev) => ({
+                            ...prev,
+                            [q.id]: e.target.value,
+                          }));
+                          setScreeningError(null);
+                        }}
+                        placeholder="Escribe tu respuesta breve aquí..."
+                        className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#005DA4] focus:ring-2 focus:ring-[#005DA4]/15"
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                disabled={isSubmittingApplication}
+                onClick={() => setScreeningModalJob(null)}
+                className="h-10 px-5 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmittingApplication}
+                className="h-10 px-6 rounded-full bg-[#0B3B70] hover:bg-[#082B54] text-white text-xs font-bold inline-flex items-center justify-center gap-2 shadow-xs transition-colors disabled:opacity-60 cursor-pointer"
+              >
+                {isSubmittingApplication ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Enviando postulación...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span>Enviar respuestas y postularme</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>
